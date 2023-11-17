@@ -44,6 +44,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+	printf("Waiting for a connection...\n\n");
     // Accept a connection
     if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
         perror(RED"Accept failed"RESET);
