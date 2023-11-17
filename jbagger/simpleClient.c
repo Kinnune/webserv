@@ -11,6 +11,7 @@ int main() {
     int client_fd;
     struct sockaddr_in server_address;
     char message[] = "Hello from the client!";
+	char message2[] = "Boo!";
 
     // Create a socket
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -33,7 +34,10 @@ int main() {
     }
 
     // Send a message to the server (you might need to modify this based on your protocol)
-    send(client_fd, message, strlen(message), 0);
+    // send(client_fd, message, strlen(message), 0);
+	write(client_fd, message, strlen(message));
+	// write(client_fd, message, strlen(message));
+	// write(client_fd, message2, strlen(message2));
 
     // Close the socket
     close(client_fd);

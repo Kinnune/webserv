@@ -51,11 +51,15 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+	printf("Connection established!\n\n");
+	// Sleep for 1 second
+
+	sleep(1);
     // Read the data from the client and print it
     ssize_t valread = read(new_socket, buffer, MAX_BUFFER_SIZE);
     printf(CYAN"Client Request:"RESET"\n%s\n", buffer);
-
-    // Close the sockets
+    
+	// Close the sockets
     close(new_socket);
     close(server_fd);
 
