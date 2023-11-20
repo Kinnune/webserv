@@ -1,0 +1,39 @@
+Url Example:
+
+http://www.example.com:80/path/to/myfile.html?key1=value1&key2=value2#SomewhereInTheDocument
+
+
+consists of:
+
+- SCHEME:		http
+- DOMAIN NAME:	www.example.com
+- PORT:			80
+- PATH TO FILE:	/path/to/myfile.html
+- PARAMETERS:	?key1=value1&key2=value2
+- ANCHOR:		#SomewhereInTheDocument
+
+
+SCHEME:			- indicates which protocol the browser must use to request the resource
+
+
+AUTHORITY:		- is separated from the scheme by the character pattern ://
+				- if present the authority includes both the domain and the port, separated by a colon
+				- the domain indicates which Web server is being requested
+					- usually this is a domain name, but an IP address may also be used (but this is rare as it is much less convenient).
+				- the port indicates the technical "gate" used to access the resources on the web server
+					- is usually omitted if the web server uses the standard ports of the HTTP protocol (80 for HTTP and 443 for HTTPS) to grant access to its resources
+					- otherwise it is mandatory.
+
+
+PATH TO FILE:	- represents a physical location on the web server
+				- nowadays, mostly an abstraction
+
+PARAMETERS:		- a list of key/value pairs separated with the & symbol
+				- the Web server can use those parameters to do extra stuff before returning the resource
+				- each Web server has its own rules regarding parameters, and the only reliable way to know if a specific Web server is handling parameters is by asking the Web server owner
+
+ANCHOR:			- is an anchor to another part of the resource itself
+				- represents a sort of "bookmark" inside the resource, giving the browser the directions to show the content located at that "bookmarked" spot
+				- on an HTML document, for example, the browser will scroll to the point where the anchor is defined
+					- on a video or audio document, the browser will try to go to the time the anchor represents
+				- is never sent to the server with the request

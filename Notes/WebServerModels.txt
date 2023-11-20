@@ -1,0 +1,46 @@
+
+---- WEB SERVER MODELS ---------------------------------------------------------
+
+
+
+1. Single-Threaded Model:
+
+- In this model, the server handles one client at a time.
+- It accepts a connection, processes the request, and then moves on to the next connection.
+- This approach is suitable for simple applications with low to moderate traffic.
+
+
+
+2. Multi-Process Model:
+
+- In this model, the server creates a new process for each incoming connection using techniques like fork() in C.
+- Each process is responsible for handling a specific client independently.
+- This approach allows for better isolation between clients, but it can be resource-intensive.
+
+
+
+3. Multi-Threaded Model:
+
+- Similar to the multi-process model, the server creates a new thread for each incoming connection using threading libraries.
+- Threads share the same address space, so you need to synchronize access to shared resources carefully.
+- This model can be more resource-efficient compared to multi-process.
+
+
+
+4. Event-Driven Model (e.g., Using poll() or select()):
+
+- This model uses a single thread to handle multiple connections concurrently using non-blocking I/O. 
+- It scales well and can handle many connections simultaneously.
+- Libraries like libevent, libuv, or systems like epoll on Linux provide support for event-driven models.
+
+
+
+5. Thread Pool Model:
+
+- This model combines the advantages of multi-threading with better resource management.
+- Instead of creating a new thread for each connection, a pool of threads is pre-created, and each thread handles multiple connections.
+- This avoids the overhead of creating and destroying threads for each client.
+
+
+
+6. Poll + Fork?
