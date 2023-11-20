@@ -13,6 +13,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <vector>
 
 #include "Client.hpp"
 
@@ -28,21 +29,20 @@ class Server
 {
 	public:
 		Server();
-		void setPort(int port);
-		void setServerPoll();
-		void startListen(int port);
-		void newClient();
+		void setPorts(std::vector<int> ports);
+		void startListen();
+		void newClient(int i);
 		void removeClient(int fd);
 		void loop();
+		unsigned int getNfds();
 	private:
-		// std::list<Client> _clients;
 		std::map<int, Client> _clients;
-		static const int _maxClients = 1023;
-		int _port;
-		int _fd;
-		struct sockaddr_in _address;
-		struct pollfd _pollFds[_maxClients + 1];
-		nfds_t _nfds;
+		static const int _maxClients = 1024;
+		std::vector<int> _ports[1];
+		std::vector<struct sockaddr_in> _addresses[1];
+		struct pollfd _pollFds[_maxClients];
+		nfds_t _nServers;
+		nfds_t _nClients;
 };
 
 #endif
