@@ -8,16 +8,18 @@ class Client
 	public:
 		Client();
 		~Client();
+		Client(Client const &other);
+		Client &operator=(Client const &other);
+		Client(int fd, int port);
 		void setFd(int fd);
 		void setPort(int port);
-		void setServer(Server &server);
 		int getFd() const;
 		int getPort() const;
-		Server &getServer() const;
+		void handleEvent(short events);
 	private:
 		int _fd;
 		int _port;
-		Server &_server;
+		struct sockaddr_in _address;
 };
 
 #endif
