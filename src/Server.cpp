@@ -2,82 +2,113 @@
 #include "Server.hpp"
 
 Server::Server()
-	: _port(0),
-	_nfds(0)
+	: _nServers(0),
+	_nClients(0)
 {
-	std::memset(&_clientFds[0], 0, sizeof(_clientFds));
-	_address.sin_family = AF_INET;
-	_address.sin_addr.s_addr = INADDR_ANY;
-	_address.sin_port = htons(_port);
-	(void)_nfds;
+	std::memset(&_pollFds[0], 0, sizeof(_pollFds));
 }
 
-void Server::setPort(int port)
+void Server::setPorts(std::vector<int> ports)
 {
-	_port = port;
-	_address.sin_port = htons(_port);
+	struct sockaddr_in address;
+
+	_nServers = ports.size();
+	for (unsigned int i = 0; i < _nServers; i++)
+	{
+		_ports->push_back(ports.at(i));
+		address.sin_port = htons(_ports->at(i));
+		address.sin_family = AF_INET;
+		address.sin_addr.s_addr = INADDR_ANY;
+		_addresses->push_back(address);
+		_pollFds[i].events = POLLIN;
+		_pollFds[i].fd = 0;
+		_pollFds[i].revents = 0;
+	}
 }
 
-void Server::startListen(int port)
+void Server::startListen()
 {
-	setPort(port);
-	_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_fd == 0)
+	for (unsigned int i = 0; i < _ports->size(); i++)
 	{
-		std::cerr << RED << "Socket creation failed" << RESET;
-		exit(EXIT_FAILURE);
+
+		_pollFds[i].fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (_pollFds[i].fd == 0)
+		{
+			std::cerr << RED << "Socket creation failed" << RESET << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		fcntl(_pollFds[i].fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+		if (bind(_pollFds[i].fd, (struct sockaddr *)&_addresses->at(i), sizeof(struct sockaddr_in)) < 0)
+		{
+			std::cerr << RED << "Bind failed" << RESET << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		std::cout << "Server address: " << GREEN << inet_ntoa(_addresses->at(i).sin_addr) << RESET << std::endl;
+		if (listen(_pollFds[i].fd, _maxClients) < 0)
+		{
+			std::cerr << RED << "Listen failed" << RESET;
+			exit(EXIT_FAILURE);
+		}
+		std::cout << "Server listening on port " << GREEN << _ports->at(i) << RESET << std::endl;
 	}
-	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
+}
+
+void Server::newClient(int i)
+{
+	Client newClient(_pollFds[i].fd, _ports->at(i));
+
+	_clients.insert(std::make_pair(newClient.getFd(), newClient));
+	_pollFds[getNfds()].fd = newClient.getFd();
+	_pollFds[getNfds()].events = (POLLIN | POLLOUT);
+	_nClients++;
+}
+
+void Server::removeClient(int fd)
+{
+	unsigned int i;
+
+	_clients.erase(fd);
+	for (i = _nServers; i < getNfds(); i++)
 	{
-		std::cerr << RED << "Bind failed\n" << RESET;
-		exit(EXIT_FAILURE);
+		if (_pollFds[i].fd == fd)
+			break ;
 	}
-	std::cout << "Server address: " << GREEN << inet_ntoa(_address.sin_addr) << "\n" << RESET;
-	if (listen(_fd, _maxClients) < 0)
-	{
-		std::cerr << RED << "Listen failed" << RESET;
-		exit(EXIT_FAILURE);
-	}
-	std::cout << "Server listening on port " << GREEN << _port << RESET << "\n";
+	_pollFds[i] = _pollFds[getNfds() - 1];
+	_pollFds[getNfds() - 1] = (struct pollfd){};
+	_nClients--;
 }
 
 void Server::loop()
 {
-	int newClient;
-	int MAX_BUFFER_SIZE = 1024;
-	char buffer[MAX_BUFFER_SIZE];
-	socklen_t adressSize = sizeof(_address);
 	int timeout = 1 * 1000;
 
 	while (true)
 	{
-		printf("Polling...\n");
+		std::cout << "Polling..." << std::endl;
 		usleep(1000000);
-		newClient = accept(_fd, (struct sockaddr *)&_address, &adressSize);
-		if (newClient > 0)
+		poll(_pollFds, getNfds(), timeout);
+		for (unsigned int i = 0; i < getNfds(); i++)
 		{
-			std::cout << "new client" << std::endl;
-			_clientFds[_nfds].fd = newClient;
-			_clientFds[_nfds].events = POLLIN;
-			fcntl(newClient, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-			_nfds++;
-			//--alternatively
-			//Client client(newClient);
-			//_clients.addback(client);
-		}
-		poll(_clientFds, _nfds + 1, timeout);
-		for (unsigned int i = 0; i < _nfds; i++)
-		{
-			if (_clientFds[i].revents & (POLLIN | POLLOUT))
+			if (i < _nServers)
 			{
-				std::cout << "Client" <<  _clientFds[i].fd << "has data\n";
-				read(_clientFds[i].fd, buffer, MAX_BUFFER_SIZE);
-				std::cout << CYAN << "Client Request:" << RESET << "\n" << buffer << "\n";
-				std::string response("HTTP/1.1 200 OK\nRequest status code : 200 OK\nContent-Length : 20 OK\n\n<h1>RESPONSE OK</h1>");
-				write(_clientFds[i].fd, response.c_str(), response.length());
-				memset(buffer, 0, MAX_BUFFER_SIZE);
+				if (_pollFds[i].revents & POLLIN)
+				{
+					newClient(i);
+				}
+			}
+			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
+			{
+				removeClient(_pollFds[i].fd);
+			}
+			else if (_pollFds[i].revents)
+			{
+				_clients[_pollFds[i].fd].handleEvent(_pollFds[i].revents);
 			}
 		}
 	}
+}
+
+unsigned int Server::getNfds()
+{
+	return (_nServers + _nClients);
 }
