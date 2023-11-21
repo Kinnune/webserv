@@ -1,11 +1,54 @@
 
 #include "Server.hpp"
+#include <iostream>
+#include <fstream>
 
 Server::Server()
 	: _nServers(0),
 	_nClients(0)
 {
 	std::memset(&_pollFds[0], 0, sizeof(_pollFds));
+}
+
+Server::~Server() {}
+
+bool isComment(std::string& line)
+{
+	if (line.empty())
+		return (true);
+	size_t startPos = line.find_first_not_of(" \t");
+	if (startPos == std::string::npos)
+		return (true);
+	if (line.at(startPos) == '#')
+		return (true);
+	line = line.substr(startPos);
+	return (false);
+}
+
+int Server::parseConfigFile(std::string configFile)
+{
+	std::ifstream file(configFile.c_str());
+
+	if (!file.is_open())
+	{
+		std::cerr << RED << "Error opening config file" << RESET << std::endl;
+		return (1);
+	}
+
+	while (!file.eof())
+	{
+		std::string line;
+		std::getline(file, line);
+		if (isComment(line))
+			continue ;
+		std::cout << line << std::endl;
+		// For each server, call some server setting function
+			// For each location, call some location setting function
+	}
+
+	file.close();
+
+	return (0);
 }
 
 void Server::setPorts(std::vector<int> ports)

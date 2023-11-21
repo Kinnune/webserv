@@ -29,6 +29,8 @@ class Server
 {
 	public:
 		Server();
+		~Server();
+		int parseConfigFile(std::string configFile);
 		void setPorts(std::vector<int> ports);
 		void startListen();
 		void newClient(int i);
