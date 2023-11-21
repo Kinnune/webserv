@@ -32,6 +32,10 @@ void Server::startListen()
 	{
 
 		_pollFds[i].fd = socket(AF_INET, SOCK_STREAM, 0);
+		//  fixes having to w8 for bind after restart
+		int enable = 1;
+		setsockopt(_pollFds[i].fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+		//--------
 		if (_pollFds[i].fd == 0)
 		{
 			std::cerr << RED << "Socket creation failed" << RESET << std::endl;
@@ -84,8 +88,6 @@ void Server::loop()
 
 	while (true)
 	{
-		std::cout << "Polling..." << std::endl;
-		usleep(1000000);
 		poll(_pollFds, getNfds(), timeout);
 		for (unsigned int i = 0; i < getNfds(); i++)
 		{
