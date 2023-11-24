@@ -3,23 +3,32 @@
 
 #include <stdio.h>
 #include "Server.hpp"
+#include <unordered_map>
+
+struct HttpRequest {
+    std::string method;
+    std::string path;
+    std::unordered_map<std::string, std::string> headers;
+    std::string body;
+};
 
 class Buffer
 {
 	public:
 		Buffer() : _endLiteral("\r\n\r\n") {};
-		char *requestEnded()
+		unsigned char *requestEnded()
 		{
-			std::vector<char>::iterator it;
+			std::vector<unsigned char>::iterator it;
+			unsigned char *position;
 
 			if (_data.size() < _endLiteral.length())
 				return (NULL);
 			for (it = _data.begin(); it != _data.end() - (_endLiteral.length() - 1); it++)
 			{
-				char *position = &(*it);
-				if (std::strncmp(position, _endLiteral.c_str(), 4) == 0)
+				position = &(*it);
+				if (std::strncmp((char *)position, _endLiteral.c_str(), 4) == 0)
 				{
-					return (&(*(it + 4)));
+					return (&(*(it + _endLiteral.length())));
 				}
 			}
 			return (NULL);
@@ -27,7 +36,7 @@ class Buffer
 		void addToBuffer(char *data, size_t size) { _data.insert(_data.end(), data, data + size); };
 		std::string spliceRequest()
 		{
-			char *endPos;
+			unsigned char *endPos;
 			size_t requestSize;
 			std::string request;
 
@@ -42,13 +51,13 @@ class Buffer
 			return (request);
 		}
 		size_t getSize() { return(_data.size()); };
-		char *getBegin() {return(&_data[0]);}
+		unsigned char *getBegin() {return(&_data[0]);}
 	private:
 		std::string _endLiteral;
 		// std::string _buffer;
 		size_t _contentLenght;
 		bool _chunked;
-		std::vector<char> _data;
+		std::vector<unsigned char> _data;
 };
 
 class Client
