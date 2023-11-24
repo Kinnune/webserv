@@ -1,54 +1,26 @@
 
 #include "Server.hpp"
+#include "Colors.hpp"
 #include <iostream>
 #include <fstream>
 
-Server::Server()
-	: _nServers(0),
-	_nClients(0)
+Server::Server() : _nServers(0), _nClients(0)
 {
 	std::memset(&_pollFds[0], 0, sizeof(_pollFds));
 }
 
 Server::~Server() {}
 
-bool isComment(std::string& line)
+void Server::initialize(std::string configFile)
 {
-	if (line.empty())
-		return (true);
-	size_t startPos = line.find_first_not_of(" \t");
-	if (startPos == std::string::npos)
-		return (true);
-	if (line.at(startPos) == '#')
-		return (true);
-	line = line.substr(startPos);
-	return (false);
+	// (void)configFile;
+	ConfigurationFile config(configFile);
+	_config = config;
 }
 
-int Server::parseConfigFile(std::string configFile)
+void Server::readConfig()
 {
-	std::ifstream file(configFile.c_str());
-
-	if (!file.is_open())
-	{
-		std::cerr << RED << "Error opening config file" << RESET << std::endl;
-		return (1);
-	}
-
-	while (!file.eof())
-	{
-		std::string line;
-		std::getline(file, line);
-		if (isComment(line))
-			continue ;
-		std::cout << line << std::endl;
-		// For each server, call some server setting function
-			// For each location, call some location setting function
-	}
-
-	file.close();
-
-	return (0);
+	_config.parse();
 }
 
 void Server::setPorts(std::vector<int> ports)
@@ -75,6 +47,11 @@ void Server::startListen()
 	{
 
 		_pollFds[i].fd = socket(AF_INET, SOCK_STREAM, 0);
+		
+		//  fixes having to w8 for bind after restart
+		int enable = 1;
+		setsockopt(_pollFds[i].fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+
 		if (_pollFds[i].fd == 0)
 		{
 			std::cerr << RED << "Socket creation failed" << RESET << std::endl;

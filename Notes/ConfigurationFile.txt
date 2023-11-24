@@ -32,3 +32,7 @@ Handling:
 - For each server block:
 	- Sets the default variables.
 	- Sets the variables of each location block.
+
+- Check if any location block matches a folder in the path.
+- If no folder matches -> use default root (or use 'location /'?)
+- If there's a match, use the corresponding rules of the first match
