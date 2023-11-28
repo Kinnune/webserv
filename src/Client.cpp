@@ -62,7 +62,7 @@ void Client::handleEvent(short events)
 		
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
 		buffer[readCount] = '\0';
-		if (std::strstr(&buffer[0], "\r\n\r\n"))
+		if (std::strstr(&buffer[0], "\t\n\t\n"))
 		{
 			std::cout << GREEN << "double newline found" << RESET << std::endl;
 		}

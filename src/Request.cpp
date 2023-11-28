@@ -1,140 +1,195 @@
 
 #include "Request.hpp"
+#include "Client.hpp"
 
 Request::Request()
-	: _names(NULL),
-	_values(NULL),
-	_body("")
 {
 }
 
 Request::~Request()
 {
-	delete (_names);
-	delete (_values);
 }
 
 Request::Request(Request const &other)
-	: _names(NULL),
-	_values(NULL)
 {
 	*this = other;
 }
 
 Request &Request::operator=(Request const &other)
 {
-	delete (_names);
-	delete (_values);
-	copyHeader(other);
 	_method = other._method;
 	_target = other._target;
 	_version = other._version;
+	_headers = other._headers;
+	_completed = other._completed;
+	_contentLength = other._contentLength;
 	return (*this);
 }
 
 Request::Request(std::vector<unsigned char> &content)
 {
-	parseContent(content);
-
-}
-
-void Request::copyHeader(Request const &other)
-{
-	for (_header_count = 0; _header_count >= other._header_count; _header_count++)
+	if (parseContent(content) == -1)
 	{
-		_names[_header_count] = other._names[_header_count];
-		_values[_header_count] = other._values[_header_count];
+		throw (std::runtime_error("Failed to parse request"));
 	}
 }
 
-
-bool isWS(unsigned char c)
+void Request::printRequest()
 {
-	static unsigned char const space = 32;
-	static unsigned char const horizontalTab = 9;
+	std::map<std::string, std::string>::iterator it;
 
-	return (c == space | c == horizontalTab);
-}
-
-int skipWS(std::vector<unsigned char> &data, int index)
-{
-	size_t size = data.size();
-
-	while (index < size && isWS(data[index]))
+	std::cout << _method << " " << _target << " " << _version << "\n";
+	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
-		index++;
+		std::cout << it->first << ": " <<  it->second << "\n";
 	}
-	return (index < size ? index : -1);
+	std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
 }
 
-int find_version()
+int Request::headerLineParse(std::vector<unsigned char> &line)
 {
+	ssize_t index = 0;
+	ssize_t wordSize = 0;
+	std::string key;
+	std::string value;
 
-}
-
-int Request::firstLine(std::vector<unsigned char>data)
-{
-	int i;
-	int index = skipWS(data, index);
-
-	//--match the first field which should be the method
-	for (i = 0; i < METHOD_COUNT; i++)
-	{
-		if (std::strncmp(_supportedMethods[i].c_str(), (char *)data[index], data.size() - index))
-		{
-			_methodType = (METHOD_TYPE)i;
-			_method = _supportedMethods[i];
-			break ;
-		}
-	}
-	if (i == METHOD_COUNT)
+	index = skipWS(line, 0);
+	if (!validIndex(line, index))
 	{
 		return (-1);
 	}
-	index = skipWS(data, index);
-	if (index < 0)
+	wordSize = seekColon(line, index);
+	if (!validIndex(line, wordSize || wordSize < 1))
 	{
 		return (-1);
 	}
-	
-}
-
-
-std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
-{
-	for ( std::vector<unsigned char>::iterator it = data.begin(); it < data.end(); it++)
+	key = std::string(line.begin() + index, line.begin() + wordSize);
+	// std::cout << "key as: (" << key << ")" << std::endl;
+	index += key.size() + 1;
+	if (!validIndex(line, index))
 	{
-		o << *it << "(" << (unsigned int)*it << ")";
+		return (-1);
 	}
-	return(o);
+	index = skipWS(line, index);
+	if (!validIndex(line, index))
+	{
+		return (-1);
+	}
+	value = std::string(line.begin() + index, line.end());
+	if (value.back() == '\n')
+		value.pop_back();
+	if (value.back() == '\t')
+		value.pop_back();
+	// std::cout << "value as: (" << value << ")" << std::endl;
+	_headers[key] = value;
+	return (0);
 }
 
-std::vector<unsigned char> getLine(std::vector<unsigned char> data, size_t index)
+int Request::firstLineParse(std::vector<unsigned char> &line)
 {
-	std::vector<unsigned char>::iterator it;
+	ssize_t index = 0;
+	ssize_t wordSize = 0;
 
-	for (it = data.begin() + index; it < data.end(); it++)
+	index = skipWS(line, 0);
+	if (!validIndex(line, index))
 	{
-		if (*it == '\n')
+		return (-1);
+	}
+	index = skipWS(line, index);
+	wordSize = skipToWS(line, index);
+	if (!validIndex(line, index) || !validIndex(line, wordSize))
+	{
+		return (-1);
+	}
+	_method = std::string(line.begin() + index, line.begin() + wordSize);
+	// std::cout << "method made as: (" << _method << ")" << std::endl;
+	// if (_method is not valid)
+	// {
+	// 	//  we need to respond: 501 Not Implemented
+	// 	return (-1);
+	// }
+	index  = skipToWS(line, index);
+	index = skipWS(line, index);
+	wordSize = skipToWS(line, index);
+	if (!validIndex(line, index) || !validIndex(line, wordSize))
+	{
+		return (-1);
+	}
+	_target = std::string(line.begin() + index, line.begin() + wordSize);
+	// std::cout << "target made as: (" << _target << ")" << std::endl;
+	index  = skipToWS(line, index);
+	index = skipWS(line, index);
+	wordSize = skipToWS(line, index);
+	if (!validIndex(line, index) || !validIndex(line, wordSize))
+	{
+		return (-1);
+	}
+	_version = std::string(line.begin() + index, line.begin() + wordSize);
+	// std::cout << "version made as: (" << _version << ")" << std::endl;
+	return (0);
+}
+
+bool Request::detectContentLenght()
+{
+	std::map<std::string, std::string>::iterator it;
+
+	ssize_t len = 0;
+	_completed = true;
+	for (it = _headers.begin(); it != _headers.end(); it++)
+	{
+		if (it->first == "Transfer-Encoding" && !std::strncmp(it->second.c_str(), "chunked", it->second.size()))
 		{
-			it++;
+			len = -1;
 			break ;
 		}
+		else if (it->first == "Content-Length")
+		{
+			try
+			{
+				len = std::stoi(it->second);
+				if (len < 0)
+				{
+					return (false);
+				}
+			}
+			catch (std::exception &e)
+			{
+				return (false);
+			}
+		}
 	}
-	return (std::vector<unsigned char>(data.begin() + index, it));
+	if (len)
+	{
+		_completed = false;
+	}
+	_contentLength = len;
+	return (true);
 }
 
-// The line terminator for message-header fields is the sequence CRLF. However,
-// we recommend that applications, when parsing such headers,
-// recognize a single LF as a line terminator and ignore the leading CR.
 int Request::parseContent(std::vector<unsigned char> &data)
 {
-	int i;
-	int index = 0;
+	ssize_t index = 0;
 	std::vector<unsigned char> line;
 
 	line = getLine(data, index);
-	std::cout << line << std::endl;
-	firstLine(line);
+	if (firstLineParse(line))
+	{
+		return (-1);
+	}
+	index += line.size();
+	line = getLine(data, index);
+	while (!lineEmpty(line))
+	{
+		if (headerLineParse(line))
+		{
+			return (-1);
+		}
+		index += line.size();
+		line = getLine(data, index);
+	}
+	if (!detectContentLenght())
+	{
+		return (-1);
+	}
 	return (0);
 }

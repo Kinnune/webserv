@@ -23,7 +23,7 @@ re: fclean
 	make
 
 test:
-	$(CPP) testmain.cpp Client.cpp Request.cpp -std=c++98 -o test
+	$(CPP) -Wall -Werror -Wextra  testmain.cpp Request.cpp request_helpers.cpp -std=c++98 -o test
 	@echo --------------------------------------------------------------------------------
 	@./test
 	@rm test

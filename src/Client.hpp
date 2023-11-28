@@ -15,7 +15,7 @@ struct HttpRequest {
 class Buffer
 {
 	public:
-		Buffer() : _endLiteral("\r\n\r\n") {};
+		Buffer() : _endLiteral("\t\n\t\n") {};
 		unsigned char *requestEnded()
 		{
 			std::vector<unsigned char>::iterator it;
@@ -55,8 +55,6 @@ class Buffer
 	private:
 		std::string _endLiteral;
 		// std::string _buffer;
-		size_t _contentLenght;
-		bool _chunked;
 		std::vector<unsigned char> _data;
 };
 
