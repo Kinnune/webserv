@@ -36,7 +36,7 @@ int skipWS(std::vector<unsigned char> &data, ssize_t index)
 {
 	ssize_t size = data.size();
 
-	while (index < size && isWS(data[index]))
+	while (index < size && (isWS(data[index]) || data[index] == '\r'))
 	{
 		index++;
 	}

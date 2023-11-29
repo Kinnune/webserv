@@ -14,20 +14,22 @@ class Request
 		~Request();
 		Request (Request const &other);
 		Request &operator=(Request const &other);
-		Request(std::vector<unsigned char> &content);
+		Request(std::vector<unsigned char> content);
 		void printRequest();
 		int firstLineParse(std::vector<unsigned char> &line);
 		int headerLineParse(std::vector<unsigned char> &line);
 		int parseContent(std::vector<unsigned char> &data);
 		bool detectContentLenght();
-
+		bool getIsValid() { return (_isValid); };
+		bool getIsComplete() { return (_completed); }
 	private:
 		std::string _method;
 		std::string _target;
 		std::string _version;
 		std::map<std::string, std::string> _headers;
-		std::string _body;
+		std::vector<unsigned char> _body;
 		bool _completed;
+		bool _isValid;
 		//  will set _contentLength to -1 if chunked content
 		ssize_t _contentLength;
 };

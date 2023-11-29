@@ -5,7 +5,7 @@ CPP = c++
 
 CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -o
 
-SRC = main.cpp Server.cpp Client.cpp 
+SRC = main.cpp Server.cpp Client.cpp Request.cpp request_helpers.cpp
 
 NAME = webserv
 

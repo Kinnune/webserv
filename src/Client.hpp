@@ -2,8 +2,9 @@
 #define CLIENT_HPP
 
 #include <stdio.h>
-#include "Server.hpp"
 #include <unordered_map>
+#include "Server.hpp"
+#include "Request.hpp"
 
 struct HttpRequest {
     std::string method;
@@ -12,21 +13,25 @@ struct HttpRequest {
     std::string body;
 };
 
+std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 class Buffer
 {
 	public:
-		Buffer() : _endLiteral("\t\n\t\n") {};
+		Buffer() : _endLiteral("\r\n\r\n") {};
 		unsigned char *requestEnded()
 		{
 			std::vector<unsigned char>::iterator it;
 			unsigned char *position;
+
+			// std::find_if(_data.begin(), _data.end(), std::vector<unsigned char>(_endLiteral.begin(), _endLiteral.end()));
 
 			if (_data.size() < _endLiteral.length())
 				return (NULL);
 			for (it = _data.begin(); it != _data.end() - (_endLiteral.length() - 1); it++)
 			{
 				position = &(*it);
-				if (std::strncmp((char *)position, _endLiteral.c_str(), 4) == 0)
+				// std::cout << "SEGF" << _data.end() - it << " " << _endLiteral.length()<< std::vector<unsigned char>(it, _data.end()) << std::endl;
+				if (std::strncmp((char *)position, _endLiteral.c_str(), _endLiteral.length()) == 0)
 				{
 					return (&(*(it + _endLiteral.length())));
 				}
@@ -34,11 +39,11 @@ class Buffer
 			return (NULL);
 		}
 		void addToBuffer(char *data, size_t size) { _data.insert(_data.end(), data, data + size); };
-		std::string spliceRequest()
+		std::vector<unsigned char> spliceRequest()
 		{
 			unsigned char *endPos;
 			size_t requestSize;
-			std::string request;
+			std::vector<unsigned char> request;
 
 			endPos = requestEnded();
 			if (!endPos)
@@ -46,15 +51,16 @@ class Buffer
 				throw(std::runtime_error("Exception: no request to get"));
 			}
 			requestSize = endPos - getBegin();
-			request = std::string(_data.begin(), _data.begin() + requestSize);
+			request = std::vector<unsigned char>(_data.begin(), _data.begin() + requestSize);
 			_data.erase(_data.begin(), _data.begin() + requestSize);
 			return (request);
 		}
 		size_t getSize() { return(_data.size()); };
-		unsigned char *getBegin() {return(&_data[0]);}
+		unsigned char *getBegin() { return(&_data[0]); }
+		std::vector<unsigned char>::iterator getEnd() { return(_data.end()); }
+		std::vector<unsigned char> &getData() { return (_data); };
 	private:
 		std::string _endLiteral;
-		// std::string _buffer;
 		std::vector<unsigned char> _data;
 };
 
@@ -75,7 +81,10 @@ class Client
 		int _fd;
 		int _port;
 		struct sockaddr_in _address;
-		std::string _request;
+		// std::string _request;
+		Buffer _buffer;
+		Request _request;
 };
+
 
 #endif
