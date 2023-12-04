@@ -1,6 +1,8 @@
 #include "Client.hpp"
 
-Client::Client() {}
+Client::Client()
+	: _request(Request())
+{}
 
 Client::~Client() {}
 
@@ -52,15 +54,53 @@ int Client::getPort() const
 
 //read to buffer until request done;
 
+void mockResponse(int fd)
+{
+	std::ifstream src;
+	static const int MAX_BUFFER_SIZE = 100000;
+	char bufferPic[MAX_BUFFER_SIZE + 1];
+
+	src.open("../resources/zeus.jpg", std::ofstream::binary | std::ofstream::in);
+	if (!src.good())
+	{
+		std::cerr << "Open failed" << std::endl; 
+		return ;
+	}
+	src.read(bufferPic, 100000);
+	int streamSize = src.gcount();
+	bufferPic[streamSize] = '\0';
+	std::string response("HTTP/1.1 200 OK\nRequest status code: 200 OK\nContent-Length: " + std::to_string(streamSize) +"\nContent-Type: image/jpeg\n\n");
+	response.append(bufferPic, streamSize);
+	write(fd, response.c_str(), response.length());
+	memset(bufferPic, 0, MAX_BUFFER_SIZE);
+	// std::cout << "\n{\n" << response << "\n}\n" << std::endl;
+
+}
+
 void Client::handleEvent(short events)
 {
-	int MAX_BUFFER_SIZE = 64;
-	char buffer[MAX_BUFFER_SIZE];
+	//* we might want to malloc this buffer
+	static const int MAX_BUFFER_SIZE = 4095;
+	static char buffer[MAX_BUFFER_SIZE + 1];
 	size_t readCount = 0;
-	std::ifstream src;
 
+
+	if (events & POLLOUT)
+	{
+		static int i = 0;
+		if (_request.getIsComplete() || _request.tryToComplete(_buffer))
+		{
+			std::cout << RED << "i: " << i << RESET << std::endl;
+			_request.printRequest();
+			_request.clear();
+			//respond();
+			mockResponse(_fd);
+			i++;
+		}
+	}
 	if (events & POLLIN)
 	{
+		std::cout << GREEN << "READING\n" << std::endl; 
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
 		if (readCount < 0)
 		{
@@ -68,67 +108,30 @@ void Client::handleEvent(short events)
 		}
 		buffer[readCount] = '\0';
 		_buffer.addToBuffer(&buffer[0], readCount);
-		// std::cout << buffer << std::endl;
-		// std::cout << _buffer.getData() << std::endl;
-		if (_buffer.requestEnded())
-		{
-			std::cout << GREEN << "double newline found" << RESET << std::endl;
-			try
-			{
-				_request = Request(_buffer.spliceRequest());
-			}
-			catch (std::exception &e)
-			{
-				std::cerr << "EXCEPTION OCCURRED: " << e.what() << std::endl;
-			}
-			if (!_request.getIsValid())
-			{
-				//  respond something
-				//  close connection
-			}
-			_request.printRequest();
-			//* TODO
-			//* check content length variable of request
-			//* if needed keep reading
-			//* if not
-			//* 	make response
-			//* 	_request.~Request()
-			//* 	and check buffer for new requests
 
-
-			// _request.printRequest();
-		}
-		else
+	}
+	if (!_request.getIsComplete() && _buffer.requestEnded())
+	{
+		std::cout << GREEN << "double newline found" << RESET << std::endl;
+	if (_buffer.getSize())
+		std::cout << CYAN << _buffer.getData() << RESET << std::endl;
+		try
 		{
-			std::cout << RED << "double newline NOT found" << RESET << std::endl;
+			_request = Request(_buffer.spliceRequest());
 		}
-		// std::cout << CYAN << "Client Request:" << RESET << "\n" << buffer << "\n";
-		// if (i == 0)
-		// {
-			// std::string response("HTTP/1.1 200 OK\nRequest status code: 200 OK\nContent-Length: 50 OK\nContent-Type: text/html; charset=utf-8\n\n<h1>RESPONSE OK</h1><img src=\"resources/zeus.jpg\">");
-			// write(_fd, response.c_str(), response.length());
-			// memset(buffer, 0, MAX_BUFFER_SIZE);
-			// i++;
-		// }
-		// else
-		// {
-			// src.open("../resources/zeus.jpg", std::ofstream::binary | std::ofstream::in);
-			// if (!src.good())
-			// {
-				// std::cerr << "Open failed" << std::endl; 
-				// return ;
-			// }
-			// src.read(buffer, MAX_BUFFER_SIZE);	
-			// int streamSize = src.gcount();
-			// buffer[streamSize] = '\0';
-			// std::string response("HTTP/1.1 200 OK\nRequest status code: 200 OK\nContent-Length: " + std::to_string(streamSize) +"\nContent-Type: image/jpeg\n\n");
-			// response.append(buffer, streamSize);
-			// write(_fd, response.c_str(), response.length());
-			// memset(buffer, 0, MAX_BUFFER_SIZE);
-// 
-			// std::cout << "\n{\n" << response << "\n}\n" << std::endl;
-// 
-		// }
+		catch (std::exception &e)
+		{
+			std::cerr << "EXCEPTION OCCURRED: " << e.what() << std::endl;
+		}
+		if (!_request.getIsValid())
+		{
+			//  respond something
+			//  close connection
+		}
+	}
+	else
+	{
+		// std::cout << RED << "double newline NOT found" << RESET << std::endl;
 	}
 }
 

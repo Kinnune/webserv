@@ -6,6 +6,9 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include "Buffer.hpp"
+
+std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 
 class Request
 {
@@ -15,11 +18,13 @@ class Request
 		Request (Request const &other);
 		Request &operator=(Request const &other);
 		Request(std::vector<unsigned char> content);
+		void clear();
 		void printRequest();
 		int firstLineParse(std::vector<unsigned char> &line);
 		int headerLineParse(std::vector<unsigned char> &line);
 		int parseContent(std::vector<unsigned char> &data);
 		bool detectContentLenght();
+		bool tryToComplete(Buffer &buffer);
 		bool getIsValid() { return (_isValid); };
 		bool getIsComplete() { return (_completed); }
 	private:

@@ -1,10 +1,10 @@
 
 #include "Request.hpp"
-#include "Client.hpp"
 
 Request::Request()
 	: _completed(false),
-	_isValid(false)
+	_isValid(false),
+	_contentLength(-1)
 {
 }
 
@@ -26,7 +26,21 @@ Request &Request::operator=(Request const &other)
 	_completed = other._completed;
 	_contentLength = other._contentLength;
 	_isValid = other._isValid;
+	_headers = other._headers;
+	_body = other._body;
 	return (*this);
+}
+
+void Request::clear()
+{
+	_completed = false;
+	_isValid = false;
+	_contentLength = -1;
+	_headers.clear();
+	_body.clear();
+	_method.clear();
+	_target.clear();
+	_version.clear();
 }
 
 Request::Request(std::vector<unsigned char> content)
@@ -48,7 +62,20 @@ void Request::printRequest()
 	{
 		std::cout << it->first << ": " <<  it->second << "\n";
 	}
+	std::cout << _body << std::endl;
 	std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
+}
+
+
+bool Request::tryToComplete(Buffer &buffer)
+{
+	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
+	{
+		_body.insert(_body.end(), buffer.getData().begin(), buffer.getData().begin() + _contentLength);
+		_completed = true;
+		return (true);
+	}
+	return (false);
 }
 
 int Request::headerLineParse(std::vector<unsigned char> &line)
