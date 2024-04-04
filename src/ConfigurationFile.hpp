@@ -13,6 +13,7 @@ typedef struct locationConfig
 	std::vector<std::string> methods;
 	std::vector<std::string> cgiExtensions;
 	std::string cgiPath;
+	int maxBody;
 	bool autoIndex;
 } locationConfig;
 
@@ -36,7 +37,7 @@ class ConfigurationFile
 	private:
 		std::string _path;
 		std::string _content;
-		std::map<std::string, std::string> _config;
+		// std::map<std::string, std::string> _config;
 		int _serverCount;
 		int _locationCount;
 		std::map<std::string, struct hostConfig> _hosts;
@@ -57,6 +58,7 @@ class ConfigurationFile
 	public:
 		ConfigurationFile();
 		ConfigurationFile(std::string path);
+		ConfigurationFile(const ConfigurationFile &other);
 		~ConfigurationFile();
 		int parse();
 };

@@ -14,9 +14,8 @@ int main(int ac, char **av)
 	}
 
 	server.initialize(av[1]);
-	// if (!server.readConfig())
-	// 	return 1;
-	// server.readConfig();
+	if (!server.readConfig())
+		return 1;
 	std::vector<int> ports;
 	ports.push_back(8080);
 	ports.push_back(666);

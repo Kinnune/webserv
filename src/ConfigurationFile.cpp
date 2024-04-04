@@ -10,11 +10,26 @@
 #define FAILURE 0
 #define SUCCESS 1
 
+
+//------------------------------------------------------------------------------
+//		CONSTRUCTORS/DESTRUCTORS
+//------------------------------------------------------------------------------
+
 ConfigurationFile::ConfigurationFile() {}
 
 ConfigurationFile::ConfigurationFile(std::string path) : _path(path), _serverCount(0) {}
 
+ConfigurationFile::ConfigurationFile(const ConfigurationFile &other)
+{
+	*this = other;
+}
+
 ConfigurationFile::~ConfigurationFile() {}
+
+
+//------------------------------------------------------------------------------
+//		ERROR
+//------------------------------------------------------------------------------
 
 int ConfigurationFile::err(std::string error)
 {
@@ -120,6 +135,12 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 		else
 			return (err("Invalid value for autoindex: " + value));
 	}
+	else if (key == "MAX_BODY")
+		loc.maxBody = std::stoi(value);
+	else if (key == "RETURN")
+	{
+		// Don't know if we need this
+	}
 	else if (key.at(0) == '}')
 		return (SUCCESS);
 	else
@@ -130,19 +151,17 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 {
 	std::cout << CYAN << "Setting location" << RESET << std::endl;
-	std::cout << "Testing: \"" << line << "\"" << std::endl;
 	size_t pos = line.find_first_of(" \t");
 	std::string key = line.substr(0, pos);
 	std::string value = line.substr(pos + 1);
 	pos = value.find_first_of(" \t");
 	if (pos != std::string::npos)
 		value = value.substr(0, pos);
-	std::cout << "key = " << key << std::endl;
-	std::cout << "value = " << value << std::endl;
 	if (key == "location")
 		loc.location = value;
 	else
 		return (err("Unknown key: " + key));
+	std::cout << "Location set: " << loc.location << std::endl;
 	return (SUCCESS);
 }
 
@@ -152,24 +171,30 @@ int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::
 	
 	while (!file.eof())
 	{
-		std::cout << PURPLE << "Start of location" << RESET << std::endl;
-		nextInfo(file, line);
-		if (line.find("location") == std::string::npos)
+		if (line.find("location") != std::string::npos)
 		{
-			nextInfo(file, line);
+			std::cout << PURPLE << "Start of location" << RESET << std::endl;
 			if (!setLocation(host.locations[host.serverName], line))
 				return (FAILURE);
-			std::getline(file, line);
+			nextInfo(file, line);	// error check for starting curly brace?
+			nextInfo(file, line);
 			while (line.at(0) != '}')
 			{
-				nextInfo(file, line);
 				if (!storeLocationValues(host.locations[host.serverName], line))
 					return (FAILURE);
-				std::getline(file, line);
+				nextInfo(file, line);
 			}
+			std::cout << PURPLE << "End of location" << RESET << std::endl;
+			_locationCount++;
+			std::cout << "Line: " << line << std::endl;			
+			nextInfo(file, line);
+			std::cout << "Line: " << line << std::endl;			
 		}
-		std::getline(file, line);
-		std::cout << PURPLE << "End of location" << RESET << std::endl;
+		if (line.at(0) == '}')
+		{
+			std::cout << "End of locations" << std::endl;
+			break ;
+		}
 	}
 	std::cout << PURPLE << "End of locations" << RESET << std::endl;
 	return (SUCCESS);
@@ -312,12 +337,11 @@ int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
 
 	if (line.at(0) == '}') // End of server
 	{
-		std::cout << PURPLE << "End of server" << RESET << std::endl;
+		_serverCount++;
+		std::cout << PURPLE << "End of server: " << _serverCount << RESET << std::endl;
 		return (SUCCESS);
 	}
 
-	std::cout << GREEN << "Server " << _serverCount << RESET << std::endl;
-	_serverCount++;
 	return (FAILURE);
 }
 
@@ -360,8 +384,6 @@ int ConfigurationFile::parse()
 		std::cout << CYAN_BOLD << "Line: [" << line << "]" << RESET << std::endl;
 		if (serverFound(file, line))
 		{
-			// nextInfo(file, line);
-			// std::cout << "Line: " << line << std::endl;
 			if (_eof || !getHostConfig(file, line))
 				return (file.close(), err("Error in server config"));
 		}

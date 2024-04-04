@@ -13,7 +13,6 @@ Server::~Server() {}
 
 void Server::initialize(std::string configFile)
 {
-	// (void)configFile;
 	ConfigurationFile config(configFile);
 	_config = config;
 }
