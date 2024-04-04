@@ -5,6 +5,7 @@ int main(int ac, char **av)
 {
 	Server server;
 	(void)av;
+	(void)ac;
 
 	if (ac != 2)
 	{
@@ -13,7 +14,9 @@ int main(int ac, char **av)
 	}
 
 	server.initialize(av[1]);
-	server.readConfig();
+	// if (!server.readConfig())
+	// 	return 1;
+	// server.readConfig();
 	std::vector<int> ports;
 	ports.push_back(8080);
 	ports.push_back(666);
@@ -21,4 +24,5 @@ int main(int ac, char **av)
 	server.setPorts(ports);
 	server.startListen();
 	server.loop();
+	return 0;
 }

@@ -14,6 +14,7 @@ all: $(NAME)
 $(NAME): $(SRC)
 	$(CPP) $(CPPFLAGS) $(NAME) $(SRC)
 
+
 clean:
 	rm $(NAME)
 
@@ -21,3 +22,8 @@ fclean: clean
 
 re: fclean
 	make
+
+run: $(NAME)
+	make
+	clear
+	./$(NAME) config/webserver.conf
