@@ -4,11 +4,15 @@
 
 #include <string>
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include "Buffer.hpp"
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
+
+
+// -1 is magic number for chunked requests
+#define CHUNKED_REQUEST -1
 
 class Request
 {
@@ -24,17 +28,21 @@ class Request
 		int headerLineParse(std::vector<unsigned char> &line);
 		int parseContent(std::vector<unsigned char> &data);
 		bool detectContentLenght();
+		std::string &getMethod() { return (_method); }
+		std::string &getTarget() { return (_target); }
 		bool tryToComplete(Buffer &buffer);
 		bool getIsValid() { return (_isValid); };
 		bool getIsComplete() { return (_completed); }
+		std::unordered_map<std::string, std::string> &getHeaders() { return (_headers); };
 	private:
 		std::string _method;
 		std::string _target;
 		std::string _version;
-		std::map<std::string, std::string> _headers;
+		std::unordered_map<std::string, std::string> _headers;
 		std::vector<unsigned char> _body;
 		bool _completed;
 		bool _isValid;
+		bool _isChunked;
 		//  will set _contentLength to -1 if chunked content
 		ssize_t _contentLength;
 };

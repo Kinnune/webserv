@@ -28,12 +28,13 @@ Request &Request::operator=(Request const &other)
 	_isValid = other._isValid;
 	_headers = other._headers;
 	_body = other._body;
+	_isChunked = other._isChunked;
 	return (*this);
 }
 
 void Request::clear()
 {
-	_completed = false;
+	_completed = false;	
 	_isValid = false;
 	_contentLength = -1;
 	_headers.clear();
@@ -55,7 +56,7 @@ Request::Request(std::vector<unsigned char> content)
 
 void Request::printRequest()
 {
-	std::map<std::string, std::string>::iterator it;
+	std::unordered_map<std::string, std::string>::iterator it;
 
 	std::cout << _method << " " << _target << " " << _version << "\n";
 	for (it = _headers.begin(); it != _headers.end(); it++)
@@ -66,6 +67,10 @@ void Request::printRequest()
 	std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
 }
 
+// std::string Request::getMethod()
+// {
+// 	return (_method);
+// }
 
 bool Request::tryToComplete(Buffer &buffer)
 {
@@ -75,6 +80,8 @@ bool Request::tryToComplete(Buffer &buffer)
 		_completed = true;
 		return (true);
 	}
+	// else if (_contentLength == CHUNKED_REQUEST)
+	
 	return (false);
 }
 
@@ -163,16 +170,18 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 
 bool Request::detectContentLenght()
 {
-	std::map<std::string, std::string>::iterator it;
+	std::unordered_map<std::string, std::string>::iterator it;
 
-	std::cout << "detecting lenght" << std::endl;
+	std::cout << "detecting length" << std::endl;
 	ssize_t len = 0;
+	_isChunked = false;
 	_completed = true;
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
 		if (it->first == "Transfer-Encoding" && !std::strncmp(it->second.c_str(), "chunked", it->second.size()))
 		{
 			len = -1;
+			_isChunked = true;
 			break ;
 		}
 		else if (it->first == "Content-Length")

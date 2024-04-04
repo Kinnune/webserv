@@ -23,6 +23,7 @@ class Client
 		void setPort(int port);
 		int getFd() const;
 		int getPort() const;
+		void respond();
 		void handleEvent(short events);
 		// void respond();
 	private:

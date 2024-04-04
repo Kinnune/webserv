@@ -77,13 +77,62 @@ void mockResponse(int fd)
 
 }
 
+// #include <unistd.h>
+
+// class Response
+// {
+// 	public:
+// 		Response(Request request)
+// 		{
+// 		}
+
+// };
+
+void Client::respond()
+{
+	std::string resourcePath;
+
+	if (_request.getMethod() == "GET")
+	{
+		resourcePath = std::string("../resources");
+		resourcePath.append(_request.getTarget());
+		std::cout << "Resource path: '" << resourcePath << "'" << std::endl;
+
+		std::ifstream ifs(resourcePath);
+		std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+		std::string response;
+		std::unordered_map<std::string, std::string> headers;
+		std::unordered_map<std::string, std::string>::iterator it;
+
+		headers = _request.getHeaders();
+		response.append("HTTP/1.1 200 OK\n");
+		for (it = headers.begin(); it != headers.end(); it++)
+		{
+			response.append(it->first + ": ");
+			response.append(it->second);
+			response.append("\n");
+		}
+		if (_request.getTarget() == "../resources/favicon.ico")
+		{
+			response.append("Content-Type: image/png");
+		}
+		response.append("Content-Length: ");
+		response.append(std::to_string(buffer.length()));
+		response.append("\r\n\r\n");
+		response.append(buffer);
+		write(_fd, response.c_str(), response.length());
+		std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
+		// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
+	}
+
+}
+
 void Client::handleEvent(short events)
 {
 	//* we might want to malloc this buffer
 	static const int MAX_BUFFER_SIZE = 4095;
 	static char buffer[MAX_BUFFER_SIZE + 1];
 	size_t readCount = 0;
-
 
 	if (events & POLLOUT)
 	{
@@ -92,9 +141,9 @@ void Client::handleEvent(short events)
 		{
 			std::cout << RED << "i: " << i << RESET << std::endl;
 			_request.printRequest();
+			respond();
 			_request.clear();
-			//respond();
-			mockResponse(_fd);
+			// mockResponse(_fd);
 			i++;
 		}
 	}
@@ -113,8 +162,8 @@ void Client::handleEvent(short events)
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
 		std::cout << GREEN << "double newline found" << RESET << std::endl;
-	if (_buffer.getSize())
-		std::cout << CYAN << _buffer.getData() << RESET << std::endl;
+		if (_buffer.getSize())
+			std::cout << CYAN << _buffer.getData() << RESET << std::endl;
 		try
 		{
 			_request = Request(_buffer.spliceRequest());
@@ -133,6 +182,7 @@ void Client::handleEvent(short events)
 	{
 		// std::cout << RED << "double newline NOT found" << RESET << std::endl;
 	}
+	// std::cout << _buffer.getData();
 }
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)

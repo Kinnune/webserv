@@ -40,7 +40,7 @@ class Buffer
 			}
 			requestSize = endPos - getBegin();
 			request = std::vector<unsigned char>(_data.begin(), _data.begin() + requestSize);
-			_data.erase(_data.begin(), _data.begin() + requestSize);
+			_data = std::vector<unsigned char>(_data.begin() + requestSize, _data.end());
 			return (request);
 		}
 		size_t getSize() { return(_data.size()); };
