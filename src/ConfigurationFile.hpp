@@ -29,7 +29,7 @@ typedef struct hostConfig
 	std::string index;
 	bool autoindex;
 	std::vector<std::string> errorPages;
-	std::map<std::string, struct locationConfig> locations;
+	std::vector<struct locationConfig> locations;
 } hostConfig;
 
 class ConfigurationFile
@@ -37,10 +37,8 @@ class ConfigurationFile
 	private:
 		std::string _path;
 		std::string _content;
-		// std::map<std::string, std::string> _config;
 		int _serverCount;
-		int _locationCount;
-		std::map<std::string, struct hostConfig> _hosts;
+		std::vector<struct hostConfig> _hosts;
 		bool _configSyntaxError;
 		bool _eof;
 		int getHostConfig(std::ifstream &file, std::string &line);

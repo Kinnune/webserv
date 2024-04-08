@@ -45,7 +45,8 @@
 # define BG_DEFAULT_BOLD "\001\e[1;49m\002"
 
 template <typename T>
-std::string color(T const &t, std::string const color) {
+std::string color(T const &t, std::string const color)
+{
     std::ostringstream oss;
     oss << t;
     return (color + oss.str() + RESET);

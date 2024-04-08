@@ -11,6 +11,17 @@
 #define SUCCESS 1
 
 
+/*
+
+TO-DO:
+
+- multiline might not store all values yet
+- fix error pages
+- add location values printer
+
+*/
+
+
 //------------------------------------------------------------------------------
 //		CONSTRUCTORS/DESTRUCTORS
 //------------------------------------------------------------------------------
@@ -173,19 +184,21 @@ int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::
 	{
 		if (line.find("location") != std::string::npos)
 		{
+			locationConfig loc;
+
 			std::cout << PURPLE << "Start of location" << RESET << std::endl;
-			if (!setLocation(host.locations[host.serverName], line))
+			if (!setLocation(loc, line))
 				return (FAILURE);
 			nextInfo(file, line);	// error check for starting curly brace?
 			nextInfo(file, line);
 			while (line.at(0) != '}')
 			{
-				if (!storeLocationValues(host.locations[host.serverName], line))
+				if (!storeLocationValues(loc, line))
 					return (FAILURE);
 				nextInfo(file, line);
 			}
+			host.locations.push_back(loc);
 			std::cout << PURPLE << "End of location" << RESET << std::endl;
-			_locationCount++;
 			std::cout << "Line: " << line << std::endl;			
 			nextInfo(file, line);
 			std::cout << "Line: " << line << std::endl;			
@@ -324,16 +337,18 @@ int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
 	hostConfig host;
 	host.id = _serverCount;
 
-	getHostDefaultValues(host, file, line);
+	if (!getHostDefaultValues(host, file, line))
+		return (FAILURE);
 
 	// Check if default values were set!	example: if (server.serverName.empty())
 
 	std::cout << YELLOW << "default values set" << RESET << std::endl;
 
 	// Store host in _hosts
-	_hosts.insert(std::pair<std::string, struct hostConfig>(host.serverName, host));
+	// _hosts.insert(std::pair<std::string, struct hostConfig>(host.serverName, host));
+	_hosts.push_back(host);
 
-	getLocations(host, file, line);
+	getLocations(_hosts.back(), file, line);
 
 	if (line.at(0) == '}') // End of server
 	{
@@ -392,25 +407,25 @@ int ConfigurationFile::parse()
 	}
 	file.close();
 
-	std::cout << "Server count: " << _serverCount << std::endl;
-	std::cout << "Location count: " << _locationCount << std::endl;
+	// std::cout << "Server count: " << _serverCount << std::endl;
+	// std::cout << "Location count: " << _locationCount << std::endl;
+
+	// print host info
+	for (std::vector<struct hostConfig>::iterator it = _hosts.begin(); it != _hosts.end(); it++)
+	{
+		std::cout << "ID:\t\t" << color(it->id, GREEN) << std::endl;
+		std::cout << "NAME:\t\t" << color(it->serverName, GREEN) << std::endl;
+		std::cout << "HOST:\t\t" << color(it->host, GREEN) << std::endl;
+		std::cout << "PORT-str:\t" << color(it->portString, GREEN) << std::endl;
+		std::cout << "PORT-int:\t" << color(it->portInt, GREEN) << std::endl;
+		std::cout << "ROOT:\t\t" << color(it->root, GREEN) << std::endl;
+		std::cout << "INDEX:\t\t" << color(it->index, GREEN) << std::endl;
+		std::cout << "AUTOINDEX:\t" << color(it->autoindex, GREEN) << std::endl;
+		std::cout << "ERRPAG-n:\t" << color(it->errorPages.size(), GREEN) << std::endl;
+		std::cout << "LOC-n:\t\t" << color(it->locations.size(), GREEN) << std::endl;
+		std::cout << std::endl;
+	}
 	return (SUCCESS);
 }
 
 
-
-	// print host info
-	// for (std::map<std::string, struct hostConfig>::iterator it = _hosts.begin(); it != _hosts.end(); it++)
-	// {
-	// 	std::cout << "Host: " << it->first << std::endl;
-	// 	std::cout << "Host id: " << it->second.id << std::endl;
-	// 	std::cout << "Host serverName: " << it->second.serverName << std::endl;
-	// 	std::cout << "Host host: " << it->second.host << std::endl;
-	// 	std::cout << "Host portString: " << it->second.portString << std::endl;
-	// 	std::cout << "Host portInt: " << it->second.portInt << std::endl;
-	// 	std::cout << "Host root: " << it->second.root << std::endl;
-	// 	std::cout << "Host index: " << it->second.index << std::endl;
-	// 	std::cout << "Host autoindex: " << it->second.autoindex << std::endl;
-	// 	std::cout << "Host location count: " << it->second.locations.size() << std::endl;
-	// 	std::cout << std::endl;
-	// }
