@@ -1,0 +1,77 @@
+Webserver:
+	- software that listens for incoming requests and responds to them
+	- FTP = File Transfer Protocol
+	- if a web browser sends http request to a ftp server, the ftp server will not understand the request
+
+1. LISTENS
+2. on a PORT
+3. for a REQUEST
+4. sent via a transport PROTOCOL
+5. and returns a RESPONSE
+6. containing the requested RESOURCE
+
+- once a webserver is running, it is listening for incoming requests
+- listens to a network port provided by the operating system that the web server is running on
+- the protocol provides 65,535 ports that software running can communicate over
+- when a web server starts up, it starts listening to one or several ports
+- a web browser sends web requests to either port 80 or port 443, depending on whether the request is sent over HTTP or HTTPS
+  - HTTP: port 80
+  - HTTPS: port 443
+
+
+--- Example request ------------------------------------------------------------
+
+GET /orders/123 HTTP/1.1
+Host: 127.0.0.1:8000
+User-Agent: Manual-Http-Request
+
+
+--- Example response -----------------------------------------------------------
+
+HTTP/1.1 200 OK
+Content-Length: 88
+Content-Type: text/html
+Connection: Closed
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Title</title>
+  </head>
+  <body>
+    <h1>Hello, World!</h1>
+  </body>
+</html>
+
+
+--- Example request ------------------------------------------------------------
+
+POST /orders HTTP/1.1
+Host: 127.0.0.1:8000
+User-Agent: Manual-Http-Request
+Content-Length: 12
+Content-Type: application/x-www...
+
+order_id=123
+
+
+--- Example response -----------------------------------------------------------
+
+HTTP/1.1 200 OK
+Host: 127.0.0.1"8000
+Connection: close
+Content-Type: image/jpeg
+Content-Length: 151000
+
+<binary data>
+
+
+--- The protocol ---------------------------------------------------------------
+
+FIRST_LINE
+HEADER1: VALUE1
+HEADER2: VALUE2
+HEADER3: VALUE3
+
+BODY
