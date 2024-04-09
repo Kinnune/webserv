@@ -128,7 +128,6 @@ int ConfigurationFile::getValue(std::string& line, std::string& value)
 	if (pos == std::string::npos)
 		return (err("Syntax error: Expected whitespace or ';'"));
 	value = tmp.substr(0, pos);
-	std::cout << CYAN << "VALUE: " << value << RESET << std::endl;
 	return (SUCCESS);
 }
 
@@ -141,7 +140,6 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 
 	while (!line.empty())
 	{
-		std::cout << GREEN << "multi-line = " << line << RESET << std::endl;
 		if (line.find_first_of(" \t") == std::string::npos)
 			break ;
 		pos = line.find_first_not_of(" \t");
@@ -151,7 +149,6 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 			pos = line.size();
 		else
 			value = line.substr(0, pos);
-		std::cout << "multi-value = " << value << std::endl;
 		if (type == METHODS)
 		{
 			if (value == "GET" || value == "POST" || value == "DELETE")
@@ -170,7 +167,6 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 			values.push_back(value);
 		line = line.substr(pos);
 	}
-	std::cout << PURPLE << "End of multi-line" << RESET << std::endl;
 	return (SUCCESS);
 }
 
@@ -195,10 +191,6 @@ void ConfigurationFile::setDefaultLocationValues(locationConfig& loc)
 
 int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& line)
 {
-	std::cout << "Location line: " << line << std::endl;
-	// size_t pos = line.find_first_of(" \t");
-	// std::string key = line.substr(0, pos);
-	// std::string value = line.substr(pos + 1);
 	std::string key;
 	std::string value;
 
@@ -251,7 +243,6 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 
 int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 {
-	std::cout << CYAN << "Setting location" << RESET << std::endl;
 	size_t pos = line.find_first_of(" \t");
 	std::string key = line.substr(0, pos);
 	std::string value = line.substr(pos + 1);
@@ -262,7 +253,6 @@ int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 		loc.location = value;
 	else
 		return (err("Unknown key: " + key));
-	std::cout << "Location set: " << loc.location << std::endl;
 	return (SUCCESS);
 }
 
@@ -270,15 +260,12 @@ int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 
 int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::string& line)
 {
-	std::cout << CYAN << "Getting locations" << RESET << std::endl;
-	
 	while (!file.eof())
 	{
 		if (line.find("location") != std::string::npos)
 		{
 			locationConfig loc;
 
-			std::cout << PURPLE << "Start of location" << RESET << std::endl;
 			if (!setLocation(loc, line))
 				return (FAILURE);
 			
@@ -293,19 +280,14 @@ int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::
 					return (FAILURE);
 				nextInfo(file, line);
 			}
-			host.locations.push_back(loc);
-			std::cout << PURPLE << "End of location" << RESET << std::endl;
-			std::cout << "Line: " << line << std::endl;			
+			host.locations.push_back(loc);		
 			nextInfo(file, line);
-			std::cout << "Line: " << line << std::endl;			
 		}
 		if (line.at(0) == '}')
 		{
-			std::cout << "End of locations" << std::endl;
 			break ;
 		}
 	}
-	std::cout << PURPLE << "End of locations" << RESET << std::endl;
 	return (SUCCESS);
 }
 
@@ -335,17 +317,13 @@ int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line
 	std::string key;
 	std::string value;
 
-	std::cout << "Host line: " << line << std::endl;
 	if (!getKey(line, key))
 		return (FAILURE);
 	if (!getValue(line, value))
 		return (FAILURE);
-	std::cout << "key = " << key << std::endl;
-	std::cout << "value = " << value << std::endl;
 	if (key == "NAME")
 	{
 		host.serverName = value;
-		std::cout << "Server name set: " << host.serverName << std::endl;
 	}
 	else if (key == "PORT")
 	{
@@ -388,12 +366,9 @@ int ConfigurationFile::getHostDefaultValues(hostConfig& host, std::ifstream& fil
 {
 	while (!file.eof() && !line.empty() && line.at(0) != '}')
 	{
-		std::cout << "GHDV: " << line << std::endl;
 		nextInfo(file, line);
-		std::cout << "GHDV: " << line << std::endl;
 		if (line.find("location") != std::string::npos)
 		{
-			std::cout << "Location found" << std::endl;
 			break ;
 		}
 		if (line.at(0) == '}')
@@ -403,11 +378,10 @@ int ConfigurationFile::getHostDefaultValues(hostConfig& host, std::ifstream& fil
 		}
 		if (!storeHostDefaultValue(host, line))
 		{
-			std::cout << "StoreHostDefaultValue failed!" << std::endl;
+			std::cerr << RED << "StoreHostDefaultValue failed!" << RESET << std::endl;
 			return (FAILURE);
 		}
 	}
-	std::cout << "End of default values" << std::endl;
 	return (SUCCESS);
 }
 
@@ -418,8 +392,6 @@ int ConfigurationFile::getHostDefaultValues(hostConfig& host, std::ifstream& fil
 
 int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
 {
-	std::cout << CYAN << "Server found" << RESET << std::endl;
-			
 	hostConfig host;
 	host.id = _serverCount;
 
@@ -431,10 +403,7 @@ int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
 
 	// Check if default values were set!	example: if (server.serverName.empty())
 
-	std::cout << YELLOW << "default values set" << RESET << std::endl;
-
 	// Store host in _hosts
-	// _hosts.insert(std::pair<std::string, struct hostConfig>(host.serverName, host));
 	_hosts.push_back(host);
 
 	getLocations(_hosts.back(), file, line);
@@ -442,7 +411,6 @@ int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
 	if (line.at(0) == '}') // End of server
 	{
 		_serverCount++;
-		std::cout << PURPLE << "End of server: " << _serverCount << RESET << std::endl;
 		return (SUCCESS);
 	}
 
@@ -487,7 +455,6 @@ int ConfigurationFile::parse()
 			return (err("No server config found."));
 		else if (_eof)
 			break ;
-		std::cout << CYAN_BOLD << "Line: [" << line << "]" << RESET << std::endl;
 		if (serverFound(file, line))
 		{
 			if (_eof || !getHostConfig(file, line))
