@@ -70,6 +70,13 @@ ConfigurationFile::~ConfigurationFile() {}
 
 
 //------------------------------------------------------------------------------
+//		GETTERS
+//------------------------------------------------------------------------------
+
+std::vector<struct hostConfig> &ConfigurationFile::getHosts() { return (_hosts); }
+
+
+//------------------------------------------------------------------------------
 //		HELPERS
 //------------------------------------------------------------------------------
 
@@ -465,10 +472,7 @@ int ConfigurationFile::parse()
 	}
 	file.close();
 
-	// print config info
-	printConfigInfo();
+	// printConfigInfo();
 	
 	return (SUCCESS);
 }
-
-

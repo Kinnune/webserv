@@ -4,8 +4,6 @@
 int main(int ac, char **av)
 {
 	Server server;
-	(void)av;
-	(void)ac;
 
 	if (ac != 2)
 	{
@@ -16,11 +14,11 @@ int main(int ac, char **av)
 	server.initialize(av[1]);
 	if (!server.readConfig())
 		return 1;
-	std::vector<int> ports;
-	ports.push_back(8080);
-	ports.push_back(666);
+	// std::vector<int> ports;
+	// ports.push_back(8080);
+	// ports.push_back(666);
 
-	server.setPorts(ports);
+	server.setPorts();
 	server.startListen();
 	server.loop();
 	return 0;

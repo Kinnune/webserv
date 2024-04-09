@@ -27,7 +27,7 @@ class Server
 		~Server();
 		void initialize(std::string configFile);
 		int readConfig();
-		void setPorts(std::vector<int> ports);
+		void setPorts();
 		void startListen();
 		void newClient(int i);
 		void removeClient(int fd);

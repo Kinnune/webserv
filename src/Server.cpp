@@ -22,17 +22,20 @@ int Server::readConfig()
 	return (_config.parse());
 }
 
-void Server::setPorts(std::vector<int> ports)
+void Server::setPorts()
 {
 	struct sockaddr_in address;
+	std::vector<struct hostConfig> hosts;
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;	// INADDR_ANY = we're responding to any address
 
-	_nServers = ports.size();
+	hosts = _config.getHosts();
+	_nServers = hosts.size();
+
 	for (unsigned int i = 0; i < _nServers; i++)
 	{
-		_ports.push_back(ports.at(i));
+		_ports.push_back(hosts.at(i).portInt);
 		address.sin_port = htons(_ports.at(i));	// htons = host to network, short (converts port number to network byte order, which is big-endian)
 		_addresses.push_back(address);
 		_pollFds[i].events = POLLIN;

@@ -42,7 +42,6 @@ class ConfigurationFile
 		bool _configSyntaxError;
 		bool _eof;
 		void printMultipleValues(std::vector<std::string> &values);
-		void printConfigInfo();
 		int getHostConfig(std::ifstream &file, std::string &line);
 		int getHostDefaultValues(hostConfig& host, std::ifstream& file, std::string& line);
 		int getMultipleValues(std::vector<std::string>& values, std::string& line, int type);
@@ -62,6 +61,8 @@ class ConfigurationFile
 		ConfigurationFile(std::string path);
 		ConfigurationFile(const ConfigurationFile &other);
 		~ConfigurationFile();
+		std::vector<struct hostConfig> &getHosts();
+		void printConfigInfo();
 		int parse();
 };
 
