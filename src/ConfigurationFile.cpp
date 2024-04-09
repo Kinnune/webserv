@@ -15,9 +15,7 @@
 
 TO-DO:
 
-- multiline might not store all values yet
-- fix error pages
-- add location values printer
+- remove ';' from values (be mindful of multiple values)
 
 */
 
@@ -27,14 +25,8 @@ TO-DO:
 //------------------------------------------------------------------------------
 
 ConfigurationFile::ConfigurationFile() {}
-
 ConfigurationFile::ConfigurationFile(std::string path) : _path(path), _serverCount(0) {}
-
-ConfigurationFile::ConfigurationFile(const ConfigurationFile &other)
-{
-	*this = other;
-}
-
+ConfigurationFile::ConfigurationFile(const ConfigurationFile &other) { *this = other; }
 ConfigurationFile::~ConfigurationFile() {}
 
 
@@ -112,6 +104,20 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 //		LOCATION
 //------------------------------------------------------------------------------
 
+void ConfigurationFile::setDefaultLocationValues(locationConfig& loc)
+{
+	loc.root = "";
+	loc.index = "";
+	loc.alias = "";
+	loc.methods.clear();
+	loc.cgiExtensions.clear();
+	loc.cgiPath = "";
+	loc.maxBody = -1;
+	loc.autoIndex = false;
+}
+
+//------------------------------------------------------------------------------
+
 int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& line)
 {
 	std::cout << "Location line: " << line << std::endl;
@@ -159,6 +165,8 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 	return (SUCCESS);
 }
 
+//------------------------------------------------------------------------------
+
 int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 {
 	std::cout << CYAN << "Setting location" << RESET << std::endl;
@@ -176,6 +184,8 @@ int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 	return (SUCCESS);
 }
 
+//------------------------------------------------------------------------------
+
 int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::string& line)
 {
 	std::cout << CYAN << "Getting locations" << RESET << std::endl;
@@ -189,6 +199,10 @@ int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::
 			std::cout << PURPLE << "Start of location" << RESET << std::endl;
 			if (!setLocation(loc, line))
 				return (FAILURE);
+			
+			// Here we set default values for the location struct. Empty strings, -1, etc...
+			setDefaultLocationValues(loc);
+
 			nextInfo(file, line);	// error check for starting curly brace?
 			nextInfo(file, line);
 			while (line.at(0) != '}')
@@ -230,6 +244,8 @@ int ConfigurationFile::getKey(std::string& line, std::string& key)
 	return (SUCCESS);
 }
 
+//------------------------------------------------------------------------------
+
 int ConfigurationFile::getValue(std::string& line, std::string& value)
 {
 	size_t pos;
@@ -239,12 +255,32 @@ int ConfigurationFile::getValue(std::string& line, std::string& value)
 	if (pos == std::string::npos)
 		return (err("Syntax error: Expected value"));
 	tmp = line.substr(pos);
-	pos = tmp.find_first_of(" \t;");
+	// pos = tmp.find_first_of(" \t;");
+	pos = tmp.find_first_of(";");	// Change to ';' so that we can have multiple values.
 	if (pos == std::string::npos)
 		return (err("Syntax error: Expected whitespace or ';'"));
-	value = tmp.substr(0, pos);
+	value = tmp.substr(0, pos + 1);
+	std::cout << CYAN << "VALUE: " << value << RESET << std::endl;
 	return (SUCCESS);
 }
+
+//------------------------------------------------------------------------------
+
+void ConfigurationFile::setDefaultHostValues(hostConfig& host)
+{
+	host.serverName = "";
+	host.host = "";
+	host.portString = "";
+	host.portInt = -1;
+	host.methods.clear();
+	host.root = "";
+	host.index = "";
+	host.autoindex = false;
+	host.errorPages.clear();
+	host.locations.clear();
+}
+
+//------------------------------------------------------------------------------
 
 int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line)
 {
@@ -298,6 +334,8 @@ int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line
 	return (SUCCESS);
 }
 
+//------------------------------------------------------------------------------
+
 int ConfigurationFile::getHostDefaultValues(hostConfig& host, std::ifstream& file, std::string& line)
 {
 	while (!file.eof() && !line.empty() && line.at(0) != '}')
@@ -336,6 +374,9 @@ int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
 			
 	hostConfig host;
 	host.id = _serverCount;
+
+	// Here we set default values for the host struct. Empty strings, -1, etc...
+	setDefaultHostValues(host);
 
 	if (!getHostDefaultValues(host, file, line))
 		return (FAILURE);
@@ -378,6 +419,15 @@ int ConfigurationFile::serverFound(std::ifstream& file, std::string& line)
 	return (FAILURE);
 }
 
+//------------------------------------------------------------------------------
+
+void printMulti(std::vector<std::string> values)
+{
+	for (std::vector<std::string>::iterator it = values.begin(); it != values.end(); it++)
+		std::cout << color(*it, GREEN) << " ";
+	std::cout << std::endl;
+}
+
 int ConfigurationFile::parse()
 {
 	std::ifstream file(_path.c_str());
@@ -413,16 +463,35 @@ int ConfigurationFile::parse()
 	// print host info
 	for (std::vector<struct hostConfig>::iterator it = _hosts.begin(); it != _hosts.end(); it++)
 	{
+		std::cout << CYAN << "----------------------------------------" << RESET << std::endl;
 		std::cout << "ID:\t\t" << color(it->id, GREEN) << std::endl;
 		std::cout << "NAME:\t\t" << color(it->serverName, GREEN) << std::endl;
 		std::cout << "HOST:\t\t" << color(it->host, GREEN) << std::endl;
 		std::cout << "PORT-str:\t" << color(it->portString, GREEN) << std::endl;
 		std::cout << "PORT-int:\t" << color(it->portInt, GREEN) << std::endl;
 		std::cout << "ROOT:\t\t" << color(it->root, GREEN) << std::endl;
+		// std::cout << "METHODS-n:\t" << color(it->methods.size(), GREEN) << std::endl;
+		std::cout << "METHODS:\t"; printMulti(it->methods);
 		std::cout << "INDEX:\t\t" << color(it->index, GREEN) << std::endl;
 		std::cout << "AUTOINDEX:\t" << color(it->autoindex, GREEN) << std::endl;
-		std::cout << "ERRPAG-n:\t" << color(it->errorPages.size(), GREEN) << std::endl;
+		// std::cout << "ERRPAG-n:\t" << color(it->errorPages.size(), GREEN) << std::endl;
+		std::cout << "ERRPAG:\t"; printMulti(it->errorPages);
 		std::cout << "LOC-n:\t\t" << color(it->locations.size(), GREEN) << std::endl;
+		for (std::vector<struct locationConfig>::iterator it2 = it->locations.begin(); it2 != it->locations.end(); it2++)
+		{
+			std::cout << YELLOW << "\t----------------------------------------" << RESET << std::endl;
+			std::cout << "\tLOCATION:\t" << color(it2->location, GREEN) << std::endl;
+			std::cout << "\tROOT:\t" << color(it2->root, GREEN) << std::endl;
+			std::cout << "\tINDEX:\t" << color(it2->index, GREEN) << std::endl;
+			std::cout << "\tALIAS:\t" << color(it2->alias, GREEN) << std::endl;
+			// std::cout << "\tMETHODS-n:\t" << color(it2->methods.size(), GREEN) << std::endl;
+			std::cout << "\tMETHODS:\t"; printMulti(it->methods);
+			// std::cout << "\tCGI-n:\t\t" << color(it2->cgiExtensions.size(), GREEN) << std::endl;
+			std::cout << "\tCGI:\t"; printMulti(it2->cgiExtensions);
+			std::cout << "\tCGI-PATH:\t" << color(it2->cgiPath, GREEN) << std::endl;
+			std::cout << "\tMAX_BODY:\t" << color(it2->maxBody, GREEN) << std::endl;
+			std::cout << "\tAUTOINDEX:\t" << color(it2->autoIndex, GREEN) << std::endl;
+		}
 		std::cout << std::endl;
 	}
 	return (SUCCESS);

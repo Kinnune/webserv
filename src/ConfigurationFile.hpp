@@ -44,9 +44,11 @@ class ConfigurationFile
 		int getHostConfig(std::ifstream &file, std::string &line);
 		int getHostDefaultValues(hostConfig& host, std::ifstream& file, std::string& line);
 		int getMultipleValues(std::vector<std::string>& values, std::string& line, int type);
+		void setDefaultLocationValues(locationConfig& loc);
 		int storeLocationValues(locationConfig& loc, std::string& line);
 		int setLocation(locationConfig& loc, std::string& line);
 		int getLocations(hostConfig& host, std::ifstream& file, std::string& line);
+		void setDefaultHostValues(hostConfig& host);
 		int storeHostDefaultValue(hostConfig& host, std::string& line);
 		int err(std::string error);
 		void nextInfo(std::ifstream &file, std::string& line);
