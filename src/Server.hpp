@@ -42,19 +42,6 @@ class Server
 		struct pollfd _pollFds[_maxClients];
 		nfds_t _nServers;
 		nfds_t _nClients;
-
-
-
-
-
-
-
-
-
-
-
-
-		
 };
 
 #endif
