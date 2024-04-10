@@ -472,7 +472,7 @@ int ConfigurationFile::parse()
 	}
 	file.close();
 
-	// printConfigInfo();
+	printConfigInfo();
 	
 	return (SUCCESS);
 }

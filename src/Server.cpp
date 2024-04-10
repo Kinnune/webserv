@@ -51,7 +51,7 @@ void Server::startListen()
 
 		_pollFds[i].fd = socket(AF_INET, SOCK_STREAM, 0);
 		
-		//  fixes having to w8 for bind after restart
+		//  fixes having to wait for bind after restart
 		int enable = 1;
 		setsockopt(_pollFds[i].fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
 
