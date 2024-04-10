@@ -13,6 +13,8 @@ typedef struct locationConfig
 	std::vector<std::string> methods;
 	std::vector<std::string> cgiExtensions;
 	std::string cgiPath;
+	std::string redirection;
+	int redirectionCode;
 	int maxBody;
 	bool autoIndex;
 } locationConfig;
