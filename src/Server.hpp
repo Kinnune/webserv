@@ -16,12 +16,7 @@
 #include <vector>
 
 #include "Client.hpp"
-
-#define GREEN "\033[0;32m"
-#define RED "\033[0;31m"
-#define CYAN "\033[0;36m"
-#define RESET "\033[0m"
-
+#include "ConfigurationFile.hpp"
 
 class Client;
 
@@ -29,17 +24,21 @@ class Server
 {
 	public:
 		Server();
-		void setPorts(std::vector<int> ports);
+		~Server();
+		void initialize(std::string configFile);
+		int readConfig();
+		void setPorts();
 		void startListen();
 		void newClient(int i);
 		void removeClient(int fd);
 		void loop();
 		unsigned int getNfds();
 	private:
+		ConfigurationFile _config;
 		std::map<int, Client> _clients;
 		static const int _maxClients = 1024;
-		std::vector<int> _ports[1];
-		std::vector<struct sockaddr_in> _addresses[1];
+		std::vector<int> _ports;
+		std::vector<struct sockaddr_in> _addresses;
 		struct pollfd _pollFds[_maxClients];
 		nfds_t _nServers;
 		nfds_t _nClients;

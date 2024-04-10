@@ -1,4 +1,7 @@
 #include "Client.hpp"
+#include "Colors.hpp"
+#include <iostream>
+#include <fstream>
 
 Client::Client()
 	: _request(Request())
