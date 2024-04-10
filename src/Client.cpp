@@ -32,6 +32,11 @@ Client::Client(int serverFd, int port)
 	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 }
 
+void Client::setConfig(ConfigurationFile &config)
+{
+	_config = config;
+}
+
 void Client::setFd(int fd)
 {
 	_fd = fd;
@@ -90,6 +95,20 @@ void mockResponse(int fd)
 // 		}
 
 // };
+
+void Client::updateResourcePath()
+{
+	_resourcePath = _request.getTarget();
+	/*
+		if path doesn't exist, respond with 404
+		if path exists, but is not stated as a location, respond with 403
+		if path exists, and is a location:
+			1. if location has a root directive, append root to path
+			2. else if location has an alias directive, switch path with alias
+			3. else if server has a root directive, append root to path
+			4. else use path as is
+	*/
+}
 
 void Client::respond()
 {

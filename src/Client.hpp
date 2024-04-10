@@ -25,8 +25,11 @@ class Client
 		int getPort() const;
 		void respond();
 		void handleEvent(short events);
-		// void respond();
+		void setConfig(ConfigurationFile &config);
 	private:
+		ConfigurationFile _config;
+		void updateResourcePath();
+		std::string _resourcePath;
 		int _fd;
 		int _port;
 		struct sockaddr_in _address;

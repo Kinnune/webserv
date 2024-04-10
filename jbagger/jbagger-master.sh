@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Update jbagger branch
-git add .
-git commit -m "Committing changes to jbagger branch"
-git push origin jbagger
+# git add .
+# git commit -m "Committing changes to jbagger branch"
+# git push origin jbagger
 
 # Merge jbagger into master
 git checkout master
