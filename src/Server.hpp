@@ -44,6 +44,16 @@ class Server
 		nfds_t _nClients;
 
 
+
+
+
+
+
+
+
+
+
+
 		
 };
 
