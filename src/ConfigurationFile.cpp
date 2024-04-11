@@ -66,6 +66,19 @@ void ConfigurationFile::printConfigInfo()
 ConfigurationFile::ConfigurationFile() {}
 ConfigurationFile::ConfigurationFile(std::string path) : _path(path), _serverCount(0) {}
 ConfigurationFile::ConfigurationFile(const ConfigurationFile &other) { *this = other; }
+ConfigurationFile &ConfigurationFile::operator=(const ConfigurationFile &other)
+{
+	if (this != &other)
+	{
+		_path = other._path;
+		_content = other._content;
+		_serverCount = other._serverCount;
+		_hosts = other._hosts;
+		_configSyntaxError = other._configSyntaxError;
+		_eof = other._eof;
+	}
+	return (*this);
+}
 ConfigurationFile::~ConfigurationFile() {}
 
 

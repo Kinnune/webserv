@@ -27,8 +27,10 @@ class Client
 		void respond();
 		void handleEvent(short events);
 		void setConfig(ConfigurationFile &config);
+		ConfigurationFile &getConfig();
 	private:
 		ConfigurationFile _config;
+		bool fileExists(const std::string &path);
 		void updateResourcePath();
 		std::string _resourcePath;
 		int _fd;

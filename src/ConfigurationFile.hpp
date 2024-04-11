@@ -62,6 +62,7 @@ class ConfigurationFile
 		ConfigurationFile();
 		ConfigurationFile(std::string path);
 		ConfigurationFile(const ConfigurationFile &other);
+		ConfigurationFile &operator=(const ConfigurationFile &other);
 		~ConfigurationFile();
 		std::vector<struct hostConfig> &getHosts();
 		void printConfigInfo();

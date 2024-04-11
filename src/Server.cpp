@@ -20,6 +20,9 @@ void Server::initialize(std::string configFile)
 int Server::readConfig()
 {
 	return (_config.parse());
+	// _config.parse();
+	// _config.printConfigInfo();
+	// return (1);
 }
 
 void Server::setPorts()

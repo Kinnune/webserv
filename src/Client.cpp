@@ -19,6 +19,7 @@ Client &Client::operator=(Client const &other)
 {
 	_fd = other._fd;
 	_port = other._port;
+	_config = other._config;
 	return (*this);
 }
 
@@ -29,8 +30,14 @@ Client::Client(int serverFd, int port)
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = INADDR_ANY;
 	_address.sin_port = htons(port);
+	_port = port;
 	_fd = accept(serverFd, (struct sockaddr *)&_address, &adressSize);
 	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+}
+
+ConfigurationFile &Client::getConfig()
+{
+	return (_config);
 }
 
 void Client::setConfig(ConfigurationFile &config)
@@ -96,15 +103,13 @@ void mockResponse(int fd)
 // };
 
 
-bool fileExists(const std::string& filename)
+bool Client::fileExists(const std::string& path)
 {
-    return access(filename.c_str(), F_OK) == 0;
+    return access(path.c_str(), F_OK) == 0;
 }
 
 void Client::updateResourcePath()
 {
-	_resourcePath = _request.getTarget();
-
 	/*
 		if path is a location:
 			1. if location has a root directive, append root to path
@@ -127,62 +132,85 @@ void Client::updateResourcePath()
 		else use path as is
 	*/
 
+	std::cout << "Updating resource path" << std::endl;
+	std::cout << "Port: " << color(_port, CYAN) << std::endl;
+	std::cout << "Hosts: " << color(_config.getHosts().size(), CYAN) << std::endl;
 	for (std::vector<hostConfig>::iterator host = _config.getHosts().begin(); host != _config.getHosts().end(); host++)
 	{
 		if (host->portInt == _port)
 		{
+			std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
 			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
 			{
-				if (_resourcePath.find(loc->location) != std::string::npos)	// might need to change so that it location only can exist at the start of path
+				if (_resourcePath.compare(0, loc->location.length(), loc->location) == 0)	// might need to change so that it location only can exist at the start of path
 				{
+					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
+					if (loc->redirection != "")
+					{
+						std::cout << "REDIRECTION: " << loc->redirection << std::endl;
+						// set resource code to 301
+						_resourcePath = loc->redirection;
+						return ;
+					}
 					if (loc->root != "")
 					{
-						_resourcePath = loc->root + _resourcePath;
+						std::cout << "LOC-ROOT: " << color(loc->root, GREEN) << std::endl;
+						_resourcePath = loc->root + _resourcePath.substr(loc->location.length());
 					}
 					else if (loc->alias != "")
 					{
+						std::cout << "LOC-ALIAS: " << color(loc->alias, GREEN) << std::endl;
 						_resourcePath = loc->alias;
 					}
 					else if (host->root != "")
 					{
-						_resourcePath = host->root + _resourcePath;
+						std::cout << "HOST-ROOT: " << color(host->root, GREEN) << std::endl;
+						_resourcePath = host->root + _resourcePath.substr(loc->location.length());
 					}
 					if (fileExists(_resourcePath))
 					{
 						if (loc->index != "")
 						{
+							std::cout << "LOC-INDEX: " << color(loc->index, GREEN) << std::endl;
 							_resourcePath.append(loc->index);
 						}
 						else if (host->index != "")
 						{
+							std::cout << "HOST-INDEX: " << color(host->index, GREEN) << std::endl;
 							_resourcePath.append(host->index);
 						}
 						else
 						{
+							std::cout << "No index found. Appending index.html" << std::endl;
 							_resourcePath.append("index.html");
 						}
 					}
 					return ;
 				}
 			}
+			std::cout << color("No location found", RED) << std::endl;
 			if (host->root != "")
 			{
+				std::cout << "HOST-ROOT: " << color(host->root, GREEN) << std::endl;
 				_resourcePath = host->root + _resourcePath;
 			}
 			if (fileExists(_resourcePath))
 			{
 				if (host->index != "")
 				{
+					std::cout << "HOST-INDEX: " << color(host->index, GREEN) << std::endl;
 					_resourcePath.append(host->index);
 				}
 				else
 				{
+					std::cout << "No index found. Appending index.html" << std::endl;
 					_resourcePath.append("index.html");
 				}
 			}
 			return ;
 		}
 	}
+	std::cout << color("No host found", RED) << std::endl;
 	// If we get this far, we have no host with the port we are looking for. This should probably be handled elsewhere.
 }
 
@@ -190,8 +218,10 @@ void Client::respond()
 {
 	if (_request.getMethod() == "GET")
 	{
+		_resourcePath = _request.getTarget();
+		std::cout << "Resource path: '" << color(_resourcePath, GREEN) << "'" << std::endl;
 		updateResourcePath();
-		std::cout << "Resource path: '" << _resourcePath << "'" << std::endl;
+		std::cout << "Resource path: '" << color(_resourcePath, GREEN) << "'" << std::endl;
 
 		std::ifstream ifs(_resourcePath);
 		std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
@@ -215,8 +245,8 @@ void Client::respond()
 		response.append(std::to_string(buffer.length()));
 		response.append("\r\n\r\n");
 		response.append(buffer);
-		write(_fd, response.c_str(), response.length());
-		std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
+		// write(_fd, response.c_str(), response.length());
+		// std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
 		// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
 	}
 
@@ -234,7 +264,7 @@ void Client::handleEvent(short events)
 		static int i = 0;
 		if (_request.getIsComplete() || _request.tryToComplete(_buffer))
 		{
-			std::cout << RED << "i: " << i << RESET << std::endl;
+			// std::cout << RED << "i: " << i << RESET << std::endl;
 			_request.printRequest();
 			respond();
 			_request.clear();
@@ -244,7 +274,7 @@ void Client::handleEvent(short events)
 	}
 	if (events & POLLIN)
 	{
-		std::cout << GREEN << "READING\n" << std::endl; 
+		// std::cout << GREEN << "READING\n" << std::endl;
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
 		if (readCount < 0)
 		{
@@ -256,7 +286,7 @@ void Client::handleEvent(short events)
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
-		std::cout << GREEN << "double newline found" << RESET << std::endl;
+		// std::cout << GREEN << "double newline found" << RESET << std::endl;
 		if (_buffer.getSize())
 			std::cout << CYAN << _buffer.getData() << RESET << std::endl;
 		try
