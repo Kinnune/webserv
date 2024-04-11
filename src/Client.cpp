@@ -52,8 +52,6 @@ int Client::getPort() const
 	return (_port);
 }
 
-#include <fstream>
-
 
 //read to buffer until request done;
 
@@ -80,26 +78,69 @@ void mockResponse(int fd)
 
 }
 
-// #include <unistd.h>
 
-// class Response
+class Response
+{
+	public:
+		Response(Request &request)
+			: _request(request)
+		{
+			std::unordered_map<std::string, std::string> headers;
+			std::unordered_map<std::string, std::string>::iterator it;
+
+			_version = _request.getVersion();			
+			_statusCode = "";
+			_statusMessage = "";
+			headers = _request.getHeaders();
+			for (it = headers.begin(); it != headers.end(); it++)
+			{
+				if (it ->first.find("Content-Length:") == std::string::npos)
+				{
+					_headers.insert(*it);
+				}
+			}
+			_body.resize(0);
+			if (DEBUG)
+				std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
+		};
+
+		std::string _version;
+		std::string _statusCode;
+		std::string _statusMessage;
+		std::unordered_map<std::string, std::string> _headers;
+		std::vector<unsigned char> _body;
+
+	private:
+		Request _request;
+};
+
+std::ostream &operator<<(std::ostream &o, Response response)
+{
+	o << response._version << " " << response._statusCode << " " << response._statusMessage << "\r\n";
+	for (std::pair<std::string, std::string> header : response._headers)
+	{
+		o << header.first << ": " << header.second << "\n";
+	}
+	o << "\r\n\r\n" << std::string(response._body.begin(), response._body.end()) << std::endl;
+	return (o);
+}
+
+// void Client::errorResponse(int status)
 // {
-// 	public:
-// 		Response(Request request)
-// 		{
-// 		}
 
-// };
+// }
 
 void Client::respond()
 {
 	std::string resourcePath;
 
+	Response response(_request);
 	if (_request.getMethod() == "GET")
 	{
 		resourcePath = std::string("../resources");
 		resourcePath.append(_request.getTarget());
-		std::cout << "Resource path: '" << resourcePath << "'" << std::endl;
+		if (DEBUG)
+			std::cout << "Resource path: '" << resourcePath << "'" << std::endl;
 
 		std::ifstream ifs(resourcePath);
 		std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
@@ -117,17 +158,51 @@ void Client::respond()
 		}
 		if (_request.getTarget() == "../resources/favicon.ico")
 		{
-			response.append("Content-Type: image/png");
+			// response.append("Content-Type: image/png");
 		}
+		response.append("Content-Type: text/html; charset=utf-8\n");
+		buffer.clear();
+		buffer = listDirectory(".");
 		response.append("Content-Length: ");
 		response.append(std::to_string(buffer.length()));
 		response.append("\r\n\r\n");
 		response.append(buffer);
 		write(_fd, response.c_str(), response.length());
-		std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
+		if (DEBUG)
+			std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
 		// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
 	}
 
+}
+
+std::string Client::listDirectory(std::string path)
+{
+	std::string directoryListResponse;
+	DIR* directory = opendir(path.c_str());
+	struct dirent* entry;
+
+	if (directory != nullptr)
+	{
+        directoryListResponse.append("<table border=\"1\">");
+        directoryListResponse.append("<tr><th>File Name</th></tr>");
+
+		while ((entry = readdir(directory)) != nullptr)
+		{
+            directoryListResponse.append("<tr><td>" + std::string(entry->d_name) + "</td></tr>");
+			if (DEBUG)
+				std::cout << entry->d_name << std::endl;
+		}
+
+        directoryListResponse.append("</table>");
+		if (DEBUG)
+	        std::cout << "</table>" << std::endl;
+		closedir(directory);
+	}
+	else
+	{
+		std::cerr << "Unable to open directory: " << path << std::endl;
+	}
+	return (directoryListResponse);
 }
 
 void Client::handleEvent(short events)
@@ -142,8 +217,10 @@ void Client::handleEvent(short events)
 		static int i = 0;
 		if (_request.getIsComplete() || _request.tryToComplete(_buffer))
 		{
-			std::cout << RED << "i: " << i << RESET << std::endl;
-			_request.printRequest();
+			if (DEBUG)
+				std::cout << RED << "i: " << i << RESET << std::endl;
+			if (DEBUG)
+				_request.printRequest();
 			respond();
 			_request.clear();
 			// mockResponse(_fd);
@@ -152,7 +229,8 @@ void Client::handleEvent(short events)
 	}
 	if (events & POLLIN)
 	{
-		std::cout << GREEN << "READING\n" << std::endl; 
+		if (DEBUG)
+			std::cout << GREEN << "READING\n" << std::endl; 
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
 		if (readCount < 0)
 		{
@@ -164,9 +242,11 @@ void Client::handleEvent(short events)
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
-		std::cout << GREEN << "double newline found" << RESET << std::endl;
+		if (DEBUG)
+			std::cout << GREEN << "double newline found" << RESET << std::endl;
 		if (_buffer.getSize())
-			std::cout << CYAN << _buffer.getData() << RESET << std::endl;
+			if (DEBUG)
+				std::cout << CYAN << _buffer.getData() << RESET << std::endl;
 		try
 		{
 			_request = Request(_buffer.spliceRequest());
