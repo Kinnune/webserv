@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <unordered_map>
 #include "Server.hpp"
+#include "ConfigurationFile.hpp"
 #include "Request.hpp"
 #include "Buffer.hpp"
 

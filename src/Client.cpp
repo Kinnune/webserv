@@ -2,6 +2,7 @@
 #include "Colors.hpp"
 #include <iostream>
 #include <fstream>
+#include <unistd.h>	// access()
 
 Client::Client()
 	: _request(Request())
@@ -57,8 +58,6 @@ int Client::getPort() const
 	return (_port);
 }
 
-#include <fstream>
-
 
 //read to buffer until request done;
 
@@ -96,31 +95,105 @@ void mockResponse(int fd)
 
 // };
 
+
+bool fileExists(const std::string& filename)
+{
+    return access(filename.c_str(), F_OK) == 0;
+}
+
 void Client::updateResourcePath()
 {
 	_resourcePath = _request.getTarget();
+
 	/*
-		if path doesn't exist, respond with 404
-		if path exists, but is not stated as a location, respond with 403
-		if path exists, and is a location:
+		if path is a location:
 			1. if location has a root directive, append root to path
-			2. else if location has an alias directive, switch path with alias
-			3. else if server has a root directive, append root to path
-			4. else use path as is
+			   else if location has an alias directive, switch path with alias
+			   else if server has a root directive, append root to path
+			   else use path as is
+			2. if path is a directory:
+					1. if location has an index directive, append index to path
+					   else if server has an index directive, append index to path
+					   else append index.html to path
+			   else if path is a file, use path as is
+		else if server has a root directive:
+			1. append root to path
+			2. if path is a directory:
+					1. if server has an index directive, append index to path
+					   else append index.html to path
+			   else if path is a file, use path as is
+		else if path is a directory:
+			1. append index.html to path
+		else use path as is
 	*/
+
+	for (std::vector<hostConfig>::iterator host = _config.getHosts().begin(); host != _config.getHosts().end(); host++)
+	{
+		if (host->portInt == _port)
+		{
+			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
+			{
+				if (_resourcePath.find(loc->location) != std::string::npos)	// might need to change so that it location only can exist at the start of path
+				{
+					if (loc->root != "")
+					{
+						_resourcePath = loc->root + _resourcePath;
+					}
+					else if (loc->alias != "")
+					{
+						_resourcePath = loc->alias;
+					}
+					else if (host->root != "")
+					{
+						_resourcePath = host->root + _resourcePath;
+					}
+					if (fileExists(_resourcePath))
+					{
+						if (loc->index != "")
+						{
+							_resourcePath.append(loc->index);
+						}
+						else if (host->index != "")
+						{
+							_resourcePath.append(host->index);
+						}
+						else
+						{
+							_resourcePath.append("index.html");
+						}
+					}
+					return ;
+				}
+			}
+			if (host->root != "")
+			{
+				_resourcePath = host->root + _resourcePath;
+			}
+			if (fileExists(_resourcePath))
+			{
+				if (host->index != "")
+				{
+					_resourcePath.append(host->index);
+				}
+				else
+				{
+					_resourcePath.append("index.html");
+				}
+			}
+			return ;
+		}
+	}
+	// If we get this far, we have no host with the port we are looking for. This should probably be handled elsewhere.
 }
 
 void Client::respond()
 {
-	std::string resourcePath;
-
 	if (_request.getMethod() == "GET")
 	{
-		resourcePath = std::string("../resources");
-		resourcePath.append(_request.getTarget());
-		std::cout << "Resource path: '" << resourcePath << "'" << std::endl;
+		updateResourcePath();
+		std::cout << "Resource path: '" << _resourcePath << "'" << std::endl;
 
-		std::ifstream ifs(resourcePath);
+		std::ifstream ifs(_resourcePath);
 		std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
 		std::string response;
 		std::unordered_map<std::string, std::string> headers;
