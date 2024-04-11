@@ -31,6 +31,8 @@ class Client
 	private:
 		ConfigurationFile _config;
 		bool fileExists(const std::string &path);
+		bool isFile(const std::string &path);
+		bool isDirectory(const std::string &path);
 		void updateResourcePath();
 		std::string _resourcePath;
 		int _fd;

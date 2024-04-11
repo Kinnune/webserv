@@ -2,7 +2,13 @@
 #include "Colors.hpp"
 #include <iostream>
 #include <fstream>
-#include <unistd.h>	// access()
+#include <unistd.h>		// access()
+#include <sys/stat.h>	// stat()
+
+
+//------------------------------------------------------------------------------
+//	CONSTRUCTORS & DESTRUCTORS
+//------------------------------------------------------------------------------
 
 Client::Client()
 	: _request(Request())
@@ -35,6 +41,11 @@ Client::Client(int serverFd, int port)
 	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 }
 
+
+//------------------------------------------------------------------------------
+//	GETTERS & SETTERS
+//------------------------------------------------------------------------------
+
 ConfigurationFile &Client::getConfig()
 {
 	return (_config);
@@ -65,6 +76,10 @@ int Client::getPort() const
 	return (_port);
 }
 
+
+//------------------------------------------------------------------------------
+//	MEMBER FUNCTIONS
+//------------------------------------------------------------------------------
 
 //read to buffer until request done;
 
@@ -108,6 +123,20 @@ bool Client::fileExists(const std::string& path)
     return access(path.c_str(), F_OK) == 0;
 }
 
+bool Client::isFile(const std::string& path)
+{
+	struct stat path_stat;
+	stat(path.c_str(), &path_stat);
+	return S_ISREG(path_stat.st_mode);
+}
+
+bool Client::isDirectory(const std::string& path)
+{
+	struct stat path_stat;
+	stat(path.c_str(), &path_stat);
+	return S_ISDIR(path_stat.st_mode);
+}
+
 void Client::updateResourcePath()
 {
 	/*
@@ -142,7 +171,7 @@ void Client::updateResourcePath()
 			std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
 			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
 			{
-				if (_resourcePath.compare(0, loc->location.length(), loc->location) == 0)	// might need to change so that it location only can exist at the start of path
+				if (_resourcePath.compare(0, loc->location.length(), loc->location) == 0)
 				{
 					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
 					if (loc->redirection != "")
@@ -167,7 +196,7 @@ void Client::updateResourcePath()
 						std::cout << "HOST-ROOT: " << color(host->root, GREEN) << std::endl;
 						_resourcePath = host->root + _resourcePath.substr(loc->location.length());
 					}
-					if (fileExists(_resourcePath))
+					if (isDirectory(_resourcePath))
 					{
 						if (loc->index != "")
 						{
@@ -194,7 +223,7 @@ void Client::updateResourcePath()
 				std::cout << "HOST-ROOT: " << color(host->root, GREEN) << std::endl;
 				_resourcePath = host->root + _resourcePath;
 			}
-			if (fileExists(_resourcePath))
+			if (isDirectory(_resourcePath))
 			{
 				if (host->index != "")
 				{
