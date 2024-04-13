@@ -1,6 +1,7 @@
 
 #ifndef BUFFER_HPP
 #define BUFFER_HPP
+#include <string.h>	//J added for strncmp() (might want to change strncmp() to compare() or something)
 
 class Buffer
 {
@@ -19,7 +20,7 @@ class Buffer
 			{
 				position = &(*it);
 				// std::cout << "SEGF" << _data.end() - it << " " << _endLiteral.length()<< std::vector<unsigned char>(it, _data.end()) << std::endl;
-				if (std::strncmp((char *)position, _endLiteral.c_str(), _endLiteral.length()) == 0)
+				if (strncmp((char *)position, _endLiteral.c_str(), _endLiteral.length()) == 0)	//J removed std::, because strncmp() is a C function
 				{
 					return (&(*(it + _endLiteral.length())));
 				}

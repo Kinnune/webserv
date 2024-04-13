@@ -286,7 +286,7 @@ void Client::handleEvent(short events)
 	//* we might want to malloc this buffer
 	static const int MAX_BUFFER_SIZE = 4095;
 	static char buffer[MAX_BUFFER_SIZE + 1];
-	size_t readCount = 0;
+	ssize_t readCount = 0;	// changed to ssize_t instead of size_t, because read() returns -1 on error, and size_t is unsigned
 
 	if (events & POLLOUT)
 	{

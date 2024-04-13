@@ -29,7 +29,7 @@ bool isWS(unsigned char c)
 	static unsigned char const space = 32;
 	static unsigned char const horizontalTab = 9;
 
-	return (c == space | c == horizontalTab);
+	return (c == space || c == horizontalTab);	//J changed from | to ||
 }
 
 int skipWS(std::vector<unsigned char> &data, ssize_t index)
@@ -56,7 +56,7 @@ int skipToWS(std::vector<unsigned char> &data, ssize_t index)
 
 bool validIndex(std::vector<unsigned char> &data, ssize_t index)
 {
-	return (index > 0 | index < static_cast<ssize_t>(data.size()));
+	return (index > 0 || index < static_cast<ssize_t>(data.size()));	//J changed from | to ||
 }
 
 int seekColon(std::vector<unsigned char> &data, ssize_t index)
