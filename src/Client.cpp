@@ -148,7 +148,7 @@ void Client::respond()
 	Response response(_request);
 
 	responseStr = response.toString();
-	std::cout << RED << responseStr << RESET <<std::endl;
+	// std::cout << RED << responseStr << RESET <<std::endl;
 	write(_fd, responseStr.c_str(), responseStr.length());
 }
 
