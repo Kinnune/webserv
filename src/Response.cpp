@@ -4,19 +4,10 @@
 Response::Response(Request &request)
 	: _request(request)
 {
-	std::unordered_map<std::string, std::string> headers;
-	std::unordered_map<std::string, std::string>::iterator it;
 	_version = _request.getVersion();			
 	_statusCode = "";
 	_statusMessage = "";
-	headers = _request.getHeaders();
-	for (it = headers.begin(); it != headers.end(); it++)
-	{
-		if (it ->first.find("Content-Length:") == std::string::npos)
-		{
-			_headers.insert(*it);
-		}
-	}
+	_headers = request.getHeaders();
 	_body.resize(0);
 	completeResponse();
 	if (DEBUG)
@@ -47,7 +38,7 @@ void Response::body404()
 
 void Response::setStatus(int status)
 {
-	_statusCode = status;
+	_statusCode = std::to_string(status);
 	switch (status)
 	{
 		case 200:
@@ -61,18 +52,28 @@ void Response::setStatus(int status)
 	}
 }
 
+void removeFirstCharIfMatches(std::string& str, char matchChar)
+{
+	if (!str.empty() && str[0] == matchChar)
+	{
+		str.erase(0, 1);
+	}
+}
+
 void Response::getMethod()
 {
-	// std::string filePath = _request.getTarget();
-	std::string filePath = "www/builders.html";
+	std::string filePath = _request.getTarget();
+	removeFirstCharIfMatches(filePath, '/');
 
-	if (!std::__fs::filesystem::exists(filePath))
-	{
-		// 404
-		setStatus(404);
-		std::cerr << "File does not exist." << std::endl;
-		return ;
-	}
+
+	// std::string filePath = "www/index.html";
+	// if (!std::__fs::filesystem::exists(filePath))
+	// {
+	// 	// 404
+	// 	setStatus(404);
+	// 	std::cerr << "File does not exist." << std::endl;
+	// 	return ;
+	// }
 	std::ifstream file(filePath, std::ios::binary);
 	if (!file)
 	{
