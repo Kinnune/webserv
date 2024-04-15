@@ -178,7 +178,7 @@ bool Request::detectContentLenght()
 	_completed = true;
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
-		if (it->first == "Transfer-Encoding" && !std::strncmp(it->second.c_str(), "chunked", it->second.size()))
+		if (it->first == "Transfer-Encoding" && !strncmp(it->second.c_str(), "chunked", it->second.size()))	//J removed std:: before strncmp(), because strncmp() is a C function
 		{
 			len = -1;
 			_isChunked = true;
