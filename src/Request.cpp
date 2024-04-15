@@ -63,8 +63,8 @@ void Request::printRequest()
 	{
 		std::cout << it->first << ": " <<  it->second << "\n";
 	}
-	std::cout << _body << std::endl;
-	std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
+	// std::cout << _body << std::endl;
+	// std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
 }
 
 // std::string Request::getMethod()
@@ -176,7 +176,6 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 bool Request::detectContentLenght()
 {
 	std::unordered_map<std::string, std::string>::iterator it;
-
 	if (DEBUG)
 		std::cout << "detecting length" << std::endl;
 	ssize_t len = 0;
@@ -184,7 +183,7 @@ bool Request::detectContentLenght()
 	_completed = true;
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
-		if (it->first == "Transfer-Encoding" && !std::strncmp(it->second.c_str(), "chunked", it->second.size()))
+		if (it->first == "Transfer-Encoding" && !strncmp(it->second.c_str(), "chunked", it->second.size()))	//J removed std:: before strncmp(), because strncmp() is a C function
 		{
 			len = -1;
 			_isChunked = true;

@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "Server.hpp"
+#include "ConfigurationFile.hpp"
 #include "Request.hpp"
 #include "Buffer.hpp"
 #include "Response.hpp"
@@ -35,8 +36,15 @@ class Client
 		void respond();
 		std::string  listDirectory(std::string path);
 		void handleEvent(short events);
-		// void respond();
+		void setConfig(ConfigurationFile &config);
+		ConfigurationFile &getConfig();
 	private:
+		ConfigurationFile _config;
+		bool fileExists(const std::string &path);
+		bool isFile(const std::string &path);
+		bool isDirectory(const std::string &path);
+		void updateResourcePath();
+		std::string _resourcePath;
 		int _fd;
 		int _port;
 		struct sockaddr_in _address;

@@ -40,7 +40,7 @@ void ConfigurationFile::printConfigInfo()
 		std::cout << "METHODS:\t"; printMultipleValues(it->methods);
 		std::cout << "INDEX:\t\t" << color(it->index, GREEN) << std::endl;
 		std::cout << "AUTOINDEX:\t" << color(it->autoindex, GREEN) << std::endl;
-		std::cout << "ERRPAG:\t"; printMultipleValues(it->errorPages);
+		std::cout << "ERRPAG:\t\t"; printMultipleValues(it->errorPages);
 		std::cout << "LOC-n:\t\t" << color(it->locations.size(), GREEN) << std::endl;
 		for (std::vector<struct locationConfig>::iterator it2 = it->locations.begin(); it2 != it->locations.end(); it2++)
 		{
@@ -49,7 +49,7 @@ void ConfigurationFile::printConfigInfo()
 			std::cout << "\tROOT:\t\t" << color(it2->root, GREEN) << std::endl;
 			std::cout << "\tINDEX:\t\t" << color(it2->index, GREEN) << std::endl;
 			std::cout << "\tALIAS:\t\t" << color(it2->alias, GREEN) << std::endl;
-			std::cout << "\tMETHODS:\t"; printMultipleValues(it->methods);
+			std::cout << "\tMETHODS:\t"; printMultipleValues(it2->methods);
 			std::cout << "\tCGI:\t\t"; printMultipleValues(it2->cgiExtensions);
 			std::cout << "\tCGI-PATH:\t" << color(it2->cgiPath, GREEN) << std::endl;
 			std::cout << "\tMAX_BODY:\t" << color(it2->maxBody, GREEN) << std::endl;
@@ -66,6 +66,19 @@ void ConfigurationFile::printConfigInfo()
 ConfigurationFile::ConfigurationFile() {}
 ConfigurationFile::ConfigurationFile(std::string path) : _path(path), _serverCount(0) {}
 ConfigurationFile::ConfigurationFile(const ConfigurationFile &other) { *this = other; }
+ConfigurationFile &ConfigurationFile::operator=(const ConfigurationFile &other)
+{
+	if (this != &other)
+	{
+		_path = other._path;
+		_content = other._content;
+		_serverCount = other._serverCount;
+		_hosts = other._hosts;
+		_configSyntaxError = other._configSyntaxError;
+		_eof = other._eof;
+	}
+	return (*this);
+}
 ConfigurationFile::~ConfigurationFile() {}
 
 
@@ -148,12 +161,21 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 	while (!line.empty())
 	{
 		if (line.find_first_of(" \t") == std::string::npos)
+		{
+			if (line.find_first_not_of(" \t") == std::string::npos)
+				break ;
+			value = line;
+			values.push_back(value);
 			break ;
+		}
 		pos = line.find_first_not_of(" \t");
 		line = line.substr(pos);
 		pos = line.find_first_of(" \t;");
 		if (pos == std::string::npos)
+		{
 			pos = line.size();
+			value = line;
+		}
 		else
 			value = line.substr(0, pos);
 		if (type == METHODS)
@@ -171,7 +193,9 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 				return (err("Invalid CGI extension: " + value));
 		}
 		else
+		{
 			values.push_back(value);
+		}
 		line = line.substr(pos);
 	}
 	return (SUCCESS);
@@ -237,7 +261,11 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 		loc.maxBody = std::stoi(value);
 	else if (key == "RETURN")
 	{
-		// Don't know if we need this
+		size_t pos;
+		pos = value.find_first_of(" \t");
+		loc.redirectionCode = stoi(value.substr(0, pos));
+		pos = value.find_first_not_of(" \t", pos);
+		loc.redirection = value.substr(pos);
 	}
 	else if (key.at(0) == '}')
 		return (SUCCESS);

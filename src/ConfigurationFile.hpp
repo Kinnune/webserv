@@ -13,6 +13,8 @@ typedef struct locationConfig
 	std::vector<std::string> methods;
 	std::vector<std::string> cgiExtensions;
 	std::string cgiPath;
+	std::string redirection;
+	int redirectionCode;
 	int maxBody;
 	bool autoIndex;
 } locationConfig;
@@ -60,6 +62,7 @@ class ConfigurationFile
 		ConfigurationFile();
 		ConfigurationFile(std::string path);
 		ConfigurationFile(const ConfigurationFile &other);
+		ConfigurationFile &operator=(const ConfigurationFile &other);
 		~ConfigurationFile();
 		std::vector<struct hostConfig> &getHosts();
 		void printConfigInfo();

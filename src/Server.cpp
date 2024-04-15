@@ -20,6 +20,9 @@ void Server::initialize(std::string configFile)
 int Server::readConfig()
 {
 	return (_config.parse());
+	// _config.parse();
+	// _config.printConfigInfo();
+	// return (1);
 }
 
 void Server::setPorts()
@@ -81,6 +84,7 @@ void Server::newClient(int i)
 {
 	Client newClient(_pollFds[i].fd, _ports.at(i));
 
+	newClient.setConfig(_config);
 	_clients.insert(std::make_pair(newClient.getFd(), newClient));
 	_pollFds[getNfds()].fd = newClient.getFd();
 	_pollFds[getNfds()].events = (POLLIN | POLLOUT);

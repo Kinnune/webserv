@@ -2,6 +2,13 @@
 #include "Colors.hpp"
 #include <iostream>
 #include <fstream>
+#include <unistd.h>		// access()
+#include <sys/stat.h>	// stat()
+
+
+//------------------------------------------------------------------------------
+//	CONSTRUCTORS & DESTRUCTORS
+//------------------------------------------------------------------------------
 
 Client::Client()
 	: _request(Request())
@@ -18,6 +25,7 @@ Client &Client::operator=(Client const &other)
 {
 	_fd = other._fd;
 	_port = other._port;
+	_config = other._config;
 	return (*this);
 }
 
@@ -28,8 +36,24 @@ Client::Client(int serverFd, int port)
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = INADDR_ANY;
 	_address.sin_port = htons(port);
+	_port = port;
 	_fd = accept(serverFd, (struct sockaddr *)&_address, &adressSize);
 	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+}
+
+
+//------------------------------------------------------------------------------
+//	GETTERS & SETTERS
+//------------------------------------------------------------------------------
+
+ConfigurationFile &Client::getConfig()
+{
+	return (_config);
+}
+
+void Client::setConfig(ConfigurationFile &config)
+{
+	_config = config;
 }
 
 void Client::setFd(int fd)
@@ -52,6 +76,9 @@ int Client::getPort() const
 	return (_port);
 }
 
+//------------------------------------------------------------------------------
+//	MEMBER FUNCTIONS
+//------------------------------------------------------------------------------
 
 //read to buffer until request done;
 
@@ -85,7 +112,8 @@ void mockResponse(int fd)
 
 // }
 
-void Client::respond()
+
+bool Client::fileExists(const std::string& path)
 {
 	std::string resourcePath;
 	std::string responseStr;
@@ -147,6 +175,7 @@ std::string Client::listDirectory(std::string path)
         directoryListResponse.append("<tr><th>File Name</th></tr>");
 
 		while ((entry = readdir(directory)) != nullptr)
+
 		{
             directoryListResponse.append("<tr><td>" + std::string(entry->d_name) + "</td></tr>");
 			if (DEBUG)
@@ -170,7 +199,7 @@ void Client::handleEvent(short events)
 	//* we might want to malloc this buffer
 	static const int MAX_BUFFER_SIZE = 4095;
 	static char buffer[MAX_BUFFER_SIZE + 1];
-	size_t readCount = 0;
+	ssize_t readCount = 0;	// changed to ssize_t instead of size_t, because read() returns -1 on error, and size_t is unsigned
 
 	if (events & POLLOUT)
 	{
