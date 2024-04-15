@@ -1,5 +1,9 @@
-
 #include "Request.hpp"
+
+
+//------------------------------------------------------------------------------
+//  CONSTRUCTORS & DESTRUCTORS
+//------------------------------------------------------------------------------
 
 Request::Request()
 	: _completed(false),
@@ -54,6 +58,11 @@ Request::Request(std::vector<unsigned char> content)
 	}
 }
 
+
+//------------------------------------------------------------------------------
+//  PRINT FUNCTIONS
+//------------------------------------------------------------------------------
+
 void Request::printRequest()
 {
 	std::unordered_map<std::string, std::string>::iterator it;
@@ -67,10 +76,25 @@ void Request::printRequest()
 	// std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
 }
 
-// std::string Request::getMethod()
-// {
-// 	return (_method);
-// }
+
+//------------------------------------------------------------------------------
+//  GETTERS
+//------------------------------------------------------------------------------
+
+std::string const &Request::getMethod() const
+{
+	return (_method);
+}
+
+std::unordered_map<std::string, std::string> &Request::getHeaders()
+{
+	return (_headers);
+}
+
+
+//------------------------------------------------------------------------------
+//  MEMBER FUNCTIONS
+//------------------------------------------------------------------------------
 
 bool Request::tryToComplete(Buffer &buffer)
 {

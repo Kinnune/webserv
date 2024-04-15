@@ -30,13 +30,13 @@ class Request
 		int headerLineParse(std::vector<unsigned char> &line);
 		int parseContent(std::vector<unsigned char> &data);
 		bool detectContentLenght();
-		std::string &getMethod() { return (_method); }
+		std::string const &getMethod() const;
 		std::string &getTarget() { return (_target); }
 		bool tryToComplete(Buffer &buffer);
 		bool getIsValid() { return (_isValid); };
 		std::string getVersion() { return (_version); };
 		bool getIsComplete() { return (_completed); }
-		std::unordered_map<std::string, std::string> &getHeaders() { return (_headers); };
+		std::unordered_map<std::string, std::string> &getHeaders();
 	private:
 		std::string _method;
 		std::string _target;

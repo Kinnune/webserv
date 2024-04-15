@@ -215,7 +215,7 @@ void Client::updateResourcePath()
 				if (locationExists(loc->location))
 				{
 					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
-					if (loc->redirection != "")
+					if (loc->redirection != "" && this->_request.getMethod() == "GET")
 					{
 						std::cout << "REDIRECTION: " << loc->redirection << std::endl;
 						// set resource code to 301
