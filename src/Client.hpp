@@ -10,15 +10,15 @@
 #include "Server.hpp"
 #include "Request.hpp"
 #include "Buffer.hpp"
+#include "Response.hpp"
 
 class Response;
 class Request;
 
-std::ostream &operator<<(std::ostream &o, Response response);
-
 #define DEBUG 0
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
+std::ostream &operator<<(std::ostream &o, Response response);
 
 class Client
 {

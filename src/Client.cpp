@@ -79,51 +79,6 @@ void mockResponse(int fd)
 }
 
 
-class Response
-{
-	public:
-		Response(Request &request)
-			: _request(request)
-		{
-			std::unordered_map<std::string, std::string> headers;
-			std::unordered_map<std::string, std::string>::iterator it;
-
-			_version = _request.getVersion();			
-			_statusCode = "";
-			_statusMessage = "";
-			headers = _request.getHeaders();
-			for (it = headers.begin(); it != headers.end(); it++)
-			{
-				if (it ->first.find("Content-Length:") == std::string::npos)
-				{
-					_headers.insert(*it);
-				}
-			}
-			_body.resize(0);
-			if (DEBUG)
-				std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
-		};
-
-		std::string _version;
-		std::string _statusCode;
-		std::string _statusMessage;
-		std::unordered_map<std::string, std::string> _headers;
-		std::vector<unsigned char> _body;
-
-	private:
-		Request _request;
-};
-
-std::ostream &operator<<(std::ostream &o, Response response)
-{
-	o << response._version << " " << response._statusCode << " " << response._statusMessage << "\r\n";
-	for (std::pair<std::string, std::string> header : response._headers)
-	{
-		o << header.first << ": " << header.second << "\n";
-	}
-	o << "\r\n\r\n" << std::string(response._body.begin(), response._body.end()) << std::endl;
-	return (o);
-}
 
 // void Client::errorResponse(int status)
 // {
@@ -133,46 +88,51 @@ std::ostream &operator<<(std::ostream &o, Response response)
 void Client::respond()
 {
 	std::string resourcePath;
-
+	std::string responseStr;
 	Response response(_request);
-	if (_request.getMethod() == "GET")
-	{
-		resourcePath = std::string("../resources");
-		resourcePath.append(_request.getTarget());
-		if (DEBUG)
-			std::cout << "Resource path: '" << resourcePath << "'" << std::endl;
 
-		std::ifstream ifs(resourcePath);
-		std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-		std::string response;
-		std::unordered_map<std::string, std::string> headers;
-		std::unordered_map<std::string, std::string>::iterator it;
+	responseStr = response.toString();
+	std::cout << RED << responseStr << RESET <<std::endl;
+	write(_fd, responseStr.c_str(), responseStr.length());
+	return ;
 
-		headers = _request.getHeaders();
-		response.append("HTTP/1.1 200 OK\n");
-		for (it = headers.begin(); it != headers.end(); it++)
-		{
-			response.append(it->first + ": ");
-			response.append(it->second);
-			response.append("\n");
-		}
-		if (_request.getTarget() == "../resources/favicon.ico")
-		{
-			// response.append("Content-Type: image/png");
-		}
-		response.append("Content-Type: text/html; charset=utf-8\n");
-		buffer.clear();
-		buffer = listDirectory(".");
-		response.append("Content-Length: ");
-		response.append(std::to_string(buffer.length()));
-		response.append("\r\n\r\n");
-		response.append(buffer);
-		write(_fd, response.c_str(), response.length());
-		if (DEBUG)
-			std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
-		// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
-	}
+	// if (_request.getMethod() == "GET")
+	// {
+	// 	resourcePath = std::string("../resources");
+	// 	resourcePath.append(_request.getTarget());
+	// 	if (DEBUG)
+	// 		std::cout << "Resource path: '" << resourcePath << "'" << std::endl;
 
+	// 	std::ifstream ifs(resourcePath);
+	// 	std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+	// 	std::string response;
+	// 	std::unordered_map<std::string, std::string> headers;
+	// 	std::unordered_map<std::string, std::string>::iterator it;
+
+	// 	headers = _request.getHeaders();
+	// 	response.append("HTTP/1.1 200 OK\n");
+	// 	for (it = headers.begin(); it != headers.end(); it++)
+	// 	{
+	// 		response.append(it->first + ": ");
+	// 		response.append(it->second);
+	// 		response.append("\n");
+	// 	}
+	// 	if (_request.getTarget() == "../resources/favicon.ico")
+	// 	{
+	// 		// response.append("Content-Type: image/png");
+	// 	}
+	// 	response.append("Content-Type: text/html; charset=utf-8\n");
+	// 	buffer.clear();
+	// 	buffer = listDirectory(".");
+	// 	response.append("Content-Length: ");
+	// 	response.append(std::to_string(buffer.length()));
+	// 	response.append("\r\n\r\n");
+	// 	response.append(buffer);
+	// 	write(_fd, response.c_str(), response.length());
+	// 	if (DEBUG)
+	// 		std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
+	// 	// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
+	// }
 }
 
 std::string Client::listDirectory(std::string path)
