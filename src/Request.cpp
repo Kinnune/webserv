@@ -103,7 +103,8 @@ int Request::headerLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	key = std::string(line.begin() + index, line.begin() + wordSize);
-	// std::cout << "key as: (" << key << ")" << std::endl;
+	if (DEBUG)
+		std::cout << "key as: (" << key << ")" << std::endl;
 	index += key.size() + 1;
 	if (!validIndex(line, index))
 	{
@@ -119,7 +120,8 @@ int Request::headerLineParse(std::vector<unsigned char> &line)
 		value.pop_back();
 	if (value.back() == '\r')
 		value.pop_back();
-	// std::cout << "value as: (" << value << ")" << std::endl;
+	if (DEBUG)
+		std::cout << "value as: (" << value << ")" << std::endl;
 	_headers[key] = value;
 	return (0);
 }
@@ -141,7 +143,8 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_method = std::string(line.begin() + index, line.begin() + wordSize);
-	// std::cout << "method made as: (" << _method << ")" << std::endl;
+	if (DEBUG)
+		std::cout << "method made as: (" << _method << ")" << std::endl;
 	// if (_method is not valid)
 	// {
 	// 	//  we need to respond: 501 Not Implemented
@@ -155,7 +158,8 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_target = std::string(line.begin() + index, line.begin() + wordSize);
-	// std::cout << "target made as: (" << _target << ")" << std::endl;
+	if (DEBUG)
+		std::cout << "target made as: (" << _target << ")" << std::endl;
 	index  = skipToWS(line, index);
 	index = skipWS(line, index);
 	wordSize = skipToWS(line, index);
@@ -164,15 +168,16 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_version = std::string(line.begin() + index, line.begin() + wordSize);
-	// std::cout << "version made as: (" << _version << ")" << std::endl;
+	if (DEBUG)
+		std::cout << "version made as: (" << _version << ")" << std::endl;
 	return (0);
 }
 
 bool Request::detectContentLenght()
 {
 	std::unordered_map<std::string, std::string>::iterator it;
-
-	// std::cout << "detecting length" << std::endl;
+	if (DEBUG)
+		std::cout << "detecting length" << std::endl;
 	ssize_t len = 0;
 	_isChunked = false;
 	_completed = true;

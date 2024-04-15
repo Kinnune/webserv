@@ -14,6 +14,8 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 // -1 is magic number for chunked requests
 #define CHUNKED_REQUEST -1
 
+#define DEBUG 0
+
 class Request
 {
 	public:
@@ -32,6 +34,7 @@ class Request
 		std::string &getTarget() { return (_target); }
 		bool tryToComplete(Buffer &buffer);
 		bool getIsValid() { return (_isValid); };
+		std::string getVersion() { return (_version); };
 		bool getIsComplete() { return (_completed); }
 		std::unordered_map<std::string, std::string> &getHeaders() { return (_headers); };
 	private:

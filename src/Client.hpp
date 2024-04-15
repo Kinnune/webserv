@@ -3,14 +3,23 @@
 
 #include <stdio.h>
 #include <unordered_map>
+#include <dirent.h>
+#include <fstream>
+#include <unistd.h>
+
 #include "Server.hpp"
 #include "ConfigurationFile.hpp"
 #include "Request.hpp"
 #include "Buffer.hpp"
+#include "Response.hpp"
 
+class Response;
 class Request;
 
+#define DEBUG 0
+
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
+std::ostream &operator<<(std::ostream &o, Response response);
 
 class Client
 {
@@ -25,6 +34,7 @@ class Client
 		int getFd() const;
 		int getPort() const;
 		void respond();
+		std::string  listDirectory(std::string path);
 		void handleEvent(short events);
 		void setConfig(ConfigurationFile &config);
 		ConfigurationFile &getConfig();

@@ -76,7 +76,6 @@ int Client::getPort() const
 	return (_port);
 }
 
-
 //------------------------------------------------------------------------------
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
@@ -106,179 +105,93 @@ void mockResponse(int fd)
 
 }
 
-// #include <unistd.h>
 
-// class Response
+
+// void Client::errorResponse(int status)
 // {
-// 	public:
-// 		Response(Request request)
-// 		{
-// 		}
 
-// };
+// }
 
 
 bool Client::fileExists(const std::string& path)
 {
-    return access(path.c_str(), F_OK) == 0;
+	std::string resourcePath;
+	std::string responseStr;
+	Response response(_request);
+
+	responseStr = response.toString();
+	std::cout << RED << responseStr << RESET <<std::endl;
+	write(_fd, responseStr.c_str(), responseStr.length());
+	return ;
+
+	// if (_request.getMethod() == "GET")
+	// {
+	// 	resourcePath = std::string("../resources");
+	// 	resourcePath.append(_request.getTarget());
+	// 	if (DEBUG)
+	// 		std::cout << "Resource path: '" << resourcePath << "'" << std::endl;
+
+	// 	std::ifstream ifs(resourcePath);
+	// 	std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+	// 	std::string response;
+	// 	std::unordered_map<std::string, std::string> headers;
+	// 	std::unordered_map<std::string, std::string>::iterator it;
+
+	// 	headers = _request.getHeaders();
+	// 	response.append("HTTP/1.1 200 OK\n");
+	// 	for (it = headers.begin(); it != headers.end(); it++)
+	// 	{
+	// 		response.append(it->first + ": ");
+	// 		response.append(it->second);
+	// 		response.append("\n");
+	// 	}
+	// 	if (_request.getTarget() == "../resources/favicon.ico")
+	// 	{
+	// 		// response.append("Content-Type: image/png");
+	// 	}
+	// 	response.append("Content-Type: text/html; charset=utf-8\n");
+	// 	buffer.clear();
+	// 	buffer = listDirectory(".");
+	// 	response.append("Content-Length: ");
+	// 	response.append(std::to_string(buffer.length()));
+	// 	response.append("\r\n\r\n");
+	// 	response.append(buffer);
+	// 	write(_fd, response.c_str(), response.length());
+	// 	if (DEBUG)
+	// 		std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
+	// 	// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
+	// }
 }
 
-bool Client::isFile(const std::string& path)
+std::string Client::listDirectory(std::string path)
 {
-	struct stat path_stat;				// create a stat struct
-	stat(path.c_str(), &path_stat);		// get the stats of the path, and store them in the struct
-	return S_ISREG(path_stat.st_mode);	// check if the path is a regular file
-}
+	std::string directoryListResponse;
+	DIR* directory = opendir(path.c_str());
+	struct dirent* entry;
 
-bool Client::isDirectory(const std::string& path)
-{
-	struct stat path_stat;
-	stat(path.c_str(), &path_stat);
-	return S_ISDIR(path_stat.st_mode);
-}
-
-void Client::updateResourcePath()
-{
-	/*
-		if path is a location:
-			1. if location has a root directive, append root to path
-			   else if location has an alias directive, switch path with alias
-			   else if server has a root directive, append root to path
-			   else use path as is
-			2. if path is a directory:
-					1. if location has an index directive, append index to path
-					   else if server has an index directive, append index to path
-					   else append index.html to path
-			   else if path is a file, use path as is
-		else if server has a root directive:
-			1. append root to path
-			2. if path is a directory:
-					1. if server has an index directive, append index to path
-					   else append index.html to path
-			   else if path is a file, use path as is
-		else if path is a directory:
-			1. append index.html to path
-		else use path as is
-	*/
-
-	std::cout << "Updating resource path" << std::endl;
-	std::cout << "Port: " << color(_port, CYAN) << std::endl;
-	std::cout << "Hosts: " << color(_config.getHosts().size(), CYAN) << std::endl;
-	for (std::vector<hostConfig>::iterator host = _config.getHosts().begin(); host != _config.getHosts().end(); host++)
+	if (directory != nullptr)
 	{
-		if (host->portInt == _port)
-		{
-			std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
-			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
-			{
-				if (_resourcePath.compare(0, loc->location.length(), loc->location) == 0)
-				{
-					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
-					if (loc->redirection != "")
-					{
-						std::cout << "REDIRECTION: " << loc->redirection << std::endl;
-						// set resource code to 301
-						_resourcePath = loc->redirection;
-						return ;
-					}
-					if (loc->root != "")
-					{
-						std::cout << "LOC-ROOT: " << color(loc->root, GREEN) << std::endl;
-						_resourcePath = loc->root + _resourcePath.substr(loc->location.length());
-					}
-					else if (loc->alias != "")
-					{
-						std::cout << "LOC-ALIAS: " << color(loc->alias, GREEN) << std::endl;
-						_resourcePath = loc->alias;
-					}
-					else if (host->root != "")
-					{
-						std::cout << "HOST-ROOT: " << color(host->root, GREEN) << std::endl;
-						_resourcePath = host->root + _resourcePath.substr(loc->location.length());
-					}
-					if (isDirectory(_resourcePath))
-					{
-						if (loc->index != "")
-						{
-							std::cout << "LOC-INDEX: " << color(loc->index, GREEN) << std::endl;
-							_resourcePath.append(loc->index);
-						}
-						else if (host->index != "")
-						{
-							std::cout << "HOST-INDEX: " << color(host->index, GREEN) << std::endl;
-							_resourcePath.append(host->index);
-						}
-						else
-						{
-							std::cout << "No index found. Appending index.html" << std::endl;
-							_resourcePath.append("index.html");
-						}
-					}
-					return ;
-				}
-			}
-			std::cout << color("No location found", RED) << std::endl;
-			if (host->root != "")
-			{
-				std::cout << "HOST-ROOT: " << color(host->root, GREEN) << std::endl;
-				_resourcePath = host->root + _resourcePath;
-			}
-			if (isDirectory(_resourcePath))
-			{
-				if (host->index != "")
-				{
-					std::cout << "HOST-INDEX: " << color(host->index, GREEN) << std::endl;
-					_resourcePath.append(host->index);
-				}
-				else
-				{
-					std::cout << "No index found. Appending index.html" << std::endl;
-					_resourcePath.append("index.html");
-				}
-			}
-			return ;
-		}
-	}
-	std::cout << color("No host found", RED) << std::endl;
-	// If we get this far, we have no host with the port we are looking for. This should probably be handled elsewhere.
-}
+        directoryListResponse.append("<table border=\"1\">");
+        directoryListResponse.append("<tr><th>File Name</th></tr>");
 
-void Client::respond()
-{
-	if (_request.getMethod() == "GET")
+		while ((entry = readdir(directory)) != nullptr)
+
+		{
+            directoryListResponse.append("<tr><td>" + std::string(entry->d_name) + "</td></tr>");
+			if (DEBUG)
+				std::cout << entry->d_name << std::endl;
+		}
+
+        directoryListResponse.append("</table>");
+		if (DEBUG)
+	        std::cout << "</table>" << std::endl;
+		closedir(directory);
+	}
+	else
 	{
-		_resourcePath = _request.getTarget();
-		std::cout << "Resource path: '" << color(_resourcePath, GREEN) << "'" << std::endl;
-		updateResourcePath();
-		std::cout << "Resource path: '" << color(_resourcePath, GREEN) << "'" << std::endl;
-
-		std::ifstream ifs(_resourcePath);
-		std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-		std::string response;
-		std::unordered_map<std::string, std::string> headers;
-		std::unordered_map<std::string, std::string>::iterator it;
-
-		headers = _request.getHeaders();
-		response.append("HTTP/1.1 200 OK\n");
-		for (it = headers.begin(); it != headers.end(); it++)
-		{
-			response.append(it->first + ": ");
-			response.append(it->second);
-			response.append("\n");
-		}
-		if (_request.getTarget() == "../resources/favicon.ico")
-		{
-			response.append("Content-Type: image/png");
-		}
-		response.append("Content-Length: ");
-		response.append(std::to_string(buffer.length()));
-		response.append("\r\n\r\n");
-		response.append(buffer);
-		// write(_fd, response.c_str(), response.length());
-		// std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
-		// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
+		std::cerr << "Unable to open directory: " << path << std::endl;
 	}
-
+	return (directoryListResponse);
 }
 
 void Client::handleEvent(short events)
@@ -293,8 +206,10 @@ void Client::handleEvent(short events)
 		static int i = 0;
 		if (_request.getIsComplete() || _request.tryToComplete(_buffer))
 		{
-			// std::cout << RED << "i: " << i << RESET << std::endl;
-			_request.printRequest();
+			if (DEBUG)
+				std::cout << RED << "i: " << i << RESET << std::endl;
+			if (DEBUG)
+				_request.printRequest();
 			respond();
 			_request.clear();
 			// mockResponse(_fd);
@@ -303,7 +218,8 @@ void Client::handleEvent(short events)
 	}
 	if (events & POLLIN)
 	{
-		// std::cout << GREEN << "READING\n" << std::endl;
+		if (DEBUG)
+			std::cout << GREEN << "READING\n" << std::endl; 
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
 		if (readCount < 0)
 		{
@@ -315,9 +231,11 @@ void Client::handleEvent(short events)
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
-		// std::cout << GREEN << "double newline found" << RESET << std::endl;
+		if (DEBUG)
+			std::cout << GREEN << "double newline found" << RESET << std::endl;
 		if (_buffer.getSize())
-			std::cout << CYAN << _buffer.getData() << RESET << std::endl;
+			if (DEBUG)
+				std::cout << CYAN << _buffer.getData() << RESET << std::endl;
 		try
 		{
 			_request = Request(_buffer.spliceRequest());
