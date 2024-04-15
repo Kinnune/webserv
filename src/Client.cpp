@@ -105,7 +105,35 @@ void mockResponse(int fd)
 
 }
 
+std::string Client::listDirectory(std::string path)
+{
+	std::string directoryListResponse;
+	DIR* directory = opendir(path.c_str());
+	struct dirent* entry;
 
+	if (directory != nullptr)
+	{
+        directoryListResponse.append("<table border=\"1\">");
+        directoryListResponse.append("<tr><th>File Name</th></tr>");
+
+		while ((entry = readdir(directory)) != nullptr)
+		{
+            directoryListResponse.append("<tr><td>" + std::string(entry->d_name) + "</td></tr>");
+			if (DEBUG)
+				std::cout << entry->d_name << std::endl;
+		}
+
+        directoryListResponse.append("</table>");
+		if (DEBUG)
+	        std::cout << "</table>" << std::endl;
+		closedir(directory);
+	}
+	else
+	{
+		std::cerr << "Unable to open directory: " << path << std::endl;
+	}
+	return (directoryListResponse);
+}
 
 // void Client::errorResponse(int status)
 // {
@@ -115,7 +143,13 @@ void mockResponse(int fd)
 
 void Client::respond()
 {
-    return access(path.c_str(), F_OK) == 0;
+	std::string resourcePath;
+	std::string responseStr;
+	Response response(_request);
+
+	responseStr = response.toString();
+	std::cout << RED << responseStr << RESET <<std::endl;
+	write(_fd, responseStr.c_str(), responseStr.length());
 }
 
 bool Client::isFile(const std::string& path)
@@ -248,44 +282,6 @@ void Client::updateResourcePath()
 	}
 	std::cout << color("No host found", RED) << std::endl;
 	// If we get this far, we have no host with the port we are looking for. This should probably be handled elsewhere.
-}
-
-void Client::respond()
-{
-	if (_request.getMethod() == "GET")
-	{
-		_resourcePath = _request.getTarget();
-		std::cout << "Resource path: '" << color(_resourcePath, GREEN) << "'" << std::endl;
-		updateResourcePath();
-		std::cout << "Resource path: '" << color(_resourcePath, GREEN) << "'" << std::endl;
-
-		std::ifstream ifs(_resourcePath);
-		std::string buffer((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-		std::string response;
-		std::unordered_map<std::string, std::string> headers;
-		std::unordered_map<std::string, std::string>::iterator it;
-
-		headers = _request.getHeaders();
-		response.append("HTTP/1.1 200 OK\n");
-		for (it = headers.begin(); it != headers.end(); it++)
-		{
-			response.append(it->first + ": ");
-			response.append(it->second);
-			response.append("\n");
-		}
-		if (_request.getTarget() == "../resources/favicon.ico")
-		{
-			response.append("Content-Type: image/png");
-		}
-		response.append("Content-Length: ");
-		response.append(std::to_string(buffer.length()));
-		response.append("\r\n\r\n");
-		response.append(buffer);
-		// write(_fd, response.c_str(), response.length());
-		// std::cout << "{" << response << "}[" << buffer << "]" << std::endl;
-		// memset(pageBuffer, 0, MAX_BUFFER_SIZE);
-	}
-
 }
 
 void Client::handleEvent(short events)
