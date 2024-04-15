@@ -113,9 +113,8 @@ void mockResponse(int fd)
 // }
 
 
-bool Client::fileExists(const std::string& path)
+void Client::respond()
 {
-	std::string resourcePath;
 	std::string responseStr;
 	Response response(_request);
 
