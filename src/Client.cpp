@@ -125,9 +125,9 @@ bool Client::fileExists(const std::string& path)
 
 bool Client::isFile(const std::string& path)
 {
-	struct stat path_stat;
-	stat(path.c_str(), &path_stat);
-	return S_ISREG(path_stat.st_mode);
+	struct stat path_stat;				// create a stat struct
+	stat(path.c_str(), &path_stat);		// get the stats of the path, and store them in the struct
+	return S_ISREG(path_stat.st_mode);	// check if the path is a regular file
 }
 
 bool Client::isDirectory(const std::string& path)

@@ -7,7 +7,7 @@
 
 # Merge jbagger into master
 git checkout master
-git pull origin jbagger
+git pull origin master
 git merge jbagger
 
 # Check for conflicts
