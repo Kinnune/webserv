@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <unordered_map>
+#include <cstring>
 #include "Server.hpp"
 #include "ConfigurationFile.hpp"
 #include "Request.hpp"
@@ -33,6 +34,7 @@ class Client
 		bool fileExists(const std::string &path);
 		bool isFile(const std::string &path);
 		bool isDirectory(const std::string &path);
+		bool locationExists(const std::string &path);
 		void updateResourcePath();
 		std::string _resourcePath;
 		int _fd;

@@ -137,6 +137,18 @@ bool Client::isDirectory(const std::string& path)
 	return S_ISDIR(path_stat.st_mode);
 }
 
+bool Client::locationExists(const std::string& location)
+{
+	if (std::strncmp(_resourcePath.c_str(), location.c_str(), location.length()) == 0)
+	{
+		if (_resourcePath.length() == location.length() || _resourcePath[location.length()] == '/')
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void Client::updateResourcePath()
 {
 	/*
@@ -171,7 +183,8 @@ void Client::updateResourcePath()
 			std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
 			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
 			{
-				if (_resourcePath.compare(0, loc->location.length(), loc->location) == 0)
+				// if (_resourcePath.compare(0, loc->location.length(), loc->location) == 0)
+				if (locationExists(loc->location))
 				{
 					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
 					if (loc->redirection != "")
@@ -198,6 +211,8 @@ void Client::updateResourcePath()
 					}
 					if (isDirectory(_resourcePath))
 					{
+						if (_resourcePath[_resourcePath.length() - 1] != '/')
+							_resourcePath.append("/");
 						if (loc->index != "")
 						{
 							std::cout << "LOC-INDEX: " << color(loc->index, GREEN) << std::endl;
@@ -225,6 +240,13 @@ void Client::updateResourcePath()
 			}
 			if (isDirectory(_resourcePath))
 			{
+				if (_resourcePath[_resourcePath.length() - 1] != '/')
+					_resourcePath.append("/");
+				if (host->autoindex)
+				{
+					// do the directory listing stuff
+					return ;
+				}
 				if (host->index != "")
 				{
 					std::cout << "HOST-INDEX: " << color(host->index, GREEN) << std::endl;
