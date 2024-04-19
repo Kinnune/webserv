@@ -40,7 +40,6 @@ class Client
 		ConfigurationFile &getConfig();
 	private:
 		ConfigurationFile _config;
-		bool fileExists(const std::string &path);
 		bool isFile(const std::string &path);
 		bool isDirectory(const std::string &path);
 		bool locationExists(const std::string &path);
@@ -49,6 +48,7 @@ class Client
 		void handleLocation(hostConfig &host, locationConfig &loc);
 		void handleNoLocation(hostConfig &host);
 		void updateAutoIndex(autoIndexState state);
+		void lookForIndexFile();
 		std::string _resourcePath;
 		int _statusCode;
 		autoIndexState _autoIndex;

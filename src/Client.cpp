@@ -103,9 +103,10 @@ int Client::getPort() const
 
 bool Client::isFile(const std::string& path)
 {
-	struct stat path_stat;				// create a stat struct
-	stat(path.c_str(), &path_stat);		// get the stats of the path, and store them in the struct
-	return S_ISREG(path_stat.st_mode);	// check if the path is a regular file
+	struct stat path_stat;						// create a stat struct
+	if (stat(path.c_str(), &path_stat) != 0)	// get the stats of the path, and store them in the struct
+		return false;							// if the path does not exist, return false
+	return S_ISREG(path_stat.st_mode);			// check if the path is a regular file
 }
 
 //------------------------------------------------------------------------------
@@ -191,12 +192,7 @@ std::string Client::listDirectory(std::string path)
 
 bool Client::respond()
 {
-	std::string resourcePath;
 	std::string responseStr;
-
-
-	// Response response(_request);
-	// response.completeResponse();
 
 	if (_response.hasRequest() == false)
 	{
@@ -233,12 +229,13 @@ void Client::updateResourcePath()
 		if (host->portInt == _port)
 		{
 			std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
-			_autoIndex = host->autoIndex;
+			updateAutoIndex(host->autoIndex);
 			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
 			{
 				if (locationExists(loc->location))
 				{
 					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
+					updateAutoIndex(loc->autoIndex);
 					handleLocation(*host, *loc);
 					return ;
 				}
@@ -299,7 +296,6 @@ void Client::handleLocation(hostConfig &host, locationConfig &loc)
 	
 	if (isDirectory(_resourcePath))
 	{
-		updateAutoIndex(loc.autoIndex);
 		_resourcePath.append("/");
 		if (loc.index != "")
 		{
@@ -311,15 +307,15 @@ void Client::handleLocation(hostConfig &host, locationConfig &loc)
 			std::cout << "HOST-INDEX: " << color(host.index, GREEN) << std::endl;
 			_resourcePath.append(host.index);
 		}
+		else if (_autoIndex != autoIndexState::ON)
+		{
+			std::cout << "No index directive found. Looking for index file" << std::endl;
+			lookForIndexFile();
+		}
 		else if (_autoIndex == autoIndexState::ON)
 		{
 			std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
 			_autoIndex = autoIndexState::ON;
-		}
-		else
-		{
-			std::cout << "No index found. Appending index.html" << std::endl;
-			_resourcePath.append("index.html");
 		}
 	}
 }
@@ -340,10 +336,15 @@ void Client::handleNoLocation(hostConfig &host)
 			std::cout << "HOST-INDEX: " << color(host.index, GREEN) << std::endl;
 			_resourcePath.append(host.index);
 		}
-		else
+		else if (_autoIndex != autoIndexState::ON)
 		{
-			std::cout << "No index found. Appending index.html" << std::endl;
-			_resourcePath.append("index.html");
+			std::cout << "No index directive found. Looking for index file" << std::endl;
+			lookForIndexFile();
+		}
+		else if (_autoIndex == autoIndexState::ON)
+		{
+			std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
+			_autoIndex = autoIndexState::ON;
 		}
 	}
 }
@@ -356,6 +357,23 @@ void Client::updateAutoIndex(autoIndexState state)
 	{
 		_autoIndex = state;
 	}
+}
+
+//------------------------------------------------------------------------------
+
+void Client::lookForIndexFile()
+{
+	std::string path = _resourcePath;
+	std::string indexFiles[] = {"index.html", "index.htm", "index.php"};
+	for (int i = 0; i < 3; i++)
+	{
+		if (isFile(path + indexFiles[i]))
+		{
+			_resourcePath = path + indexFiles[i];
+			return ;
+		}
+	}
+	_statusCode = 403;
 }
 
 
