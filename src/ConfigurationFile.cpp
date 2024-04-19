@@ -39,7 +39,7 @@ void ConfigurationFile::printConfigInfo()
 		std::cout << "ROOT:\t\t" << color(it->root, GREEN) << std::endl;
 		std::cout << "METHODS:\t"; printMultipleValues(it->methods);
 		std::cout << "INDEX:\t\t" << color(it->index, GREEN) << std::endl;
-		std::cout << "AUTOINDEX:\t" << color(it->autoindex, GREEN) << std::endl;
+		std::cout << "AUTOINDEX:\t" << color(it->autoIndex, GREEN) << std::endl;
 		std::cout << "ERRPAG:\t\t"; printMultipleValues(it->errorPages);
 		std::cout << "LOC-n:\t\t" << color(it->locations.size(), GREEN) << std::endl;
 		for (std::vector<struct locationConfig>::iterator it2 = it->locations.begin(); it2 != it->locations.end(); it2++)
@@ -215,7 +215,7 @@ void ConfigurationFile::setDefaultLocationValues(locationConfig& loc)
 	loc.cgiExtensions.clear();
 	loc.cgiPath = "";
 	loc.maxBody = -1;
-	loc.autoIndex = false;
+	loc.autoIndex = autoIndexState::NONE;
 }
 
 //------------------------------------------------------------------------------
@@ -251,9 +251,9 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 	else if (key == "AUTOINDEX")
 	{
 		if (value == "on")
-			loc.autoIndex = true;
+			loc.autoIndex = autoIndexState::ON;
 		else if (value == "off")
-			loc.autoIndex = false;
+			loc.autoIndex = autoIndexState::OFF;
 		else
 			return (err("Invalid value for autoindex: " + value));
 	}
@@ -340,7 +340,7 @@ void ConfigurationFile::setDefaultHostValues(hostConfig& host)
 	host.methods.clear();
 	host.root = "";
 	host.index = "";
-	host.autoindex = false;
+	host.autoIndex = autoIndexState::NONE;
 	host.errorPages.clear();
 	host.locations.clear();
 }
@@ -379,9 +379,9 @@ int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line
 	else if (key == "AUTOINDEX")
 	{
 		if (value == "on")
-			host.autoindex = true;
+			host.autoIndex = autoIndexState::ON;
 		else if (value == "off")
-			host.autoindex = false;
+			host.autoIndex = autoIndexState::OFF;
 		else
 			std::cerr << RED << "Invalid value for autoindex: " << value << RESET << std::endl;
 	}

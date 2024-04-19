@@ -4,6 +4,8 @@
 #include <map>
 #include <vector>
 
+enum class autoIndexState { NONE, ON, OFF };
+
 typedef struct locationConfig
 {
 	std::string location;
@@ -16,7 +18,7 @@ typedef struct locationConfig
 	std::string redirection;
 	int redirectionCode;
 	int maxBody;
-	bool autoIndex;
+	autoIndexState autoIndex;
 } locationConfig;
 
 typedef struct hostConfig
@@ -29,7 +31,7 @@ typedef struct hostConfig
 	std::string portString;
 	std::string root;
 	std::string index;
-	bool autoindex;
+	autoIndexState autoIndex;
 	std::vector<std::string> errorPages;
 	std::vector<struct locationConfig> locations;
 } hostConfig;

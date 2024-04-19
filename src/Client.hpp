@@ -45,13 +45,18 @@ class Client
 		bool isFile(const std::string &path);
 		bool isDirectory(const std::string &path);
 		bool locationExists(const std::string &path);
+		bool allowedMethod(std::vector<std::string> methods, std::string method);
 		void updateResourcePath();
+		void handleLocation(hostConfig &host, locationConfig &loc);
+		void handleNoLocation(hostConfig &host);
+		void updateAutoIndex(autoIndexState state);
 		std::string _resourcePath;
+		int _statusCode;
+		autoIndexState _autoIndex;
 		int _fd;
 		int _port;
 		struct sockaddr_in _address;
 		Buffer _buffer;
-		// Request &_request;
 		Request _request;
 };
 

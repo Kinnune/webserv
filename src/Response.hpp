@@ -11,8 +11,10 @@
 #include <sstream>
 
 #include "Request.hpp"
+#include "ConfigurationFile.hpp"
 
 class Response;
+class ConfigurationFile;
 
 std::ostream &operator<<(std::ostream &o, Response response);
 
@@ -21,6 +23,8 @@ class Response
 {
 	public:
 		Response(Request &request);
+		~Response();
+
 		void completeResponse();
 		void setStatus(int status);
 		void body404();

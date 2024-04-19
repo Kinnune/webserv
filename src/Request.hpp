@@ -31,6 +31,7 @@ class Request
 		int parseContent(std::vector<unsigned char> &data);
 		bool detectContentLenght();
 		std::string const &getMethod() const;
+		void setTarget(std::string target) { _target = target; };
 		std::string &getTarget() { return (_target); }
 		bool tryToComplete(Buffer &buffer);
 		bool getIsValid() { return (_isValid); };
