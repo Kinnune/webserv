@@ -11,7 +11,8 @@
 //------------------------------------------------------------------------------
 
 Client::Client()
-	: _request(Request())
+	: _request(Request()),
+	_response(Response())
 {}
 
 Client::~Client() {}
@@ -149,33 +150,6 @@ bool Client::allowedMethod(std::vector<std::string> methods, std::string method)
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
 
-//read to buffer until request done;
-
-void mockResponse(int fd)
-{
-	std::ifstream src;
-	static const int MAX_BUFFER_SIZE = 100000;
-	char bufferPic[MAX_BUFFER_SIZE + 1];
-
-	src.open("../resources/zeus.jpg", std::ofstream::binary | std::ofstream::in);
-	if (!src.good())
-	{
-		std::cerr << "Open failed" << std::endl; 
-		return ;
-	}
-	src.read(bufferPic, 100000);
-	int streamSize = src.gcount();
-	bufferPic[streamSize] = '\0';
-	std::string response("HTTP/1.1 200 OK\nRequest status code: 200 OK\nContent-Length: " + std::to_string(streamSize) +"\nContent-Type: image/jpeg\n\n");
-	response.append(bufferPic, streamSize);
-	write(fd, response.c_str(), response.length());
-	memset(bufferPic, 0, MAX_BUFFER_SIZE);
-	// std::cout << "\n{\n" << response << "\n}\n" << std::endl;
-
-}
-
-//------------------------------------------------------------------------------
-
 std::string Client::listDirectory(std::string path)
 {
 	std::string directoryListResponse;
@@ -215,23 +189,31 @@ std::string Client::listDirectory(std::string path)
 
 //------------------------------------------------------------------------------
 
-void Client::respond()
+bool Client::respond()
 {
 	std::string resourcePath;
 	std::string responseStr;
 
-	std::cout << "Requested path: " << color(_request.getTarget(), CYAN) << std::endl;
-	_resourcePath = _request.getTarget();
-	updateResourcePath();
-	std::cout << "Updated path: " << color(_resourcePath, CYAN) << std::endl;
-	_request.setTarget(_resourcePath);
-	std::cout << "Request path: " << color(_request.getTarget(), CYAN) << std::endl;
-	Response response(_request);
-	response.completeResponse();
 
-	responseStr = response.toString();
-	std::cout << RED << responseStr << RESET <<std::endl;
-	write(_fd, responseStr.c_str(), responseStr.length());
+	// Response response(_request);
+	// response.completeResponse();
+
+	if (_response.hasRequest() == false)
+	{
+		_resourcePath = _request.getTarget();
+		updateResourcePath();
+		_request.setTarget(_resourcePath);
+		std::cout << "Updated path: " << color(_resourcePath, CYAN) << std::endl;
+		_response = Response(_request);
+	}
+	if (_response.completeResponse())
+	{
+		responseStr = _response.toString();
+		write(_fd, responseStr.c_str(), responseStr.length());
+		_response = Response();
+		return (true);
+	}
+	return (false);
 }
 
 
@@ -254,9 +236,9 @@ void Client::updateResourcePath()
 			_autoIndex = host->autoIndex;
 			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
 			{
-				std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
 				if (locationExists(loc->location))
 				{
+					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
 					handleLocation(*host, *loc);
 					return ;
 				}
@@ -387,6 +369,7 @@ void Client::handleEvent(short events)
 	static const int MAX_BUFFER_SIZE = 4095;
 	static char buffer[MAX_BUFFER_SIZE + 1];
 	ssize_t readCount = 0;	// changed to ssize_t instead of size_t, because read() returns -1 on error, and size_t is unsigned
+	// static bool waitCGI = false;
 
 	if (events & POLLOUT)
 	{
@@ -397,8 +380,10 @@ void Client::handleEvent(short events)
 				std::cout << RED << "i: " << i << RESET << std::endl;
 			if (DEBUG)
 				_request.printRequest();
-			respond();
-			_request.clear();
+			if (respond())
+			{
+				_request.clear();
+			}
 			// mockResponse(_fd);
 			i++;
 		}
@@ -415,7 +400,6 @@ void Client::handleEvent(short events)
 		}
 		buffer[readCount] = '\0';
 		_buffer.addToBuffer(&buffer[0], readCount);
-
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{

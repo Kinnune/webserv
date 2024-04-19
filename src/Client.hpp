@@ -17,7 +17,6 @@
 class Response;
 class Request;
 
-#define DEBUG 0
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 std::ostream &operator<<(std::ostream &o, Response response);
@@ -34,7 +33,7 @@ class Client
 		void setPort(int port);
 		int getFd() const;
 		int getPort() const;
-		void respond();
+		bool respond();
 		std::string  listDirectory(std::string path);
 		void handleEvent(short events);
 		void setConfig(ConfigurationFile &config);
@@ -58,6 +57,7 @@ class Client
 		struct sockaddr_in _address;
 		Buffer _buffer;
 		Request _request;
+		Response _response;
 };
 
 

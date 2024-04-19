@@ -39,7 +39,7 @@ void ConfigurationFile::printConfigInfo()
 		std::cout << "ROOT:\t\t" << color(it->root, GREEN) << std::endl;
 		std::cout << "METHODS:\t"; printMultipleValues(it->methods);
 		std::cout << "INDEX:\t\t" << color(it->index, GREEN) << std::endl;
-		std::cout << "AUTOINDEX:\t" << color(it->autoIndex, GREEN) << std::endl;
+		std::cout << "AUTOINDEX:\t" << color((int)it->autoIndex, GREEN) << std::endl;
 		std::cout << "ERRPAG:\t\t"; printMultipleValues(it->errorPages);
 		std::cout << "LOC-n:\t\t" << color(it->locations.size(), GREEN) << std::endl;
 		for (std::vector<struct locationConfig>::iterator it2 = it->locations.begin(); it2 != it->locations.end(); it2++)
@@ -53,7 +53,7 @@ void ConfigurationFile::printConfigInfo()
 			std::cout << "\tCGI:\t\t"; printMultipleValues(it2->cgiExtensions);
 			std::cout << "\tCGI-PATH:\t" << color(it2->cgiPath, GREEN) << std::endl;
 			std::cout << "\tMAX_BODY:\t" << color(it2->maxBody, GREEN) << std::endl;
-			std::cout << "\tAUTOINDEX:\t" << color(it2->autoIndex, GREEN) << std::endl;
+			std::cout << "\tAUTOINDEX:\t" << color((int)it->autoIndex, GREEN) << std::endl;
 		}
 		std::cout << std::endl;
 	}
