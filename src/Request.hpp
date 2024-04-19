@@ -36,6 +36,7 @@ class Request
 		bool getIsValid() { return (_isValid); };
 		std::string getVersion() { return (_version); };
 		bool getIsComplete() { return (_completed); }
+		std::vector<unsigned char> getBody() { return (_body); };
 		std::unordered_map<std::string, std::string> &getHeaders();
 	private:
 		std::string _method;

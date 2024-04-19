@@ -11,7 +11,8 @@
 //------------------------------------------------------------------------------
 
 Client::Client()
-	: _request(Request())
+	: _request(Request()),
+	_response(Response())
 {}
 
 Client::~Client() {}
@@ -141,15 +142,24 @@ std::string Client::listDirectory(std::string path)
 // }
 
 
-void Client::respond()
+bool Client::respond()
 {
+	std::cout << BLUE << "Going to respond" << RESET << std::endl;
 	std::string resourcePath;
 	std::string responseStr;
-	Response response(_request);
 
-	responseStr = response.toString();
-	// std::cout << RED << responseStr << RESET <<std::endl;
-	write(_fd, responseStr.c_str(), responseStr.length());
+	if (_response.hasRequest() == false)
+	{
+		_response = Response(_request);
+	}
+	if (_response.completeResponse())
+	{
+		responseStr = _response.toString();
+		write(_fd, responseStr.c_str(), responseStr.length());
+		_response = Response();
+		return (true);
+	}
+	return (false);
 }
 
 bool Client::isFile(const std::string& path)
@@ -290,6 +300,7 @@ void Client::handleEvent(short events)
 	static const int MAX_BUFFER_SIZE = 4095;
 	static char buffer[MAX_BUFFER_SIZE + 1];
 	ssize_t readCount = 0;	// changed to ssize_t instead of size_t, because read() returns -1 on error, and size_t is unsigned
+	// static bool waitCGI = false;
 
 	if (events & POLLOUT)
 	{
@@ -300,8 +311,10 @@ void Client::handleEvent(short events)
 				std::cout << RED << "i: " << i << RESET << std::endl;
 			if (DEBUG)
 				_request.printRequest();
-			respond();
-			_request.clear();
+			if (respond())
+			{
+				_request.clear();
+			}
 			// mockResponse(_fd);
 			i++;
 		}
@@ -317,7 +330,6 @@ void Client::handleEvent(short events)
 		}
 		buffer[readCount] = '\0';
 		_buffer.addToBuffer(&buffer[0], readCount);
-
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
