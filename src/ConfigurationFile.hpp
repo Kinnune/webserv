@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 
-enum class autoIndexState { NONE, ON, OFF };
+// enum class autoIndexState { NONE, ON, OFF };
 
 class ConfigurationFile
 {

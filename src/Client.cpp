@@ -224,18 +224,18 @@ void Client::updateResourcePath()
 	std::cout << "Port: " << color(_port, CYAN) << std::endl;
 	std::cout << "Hosts: " << color(_config.getHosts().size(), CYAN) << std::endl;
 
-	for (std::vector<hostConfig>::iterator host = _config.getHosts().begin(); host != _config.getHosts().end(); host++)
+	for (std::vector<Host>::iterator host = _config.getHosts().begin(); host != _config.getHosts().end(); host++)
 	{
-		if (host->portInt == _port)
+		if (host->getPortInt() == _port)
 		{
-			std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
-			updateAutoIndex(host->autoIndex);
-			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
+			std::cout << "Host found: " << color(host->getPortInt(), CYAN) << std::endl;
+			updateAutoIndex(host->getAutoIndex());
+			for (std::vector<Location>::iterator loc = host->getLocations().begin(); loc != host->getLocations().end(); loc++)
 			{
-				if (locationExists(loc->location))
+				if (locationExists(loc->getLocation()))
 				{
-					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
-					updateAutoIndex(loc->autoIndex);
+					std::cout << "Location found: " << color(loc->getLocation(), CYAN) << std::endl;
+					updateAutoIndex(loc->getAutoIndex());
 					handleLocation(*host, *loc);
 					return ;
 				}
@@ -251,10 +251,10 @@ void Client::updateResourcePath()
 
 //------------------------------------------------------------------------------
 
-void Client::handleLocation(hostConfig &host, locationConfig &loc)
+void Client::handleLocation(Host &host, Location &loc)
 {
 	// check if method is allowed
-	if (!allowedMethod(loc.methods, _request.getMethod()))
+	if (!allowedMethod(loc.getMethods(), _request.getMethod()))
 	{
 		std::cout << "Method not allowed" << std::endl;
 		_statusCode = 405;
@@ -262,44 +262,44 @@ void Client::handleLocation(hostConfig &host, locationConfig &loc)
 	}
 
 	// handle redirection
-	if (loc.redirection != "" && _request.getMethod() == "GET")
+	if (loc.getRedirection() != "" && _request.getMethod() == "GET")
 	{
-		std::cout << "REDIRECTION: " << loc.redirection << std::endl;
+		std::cout << "REDIRECTION: " << loc.getRedirection() << std::endl;
 		_statusCode = 301;
-		_resourcePath = loc.redirection;
+		_resourcePath = loc.getRedirection();
 		return ;
 	}
 
 	// handle root/alias
-	if (loc.root != "")
+	if (loc.getRoot() != "")
 	{
-		std::cout << "LOC-ROOT: " << color(loc.root, GREEN) << std::endl;
-		if (isFile(loc.root + _resourcePath))
+		std::cout << "LOC-ROOT: " << color(loc.getRoot(), GREEN) << std::endl;
+		if (isFile(loc.getRoot() + _resourcePath))
 		{
 			std::cout << "Resource path is a file" << std::endl;
-			_resourcePath = loc.root + _resourcePath;
+			_resourcePath = loc.getRoot() + _resourcePath;
 			return ;
 		}
-		_resourcePath = loc.root + _resourcePath.substr(loc.location.length());
+		_resourcePath = loc.getRoot() + _resourcePath.substr(loc.getLocation().length());
 	}
-	else if (loc.alias != "")
+	else if (loc.getAlias() != "")
 	{
-		std::cout << "LOC-ALIAS: " << color(loc.alias, GREEN) << std::endl;
-		_resourcePath = loc.alias;
+		std::cout << "LOC-ALIAS: " << color(loc.getAlias(), GREEN) << std::endl;
+		_resourcePath = loc.getAlias();
 	}
-	else if (host.root != "")
+	else if (host.getRoot() != "")
 	{
-		std::cout << "HOST-ROOT: " << color(host.root, GREEN) << std::endl;
-		_resourcePath = host.root + _resourcePath.substr(loc.location.length());
+		std::cout << "HOST-ROOT: " << color(host.getRoot(), GREEN) << std::endl;
+		_resourcePath = host.getRoot() + _resourcePath.substr(loc.getLocation().length());
 	}
 
 	// handle index and autoindex
 	if (isDirectory(_resourcePath))
 	{
 		_resourcePath.append("/");
-		if (loc.index_pages.size() > 0)
+		if (loc.getIndexPages().size() > 0)
 		{
-			for (std::vector<std::string>::iterator it = loc.index_pages.begin(); it != loc.index_pages.end(); it++)
+			for (std::vector<std::string>::iterator it = loc.getIndexPages().begin(); it != loc.getIndexPages().end(); it++)
 			{
 				if (isFile(_resourcePath + *it))
 				{
@@ -309,9 +309,9 @@ void Client::handleLocation(hostConfig &host, locationConfig &loc)
 			}
 			_statusCode = 403;
 		}
-		else if (host.index_pages.size() > 0)
+		else if (host.getIndexPages().size() > 0)
 		{
-			for (std::vector<std::string>::iterator it = host.index_pages.begin(); it != host.index_pages.end(); it++)
+			for (std::vector<std::string>::iterator it = host.getIndexPages().begin(); it != host.getIndexPages().end(); it++)
 			{
 				if (isFile(_resourcePath + *it))
 				{
@@ -336,18 +336,18 @@ void Client::handleLocation(hostConfig &host, locationConfig &loc)
 
 //------------------------------------------------------------------------------
 
-void Client::handleNoLocation(hostConfig &host)
+void Client::handleNoLocation(Host &host)
 {
-	if (host.root != "")
+	if (host.getRoot() != "")
 	{
-		std::cout << "HOST-ROOT: " << color(host.root, GREEN) << std::endl;
-		_resourcePath = host.root + _resourcePath;
+		std::cout << "HOST-ROOT: " << color(host.getRoot(), GREEN) << std::endl;
+		_resourcePath = host.getRoot() + _resourcePath;
 	}
 	if (isDirectory(_resourcePath))
 	{
-		if (host.index_pages.size() > 0)
+		if (host.getIndexPages().size() > 0)
 		{
-			for (std::vector<std::string>::iterator it = host.index_pages.begin(); it != host.index_pages.end(); it++)
+			for (std::vector<std::string>::iterator it = host.getIndexPages().begin(); it != host.getIndexPages().end(); it++)
 			{
 				if (isFile(_resourcePath + *it))
 				{

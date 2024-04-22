@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-enum class autoIndexState { NONE, ON, OFF };
+// enum class autoIndexState { NONE, ON, OFF };
 
 class Host
 {

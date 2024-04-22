@@ -38,20 +38,26 @@ void ConfigurationFile::printConfigInfo()
 		std::cout << "PORT-str:\t" << color(host->getPortString(), GREEN) << std::endl;
 		std::cout << "PORT-int:\t" << color(host->getPortInt(), GREEN) << std::endl;
 		std::cout << "ROOT:\t\t" << color(host->getRoot(), GREEN) << std::endl;
-		std::cout << "METHODS:\t"; printMultipleValues(host->getMethods());
-		std::cout << "INDEX:\t\t"; printMultipleValues(host->getIndexPages());
+		std::vector<std::string> methods = host->getMethods();
+		std::cout << "METHODS:\t"; printMultipleValues(methods);
+		std::vector<std::string> indexPages = host->getIndexPages();
+		std::cout << "INDEX:\t\t"; printMultipleValues(indexPages);
 		std::cout << "AUTOINDEX:\t" << color((int)host->getAutoIndex(), GREEN) << std::endl;
-		std::cout << "ERRPAG:\t\t"; printMultipleValues(host->getErrorPages());
+		std::vector<std::string> errorPages = host->getErrorPages();
+		std::cout << "ERRPAG:\t\t"; printMultipleValues(errorPages);
 		std::cout << "LOC-n:\t\t" << color(host->getLocations().size(), GREEN) << std::endl;
 		for (std::vector<Location>::iterator loc = host->getLocations().begin(); loc != host->getLocations().end(); loc++)
 		{
 			std::cout << YELLOW << "\t----------------------------------------" << RESET << std::endl;
-			std::cout << "\tLOCATION:\t" << color(loc->getLocation, GREEN) << std::endl;
+			std::cout << "\tLOCATION:\t" << color(loc->getLocation(), GREEN) << std::endl;
 			std::cout << "\tROOT:\t\t" << color(loc->getRoot(), GREEN) << std::endl;
-			std::cout << "\tINDEX:\t\t"; printMultipleValues(loc->getIndexPages());
+			std::vector<std::string> indexPages = loc->getIndexPages();
+			std::cout << "\tINDEX:\t\t"; printMultipleValues(indexPages);
 			std::cout << "\tALIAS:\t\t" << color(loc->getAlias(), GREEN) << std::endl;
-			std::cout << "\tMETHODS:\t"; printMultipleValues(loc->getMethods());
-			std::cout << "\tCGI:\t\t"; printMultipleValues(loc->getCgiExtensions());
+			std::vector<std::string> methods = loc->getMethods();
+			std::cout << "\tMETHODS:\t"; printMultipleValues(methods);
+			std::vector<std::string> cgiExtensions = loc->getCgiExtensions();
+			std::cout << "\tCGI:\t\t"; printMultipleValues(cgiExtensions);
 			std::cout << "\tCGI_PATH:\t" << color(loc->getCgiPath(), GREEN) << std::endl;
 			std::cout << "\tINTERPRETER:\t" << color(loc->getInterpreter(), GREEN) << std::endl;
 			std::cout << "\tAUTOINDEX:\t" << color((int)loc->getAutoIndex(), GREEN) << std::endl;
@@ -220,20 +226,6 @@ int ConfigurationFile::parseMultipleValues(std::vector<std::string>& values, std
 //		LOCATION
 //------------------------------------------------------------------------------
 
-// void ConfigurationFile::setDefaultLocationValues(Location& loc)
-// {
-// 	loc.root = "";
-// 	loc.index_pages.clear();
-// 	loc.alias = "";
-// 	loc.methods.clear();
-// 	loc.cgiExtensions.clear();
-// 	loc.cgiPath = "";
-// 	loc.maxBody = -1;
-// 	loc.autoIndex = autoIndexState::NONE;
-// }
-
-//------------------------------------------------------------------------------
-
 int ConfigurationFile::storeLocationValues(Location& loc, std::string& line)
 {
 	std::string key;
@@ -248,20 +240,26 @@ int ConfigurationFile::storeLocationValues(Location& loc, std::string& line)
 		loc.setRoot(value);
 	else if (key == "INDEX")
 	{
-		if (!parseMultipleValues(loc.getIndexPages(), value, INDEX))
+		std::vector<std::string> indexPages = loc.getIndexPages();
+		if (!parseMultipleValues(indexPages, value, INDEX))
 			return (FAILURE);
+		loc.setIndexPages(indexPages);
 	}
 	else if (key == "ALIAS")
 		loc.setAlias(value);
 	else if (key == "METHODS")
 	{
-		if (!parseMultipleValues(loc.getMethods(), value, METHODS))
+		std::vector<std::string> methods = loc.getMethods();
+		if (!parseMultipleValues(methods, value, METHODS))
 			return (FAILURE);
+		loc.setMethods(methods);
 	}
 	else if (key == "CGI_EXT")
 	{
-		if (!parseMultipleValues(loc.getCgiExtensions(), value, CGI))
+		std::vector<std::string> cgiExtensions = loc.getCgiExtensions();
+		if (!parseMultipleValues(cgiExtensions, value, CGI))
 			return (FAILURE);
+		loc.setCgiExtensions(cgiExtensions);
 	}
 	else if (key == "CGI_PATH")
 		loc.setCgiPath(value);
@@ -350,22 +348,6 @@ int ConfigurationFile::parseLocations(Host& host, std::ifstream& file, std::stri
 //		HOST
 //------------------------------------------------------------------------------
 
-// void ConfigurationFile::setDefaultHostValues(hostConfig& host)
-// {
-// 	host.serverName = "";
-// 	host.host = "";
-// 	host.portString = "";
-// 	host.portInt = -1;
-// 	host.methods.clear();
-// 	host.root = "";
-// 	host.index_pages.clear();
-// 	host.autoIndex = autoIndexState::NONE;
-// 	host.errorPages.clear();
-// 	host.locations.clear();
-// }
-
-//------------------------------------------------------------------------------
-
 int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 {
 	std::string key;
@@ -388,16 +370,19 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 		host.setHost(value);
 	else if (key == "METHODS")
 	{
-		if (!parseMultipleValues(host.getMethods(), value, METHODS))
+		std::vector<std::string> methods = host.getMethods();
+		if (!parseMultipleValues(methods, value, METHODS))
 			return (FAILURE);
+		host.setMethods(methods);
 	}
 	else if (key == "ROOT")
 		host.setRoot(value);
 	else if (key == "INDEX")
 	{
-		// host.index = value;
-		if (!parseMultipleValues(host.getIndexPages(), value, INDEX))
+		std::vector<std::string> indexPages = host.getIndexPages();
+		if (!parseMultipleValues(indexPages, value, INDEX))
 			return (FAILURE);
+		host.setIndexPages(indexPages);
 	}
 	else if (key == "AUTOINDEX")
 	{
@@ -410,8 +395,10 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 	}
 	else if (key == "ERROR_PAGES")
 	{
-		if (!parseMultipleValues(host.getErrorPages(), value, ERROR_PAGES))
+		std::vector<std::string> errorPages = host.getErrorPages();
+		if (!parseMultipleValues(errorPages, value, ERROR_PAGES))
 			return (FAILURE);
+		host.setErrorPages(errorPages);
 	}
 	else
 		return (err("Unknown key: " + key));

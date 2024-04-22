@@ -45,8 +45,8 @@ class Client
 		bool locationExists(const std::string &path);
 		bool allowedMethod(std::vector<std::string> methods, std::string method);
 		void updateResourcePath();
-		void handleLocation(hostConfig &host, locationConfig &loc);
-		void handleNoLocation(hostConfig &host);
+		void handleLocation(Host &host, Location &loc);
+		void handleNoLocation(Host &host);
 		void updateAutoIndex(autoIndexState state);
 		void lookForIndexFile();
 		std::string _resourcePath;
@@ -58,7 +58,7 @@ class Client
 		Buffer _buffer;
 		Request _request;
 		Response _response;
-		hostConfig _host;
+		Host _host;
 };
 
 
