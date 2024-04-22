@@ -7,6 +7,7 @@
 #define METHODS 0
 #define CGI 1
 #define ERROR_PAGES 2
+#define INDEX 3
 #define FAILURE 0
 #define SUCCESS 1
 
@@ -38,7 +39,7 @@ void ConfigurationFile::printConfigInfo()
 		std::cout << "PORT-int:\t" << color(it->portInt, GREEN) << std::endl;
 		std::cout << "ROOT:\t\t" << color(it->root, GREEN) << std::endl;
 		std::cout << "METHODS:\t"; printMultipleValues(it->methods);
-		std::cout << "INDEX:\t\t" << color(it->index, GREEN) << std::endl;
+		std::cout << "INDEX:\t\t"; printMultipleValues(it->index_pages);
 		std::cout << "AUTOINDEX:\t" << color((int)it->autoIndex, GREEN) << std::endl;
 		std::cout << "ERRPAG:\t\t"; printMultipleValues(it->errorPages);
 		std::cout << "LOC-n:\t\t" << color(it->locations.size(), GREEN) << std::endl;
@@ -47,7 +48,7 @@ void ConfigurationFile::printConfigInfo()
 			std::cout << YELLOW << "\t----------------------------------------" << RESET << std::endl;
 			std::cout << "\tLOCATION:\t" << color(it2->location, GREEN) << std::endl;
 			std::cout << "\tROOT:\t\t" << color(it2->root, GREEN) << std::endl;
-			std::cout << "\tINDEX:\t\t" << color(it2->index, GREEN) << std::endl;
+			std::cout << "\tINDEX:\t\t"; printMultipleValues(it2->index_pages);
 			std::cout << "\tALIAS:\t\t" << color(it2->alias, GREEN) << std::endl;
 			std::cout << "\tMETHODS:\t"; printMultipleValues(it2->methods);
 			std::cout << "\tCGI:\t\t"; printMultipleValues(it2->cgiExtensions);
@@ -192,6 +193,17 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 			else
 				return (err("Invalid CGI extension: " + value));
 		}
+		else if (type == INDEX)
+		{
+			values.push_back(value);
+		}
+		else if (type == ERROR_PAGES)
+		{
+			if (value.find_first_not_of("0123456789") == std::string::npos)
+				values.push_back(value);
+			else
+				return (err("Invalid error page: " + value));
+		}
 		else
 		{
 			values.push_back(value);
@@ -209,7 +221,7 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 void ConfigurationFile::setDefaultLocationValues(locationConfig& loc)
 {
 	loc.root = "";
-	loc.index = "";
+	loc.index_pages.clear();
 	loc.alias = "";
 	loc.methods.clear();
 	loc.cgiExtensions.clear();
@@ -235,7 +247,7 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 	else if (key == "INDEX")
 	{
 		// loc.index = value;
-		if (!getMultipleValues(loc.index_pages, value, METHODS))
+		if (!getMultipleValues(loc.index_pages, value, INDEX))
 			return (FAILURE);
 	}
 	else if (key == "ALIAS")
@@ -343,7 +355,7 @@ void ConfigurationFile::setDefaultHostValues(hostConfig& host)
 	host.portInt = -1;
 	host.methods.clear();
 	host.root = "";
-	host.index = "";
+	host.index_pages.clear();
 	host.autoIndex = autoIndexState::NONE;
 	host.errorPages.clear();
 	host.locations.clear();
@@ -381,7 +393,7 @@ int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line
 	else if (key == "INDEX")
 	{
 		// host.index = value;
-		if (!getMultipleValues(host.index_pages, value, METHODS))
+		if (!getMultipleValues(host.index_pages, value, INDEX))
 			return (FAILURE);
 	}
 	else if (key == "AUTOINDEX")
