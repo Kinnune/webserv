@@ -58,6 +58,7 @@ class Client
 		Buffer _buffer;
 		Request _request;
 		Response _response;
+		hostConfig _host;
 };
 
 

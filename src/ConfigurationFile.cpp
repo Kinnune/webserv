@@ -29,32 +29,34 @@ void ConfigurationFile::printConfigInfo()
 {
 	std::cout << color("----------------------------------------", CYAN) << std::endl;
 	std::cout << color("CONFIG INFO", CYAN) << std::endl;
-	for (std::vector<struct hostConfig>::iterator it = _hosts.begin(); it != _hosts.end(); it++)
+	for (std::vector<Host>::iterator host = _hosts.begin(); host != _hosts.end(); host++)
 	{
 		std::cout << CYAN << "----------------------------------------" << RESET << std::endl;
-		std::cout << "ID:\t\t" << color(it->id, GREEN) << std::endl;
-		std::cout << "NAME:\t\t" << color(it->serverName, GREEN) << std::endl;
-		std::cout << "HOST:\t\t" << color(it->host, GREEN) << std::endl;
-		std::cout << "PORT-str:\t" << color(it->portString, GREEN) << std::endl;
-		std::cout << "PORT-int:\t" << color(it->portInt, GREEN) << std::endl;
-		std::cout << "ROOT:\t\t" << color(it->root, GREEN) << std::endl;
-		std::cout << "METHODS:\t"; printMultipleValues(it->methods);
-		std::cout << "INDEX:\t\t"; printMultipleValues(it->index_pages);
-		std::cout << "AUTOINDEX:\t" << color((int)it->autoIndex, GREEN) << std::endl;
-		std::cout << "ERRPAG:\t\t"; printMultipleValues(it->errorPages);
-		std::cout << "LOC-n:\t\t" << color(it->locations.size(), GREEN) << std::endl;
-		for (std::vector<struct locationConfig>::iterator it2 = it->locations.begin(); it2 != it->locations.end(); it2++)
+		std::cout << "ID:\t\t" << color(host->getId(), GREEN) << std::endl;
+		std::cout << "NAME:\t\t" << color(host->getServerName(), GREEN) << std::endl;
+		std::cout << "HOST:\t\t" << color(host->getHost(), GREEN) << std::endl;
+		std::cout << "PORT-str:\t" << color(host->getPortString(), GREEN) << std::endl;
+		std::cout << "PORT-int:\t" << color(host->getPortInt(), GREEN) << std::endl;
+		std::cout << "ROOT:\t\t" << color(host->getRoot(), GREEN) << std::endl;
+		std::cout << "METHODS:\t"; printMultipleValues(host->getMethods());
+		std::cout << "INDEX:\t\t"; printMultipleValues(host->getIndexPages());
+		std::cout << "AUTOINDEX:\t" << color((int)host->getAutoIndex(), GREEN) << std::endl;
+		std::cout << "ERRPAG:\t\t"; printMultipleValues(host->getErrorPages());
+		std::cout << "LOC-n:\t\t" << color(host->getLocations().size(), GREEN) << std::endl;
+		for (std::vector<Location>::iterator loc = host->getLocations().begin(); loc != host->getLocations().end(); loc++)
 		{
 			std::cout << YELLOW << "\t----------------------------------------" << RESET << std::endl;
-			std::cout << "\tLOCATION:\t" << color(it2->location, GREEN) << std::endl;
-			std::cout << "\tROOT:\t\t" << color(it2->root, GREEN) << std::endl;
-			std::cout << "\tINDEX:\t\t"; printMultipleValues(it2->index_pages);
-			std::cout << "\tALIAS:\t\t" << color(it2->alias, GREEN) << std::endl;
-			std::cout << "\tMETHODS:\t"; printMultipleValues(it2->methods);
-			std::cout << "\tCGI:\t\t"; printMultipleValues(it2->cgiExtensions);
-			std::cout << "\tCGI-PATH:\t" << color(it2->cgiPath, GREEN) << std::endl;
-			std::cout << "\tMAX_BODY:\t" << color(it2->maxBody, GREEN) << std::endl;
-			std::cout << "\tAUTOINDEX:\t" << color((int)it->autoIndex, GREEN) << std::endl;
+			std::cout << "\tLOCATION:\t" << color(loc->getLocation, GREEN) << std::endl;
+			std::cout << "\tROOT:\t\t" << color(loc->getRoot(), GREEN) << std::endl;
+			std::cout << "\tINDEX:\t\t"; printMultipleValues(loc->getIndexPages());
+			std::cout << "\tALIAS:\t\t" << color(loc->getAlias(), GREEN) << std::endl;
+			std::cout << "\tMETHODS:\t"; printMultipleValues(loc->getMethods());
+			std::cout << "\tCGI:\t\t"; printMultipleValues(loc->getCgiExtensions());
+			std::cout << "\tCGI_PATH:\t" << color(loc->getCgiPath(), GREEN) << std::endl;
+			std::cout << "\tINTERPRETER:\t" << color(loc->getInterpreter(), GREEN) << std::endl;
+			std::cout << "\tAUTOINDEX:\t" << color((int)loc->getAutoIndex(), GREEN) << std::endl;
+			std::cout << "\tMAX_BODY:\t" << color(loc->getMaxBody(), GREEN) << std::endl;
+			std::cout << "\tRETURN:\t\t" << color(loc->getRedirectionCode(), GREEN) << " " << color(loc->getRedirection(), GREEN) << std::endl;
 		}
 		std::cout << std::endl;
 	}
@@ -87,7 +89,7 @@ ConfigurationFile::~ConfigurationFile() {}
 //		GETTERS
 //------------------------------------------------------------------------------
 
-std::vector<struct hostConfig> &ConfigurationFile::getHosts() { return (_hosts); }
+std::vector<Host> &ConfigurationFile::getHosts() { return (_hosts); }
 
 
 //------------------------------------------------------------------------------
@@ -154,7 +156,7 @@ int ConfigurationFile::getValue(std::string& line, std::string& value)
 
 //------------------------------------------------------------------------------
 
-int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::string& line, int type)
+int ConfigurationFile::parseMultipleValues(std::vector<std::string>& values, std::string& line, int type)
 {
 	std::string value;
 	size_t pos;
@@ -218,21 +220,21 @@ int ConfigurationFile::getMultipleValues(std::vector<std::string>& values, std::
 //		LOCATION
 //------------------------------------------------------------------------------
 
-void ConfigurationFile::setDefaultLocationValues(locationConfig& loc)
-{
-	loc.root = "";
-	loc.index_pages.clear();
-	loc.alias = "";
-	loc.methods.clear();
-	loc.cgiExtensions.clear();
-	loc.cgiPath = "";
-	loc.maxBody = -1;
-	loc.autoIndex = autoIndexState::NONE;
-}
+// void ConfigurationFile::setDefaultLocationValues(Location& loc)
+// {
+// 	loc.root = "";
+// 	loc.index_pages.clear();
+// 	loc.alias = "";
+// 	loc.methods.clear();
+// 	loc.cgiExtensions.clear();
+// 	loc.cgiPath = "";
+// 	loc.maxBody = -1;
+// 	loc.autoIndex = autoIndexState::NONE;
+// }
 
 //------------------------------------------------------------------------------
 
-int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& line)
+int ConfigurationFile::storeLocationValues(Location& loc, std::string& line)
 {
 	std::string key;
 	std::string value;
@@ -243,45 +245,46 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 		return (FAILURE);
 
 	if (key == "ROOT")
-		loc.root = value;
+		loc.setRoot(value);
 	else if (key == "INDEX")
 	{
-		// loc.index = value;
-		if (!getMultipleValues(loc.index_pages, value, INDEX))
+		if (!parseMultipleValues(loc.getIndexPages(), value, INDEX))
 			return (FAILURE);
 	}
 	else if (key == "ALIAS")
-		loc.alias = value;
+		loc.setAlias(value);
 	else if (key == "METHODS")
 	{
-		if (!getMultipleValues(loc.methods, value, METHODS))
+		if (!parseMultipleValues(loc.getMethods(), value, METHODS))
 			return (FAILURE);
 	}
 	else if (key == "CGI_EXT")
 	{
-		if (!getMultipleValues(loc.cgiExtensions, value, CGI))
+		if (!parseMultipleValues(loc.getCgiExtensions(), value, CGI))
 			return (FAILURE);
 	}
 	else if (key == "CGI_PATH")
-		loc.cgiPath = value;
+		loc.setCgiPath(value);
+	else if (key == "INTERPRETER")
+		loc.setInterpreter(value);
 	else if (key == "AUTOINDEX")
 	{
 		if (value == "on")
-			loc.autoIndex = autoIndexState::ON;
+			loc.setAutoIndex(autoIndexState::ON);
 		else if (value == "off")
-			loc.autoIndex = autoIndexState::OFF;
+			loc.setAutoIndex(autoIndexState::OFF);
 		else
 			return (err("Invalid value for autoindex: " + value));
 	}
 	else if (key == "MAX_BODY")
-		loc.maxBody = std::stoi(value);
+		loc.setMaxBody(std::stoi(value));
 	else if (key == "RETURN")
 	{
 		size_t pos;
 		pos = value.find_first_of(" \t");
-		loc.redirectionCode = stoi(value.substr(0, pos));
+		loc.setRedirectionCode(stoi(value.substr(0, pos)));
 		pos = value.find_first_not_of(" \t", pos);
-		loc.redirection = value.substr(pos);
+		loc.setRedirection(value.substr(pos));
 	}
 	else if (key.at(0) == '}')
 		return (SUCCESS);
@@ -292,7 +295,7 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 
 //------------------------------------------------------------------------------
 
-int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
+int ConfigurationFile::setLocation(Location& loc, std::string& line)
 {
 	size_t pos = line.find_first_of(" \t");
 	std::string key = line.substr(0, pos);
@@ -301,7 +304,7 @@ int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 	if (pos != std::string::npos)
 		value = value.substr(0, pos);
 	if (key == "location")
-		loc.location = value;
+		loc.setLocation(value);
 	else
 		return (err("Unknown key: " + key));
 	return (SUCCESS);
@@ -309,19 +312,19 @@ int ConfigurationFile::setLocation(locationConfig& loc, std::string& line)
 
 //------------------------------------------------------------------------------
 
-int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::string& line)
+int ConfigurationFile::parseLocations(Host& host, std::ifstream& file, std::string& line)
 {
 	while (!file.eof())
 	{
 		if (line.find("location") != std::string::npos)
 		{
-			locationConfig loc;
+			Location loc;
 
 			if (!setLocation(loc, line))
 				return (FAILURE);
 			
 			// Here we set default values for the location struct. Empty strings, -1, etc...
-			setDefaultLocationValues(loc);
+			// setDefaultLocationValues(loc);
 
 			nextInfo(file, line);	// error check for starting curly brace?
 			nextInfo(file, line);
@@ -331,7 +334,7 @@ int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::
 					return (FAILURE);
 				nextInfo(file, line);
 			}
-			host.locations.push_back(loc);		
+			host.addLocation(loc);		
 			nextInfo(file, line);
 		}
 		if (line.at(0) == '}')
@@ -347,23 +350,23 @@ int ConfigurationFile::getLocations(hostConfig& host, std::ifstream& file, std::
 //		HOST
 //------------------------------------------------------------------------------
 
-void ConfigurationFile::setDefaultHostValues(hostConfig& host)
-{
-	host.serverName = "";
-	host.host = "";
-	host.portString = "";
-	host.portInt = -1;
-	host.methods.clear();
-	host.root = "";
-	host.index_pages.clear();
-	host.autoIndex = autoIndexState::NONE;
-	host.errorPages.clear();
-	host.locations.clear();
-}
+// void ConfigurationFile::setDefaultHostValues(hostConfig& host)
+// {
+// 	host.serverName = "";
+// 	host.host = "";
+// 	host.portString = "";
+// 	host.portInt = -1;
+// 	host.methods.clear();
+// 	host.root = "";
+// 	host.index_pages.clear();
+// 	host.autoIndex = autoIndexState::NONE;
+// 	host.errorPages.clear();
+// 	host.locations.clear();
+// }
 
 //------------------------------------------------------------------------------
 
-int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line)
+int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 {
 	std::string key;
 	std::string value;
@@ -374,40 +377,40 @@ int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line
 		return (FAILURE);
 	if (key == "NAME")
 	{
-		host.serverName = value;
+		host.setServerName(value);
 	}
 	else if (key == "PORT")
 	{
-		host.portString = value;
-		host.portInt = std::stoi(value);
+		host.setPortString(value);
+		host.setPortInt(std::stoi(value));
 	}
 	else if (key == "HOST")
-		host.host = value;
+		host.setHost(value);
 	else if (key == "METHODS")
 	{
-		if (!getMultipleValues(host.methods, value, METHODS))
+		if (!parseMultipleValues(host.getMethods(), value, METHODS))
 			return (FAILURE);
 	}
 	else if (key == "ROOT")
-		host.root = value;
+		host.setRoot(value);
 	else if (key == "INDEX")
 	{
 		// host.index = value;
-		if (!getMultipleValues(host.index_pages, value, INDEX))
+		if (!parseMultipleValues(host.getIndexPages(), value, INDEX))
 			return (FAILURE);
 	}
 	else if (key == "AUTOINDEX")
 	{
 		if (value == "on")
-			host.autoIndex = autoIndexState::ON;
+			host.setAutoIndex(autoIndexState::ON);
 		else if (value == "off")
-			host.autoIndex = autoIndexState::OFF;
+			host.setAutoIndex(autoIndexState::OFF);
 		else
 			std::cerr << RED << "Invalid value for autoindex: " << value << RESET << std::endl;
 	}
 	else if (key == "ERROR_PAGES")
 	{
-		if (!getMultipleValues(host.errorPages, value, ERROR_PAGES))
+		if (!parseMultipleValues(host.getErrorPages(), value, ERROR_PAGES))
 			return (FAILURE);
 	}
 	else
@@ -417,7 +420,7 @@ int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line
 
 //------------------------------------------------------------------------------
 
-int ConfigurationFile::getHostDefaultValues(hostConfig& host, std::ifstream& file, std::string& line)
+int ConfigurationFile::parseHostDefaultValues(Host& host, std::ifstream& file, std::string& line)
 {
 	while (!file.eof() && !line.empty() && line.at(0) != '}')
 	{
@@ -445,15 +448,15 @@ int ConfigurationFile::getHostDefaultValues(hostConfig& host, std::ifstream& fil
 //		SERVER
 //------------------------------------------------------------------------------
 
-int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
+int ConfigurationFile::parseHostConfig(std::ifstream& file, std::string& line)
 {
-	hostConfig host;
-	host.id = _serverCount;
+	Host host;
+	host.setId(_serverCount);
 
 	// Here we set default values for the host struct. Empty strings, -1, etc...
-	setDefaultHostValues(host);
+	// setDefaultHostValues(host);
 
-	if (!getHostDefaultValues(host, file, line))
+	if (!parseHostDefaultValues(host, file, line))
 		return (FAILURE);
 
 	// Check if default values were set!	example: if (server.serverName.empty())
@@ -461,7 +464,7 @@ int ConfigurationFile::getHostConfig(std::ifstream& file, std::string& line)
 	// Store host in _hosts
 	_hosts.push_back(host);
 
-	getLocations(_hosts.back(), file, line);
+	parseLocations(_hosts.back(), file, line);
 
 	if (line.at(0) == '}') // End of server
 	{
@@ -512,7 +515,7 @@ int ConfigurationFile::parse()
 			break ;
 		if (serverFound(file, line))
 		{
-			if (_eof || !getHostConfig(file, line))
+			if (_eof || !parseHostConfig(file, line))
 				return (file.close(), err("Error in server config"));
 		}
 		else

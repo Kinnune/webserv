@@ -241,6 +241,8 @@ bool Response::supportedCGI()
 
 	//**these values could/should be read from the config
 	return (fileExtension == "js" | fileExtension == "py");
+
+	return _supportedCGI;
 }
 
 //------------------------------------------------------------------------------

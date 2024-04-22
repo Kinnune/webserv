@@ -1,40 +1,11 @@
 #ifndef CONFIGURATIONFILE_HPP
 #define CONFIGURATIONFILE_HPP
+#include "Host.hpp"
 #include <string>
 #include <map>
 #include <vector>
 
 enum class autoIndexState { NONE, ON, OFF };
-
-typedef struct locationConfig
-{
-	std::string location;
-	std::string root;
-	std::vector<std::string> index_pages;
-	std::string alias;
-	std::vector<std::string> methods;
-	std::vector<std::string> cgiExtensions;
-	std::string cgiPath;
-	std::string redirection;
-	int redirectionCode;
-	int maxBody;
-	autoIndexState autoIndex;
-} locationConfig;
-
-typedef struct hostConfig
-{
-	int			id;
-	int 		portInt;
-	std::string serverName;
-	std::string host;
-	std::vector<std::string> methods;
-	std::string portString;
-	std::string root;
-	std::vector<std::string> index_pages;
-	autoIndexState autoIndex;
-	std::vector<std::string> errorPages;
-	std::vector<struct locationConfig> locations;
-} hostConfig;
 
 class ConfigurationFile
 {
@@ -42,19 +13,17 @@ class ConfigurationFile
 		std::string _path;
 		std::string _content;
 		int _serverCount;
-		std::vector<struct hostConfig> _hosts;
+		std::vector<Host> _hosts;
 		bool _configSyntaxError;
 		bool _eof;
 		void printMultipleValues(std::vector<std::string> &values);
-		int getHostConfig(std::ifstream &file, std::string &line);
-		int getHostDefaultValues(hostConfig& host, std::ifstream& file, std::string& line);
-		int getMultipleValues(std::vector<std::string>& values, std::string& line, int type);
-		void setDefaultLocationValues(locationConfig& loc);
-		int storeLocationValues(locationConfig& loc, std::string& line);
-		int setLocation(locationConfig& loc, std::string& line);
-		int getLocations(hostConfig& host, std::ifstream& file, std::string& line);
-		void setDefaultHostValues(hostConfig& host);
-		int storeHostDefaultValue(hostConfig& host, std::string& line);
+		int parseHostConfig(std::ifstream &file, std::string &line);
+		int parseHostDefaultValues(Host& host, std::ifstream& file, std::string& line);
+		int parseMultipleValues(std::vector<std::string>& values, std::string& line, int type);
+		int storeLocationValues(Location& loc, std::string& line);
+		int setLocation(Location& loc, std::string& line);
+		int parseLocations(Host& host, std::ifstream& file, std::string& line);
+		int storeHostDefaultValue(Host& host, std::string& line);
 		int err(std::string error);
 		void nextInfo(std::ifstream &file, std::string& line);
 		int serverFound(std::ifstream& file, std::string& line);
@@ -66,7 +35,7 @@ class ConfigurationFile
 		ConfigurationFile(const ConfigurationFile &other);
 		ConfigurationFile &operator=(const ConfigurationFile &other);
 		~ConfigurationFile();
-		std::vector<struct hostConfig> &getHosts();
+		std::vector<Host> &getHosts();
 		void printConfigInfo();
 		int parse();
 };
