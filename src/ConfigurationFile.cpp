@@ -233,7 +233,11 @@ int ConfigurationFile::storeLocationValues(locationConfig& loc, std::string& lin
 	if (key == "ROOT")
 		loc.root = value;
 	else if (key == "INDEX")
-		loc.index = value;
+	{
+		// loc.index = value;
+		if (!getMultipleValues(loc.index_pages, value, METHODS))
+			return (FAILURE);
+	}
 	else if (key == "ALIAS")
 		loc.alias = value;
 	else if (key == "METHODS")
@@ -375,7 +379,11 @@ int ConfigurationFile::storeHostDefaultValue(hostConfig& host, std::string& line
 	else if (key == "ROOT")
 		host.root = value;
 	else if (key == "INDEX")
-		host.index = value;
+	{
+		// host.index = value;
+		if (!getMultipleValues(host.index_pages, value, METHODS))
+			return (FAILURE);
+	}
 	else if (key == "AUTOINDEX")
 	{
 		if (value == "on")

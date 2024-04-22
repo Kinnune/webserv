@@ -270,7 +270,7 @@ void Client::handleLocation(hostConfig &host, locationConfig &loc)
 		return ;
 	}
 
-
+	// handle root/alias
 	if (loc.root != "")
 	{
 		std::cout << "LOC-ROOT: " << color(loc.root, GREEN) << std::endl;
@@ -293,19 +293,33 @@ void Client::handleLocation(hostConfig &host, locationConfig &loc)
 		_resourcePath = host.root + _resourcePath.substr(loc.location.length());
 	}
 
-	
+	// handle index and autoindex
 	if (isDirectory(_resourcePath))
 	{
 		_resourcePath.append("/");
-		if (loc.index != "")
+		if (loc.index_pages.size() > 0)
 		{
-			std::cout << "LOC-INDEX: " << color(loc.index, GREEN) << std::endl;
-			_resourcePath.append(loc.index);
+			for (std::vector<std::string>::iterator it = loc.index_pages.begin(); it != loc.index_pages.end(); it++)
+			{
+				if (isFile(_resourcePath + *it))
+				{
+					_resourcePath.append(*it);
+					return ;
+				}
+			}
+			_statusCode = 403;
 		}
-		else if (host.index != "")
+		else if (host.index_pages.size() > 0)
 		{
-			std::cout << "HOST-INDEX: " << color(host.index, GREEN) << std::endl;
-			_resourcePath.append(host.index);
+			for (std::vector<std::string>::iterator it = host.index_pages.begin(); it != host.index_pages.end(); it++)
+			{
+				if (isFile(_resourcePath + *it))
+				{
+					_resourcePath.append(*it);
+					return ;
+				}
+			}
+			_statusCode = 403;
 		}
 		else if (_autoIndex != autoIndexState::ON)
 		{
@@ -331,10 +345,17 @@ void Client::handleNoLocation(hostConfig &host)
 	}
 	if (isDirectory(_resourcePath))
 	{
-		if (host.index != "")
+		if (host.index_pages.size() > 0)
 		{
-			std::cout << "HOST-INDEX: " << color(host.index, GREEN) << std::endl;
-			_resourcePath.append(host.index);
+			for (std::vector<std::string>::iterator it = host.index_pages.begin(); it != host.index_pages.end(); it++)
+			{
+				if (isFile(_resourcePath + *it))
+				{
+					_resourcePath.append(*it);
+					return ;
+				}
+			}
+			_statusCode = 403;
 		}
 		else if (_autoIndex != autoIndexState::ON)
 		{

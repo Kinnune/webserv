@@ -10,7 +10,7 @@ typedef struct locationConfig
 {
 	std::string location;
 	std::string root;
-	std::string index;
+	std::vector<std::string> index_pages;
 	std::string alias;
 	std::vector<std::string> methods;
 	std::vector<std::string> cgiExtensions;
@@ -30,7 +30,7 @@ typedef struct hostConfig
 	std::vector<std::string> methods;
 	std::string portString;
 	std::string root;
-	std::string index;
+	std::vector<std::string> index_pages;
 	autoIndexState autoIndex;
 	std::vector<std::string> errorPages;
 	std::vector<struct locationConfig> locations;
