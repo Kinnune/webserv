@@ -1,8 +1,9 @@
 #ifndef HOST_HPP
 #define HOST_HPP
-#include "Location.hpp"
-#include <vector>
 #include <string>
+#include <vector>
+#include "Location.hpp"
+#include "utilityHeader.hpp"
 
 // enum class autoIndexState { NONE, ON, OFF };
 

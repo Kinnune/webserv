@@ -2,8 +2,8 @@
 #define LOCATION_HPP
 #include <vector>
 #include <string>
+#include "utilityHeader.hpp"
 
-enum class autoIndexState { NONE, ON, OFF };
 
 class Location
 {
