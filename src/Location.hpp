@@ -17,8 +17,8 @@ class Location
 		std::string					interpreter;
 		std::string					redirection;
 		autoIndexState				autoIndex;
-		std::vector<std::string>	index_pages;
 		std::vector<std::string>	methods;
+		std::vector<std::string>	index_pages;
 		std::vector<std::string>	cgiExtensions;
 	
 	public:
@@ -38,8 +38,8 @@ class Location
 		std::string getInterpreter() const;
 		std::string getRedirection() const;
 		autoIndexState getAutoIndex() const;
-		std::vector<std::string> getIndexPages() const;
 		std::vector<std::string> getMethods() const;
+		std::vector<std::string> getIndexPages() const;
 		std::vector<std::string> getCgiExtensions() const;
 
 		// Setters
@@ -52,8 +52,8 @@ class Location
 		void setInterpreter(std::string interpreter);
 		void setRedirection(std::string redirection);
 		void setAutoIndex(autoIndexState autoIndex);
-		void setIndexPages(std::vector<std::string> index_pages);
 		void setMethods(std::vector<std::string> methods);
+		void setIndexPages(std::vector<std::string> index_pages);
 		void setCgiExtensions(std::vector<std::string> cgiExtensions);
 };
 

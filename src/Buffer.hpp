@@ -27,7 +27,9 @@ class Buffer
 			}
 			return (NULL);
 		}
+		
 		void addToBuffer(char *data, size_t size) { _data.insert(_data.end(), data, data + size); };
+		
 		std::vector<unsigned char> spliceRequest()
 		{
 			unsigned char *endPos;
@@ -44,10 +46,12 @@ class Buffer
 			_data = std::vector<unsigned char>(_data.begin() + requestSize, _data.end());
 			return (request);
 		}
+		
 		size_t getSize() { return(_data.size()); };
 		unsigned char *getBegin() { return(&_data[0]); }
 		std::vector<unsigned char>::iterator getEnd() { return(_data.end()); }
 		std::vector<unsigned char> &getData() { return (_data); };
+	
 	private:
 		std::string _endLiteral;
 		std::vector<unsigned char> _data;

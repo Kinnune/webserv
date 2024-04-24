@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 #include "Buffer.hpp"
+#include "Host.hpp"
+#include "ConfigurationFile.hpp"
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 
@@ -24,22 +26,30 @@ class Request
 		Request (Request const &other);
 		Request &operator=(Request const &other);
 		Request(std::vector<unsigned char> content);
+		Request(std::vector<unsigned char> content, ConfigurationFile config);
 		void clear();
 		void printRequest();
 		int firstLineParse(std::vector<unsigned char> &line);
 		int headerLineParse(std::vector<unsigned char> &line);
 		int parseContent(std::vector<unsigned char> &data);
 		bool detectContentLenght();
-		std::string const &getMethod() const;
-		void setTarget(std::string target) { _target = target; };
-		std::string &getTarget() { return (_target); }
 		bool tryToComplete(Buffer &buffer);
+
+		// Getters
 		bool getIsValid() { return (_isValid); };
-		std::string getVersion() { return (_version); };
 		bool getIsComplete() { return (_completed); }
+		std::string &getTarget() { return (_target); }
+		std::string getVersion() { return (_version); };
 		std::vector<unsigned char> getBody() { return (_body); };
+		std::string const &getMethod() const;
 		std::unordered_map<std::string, std::string> &getHeaders();
+		Host &getHost() { return (_host); };
+
+		// Setters
+		void setTarget(std::string target) { _target = target; };
+
 	private:
+		Host _host;
 		std::string _method;
 		std::string _target;
 		std::string _version;

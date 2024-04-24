@@ -30,12 +30,21 @@ class ConfigurationFile
 		int getKey(std::string& line, std::string& key);
 		int getValue(std::string& line, std::string& value);
 	public:
+
+		// Constructors/Destructors
 		ConfigurationFile();
 		ConfigurationFile(std::string path);
 		ConfigurationFile(const ConfigurationFile &other);
 		ConfigurationFile &operator=(const ConfigurationFile &other);
 		~ConfigurationFile();
+		
+		// Getters
 		std::vector<Host> &getHosts();
+		Host *getHost(std::string hostHeader);
+		
+		// Setters
+
+		// Member functions
 		void printConfigInfo();
 		int parse();
 };

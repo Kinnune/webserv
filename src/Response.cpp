@@ -39,6 +39,7 @@ Response::Response(Request &request)
 	_statusMessage = "";
 	_version = _request.getVersion();			
 	_headers = request.getHeaders();
+	_host = request.getHost();
 	_body.resize(0);
 	if (DEBUG)
 		std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
@@ -241,8 +242,6 @@ bool Response::supportedCGI()
 
 	//**these values could/should be read from the config
 	return (fileExtension == "js" | fileExtension == "py");
-
-	return _supportedCGI;
 }
 
 //------------------------------------------------------------------------------
@@ -368,13 +367,11 @@ int Response::doCGI()
 
 void Response::getMethod()
 {
-	std::string filePath = _request.getTarget();
+	std::cout << "Resource requested: " << color(_request.getTarget(), GREEN) << std::endl;
+	std::string filePath = _host.updatePath(_request.getTarget());
+	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 	std::string contentType = detectContentType(filePath);
-	//**hardcoded favicon for now this whole filepath thing is not done correctly for now
-	if (filePath.find("favicon.ico") != std::string::npos)
-	{
-		filePath = "www/favicon.ico";
-	}
+	
 	removeFirstCharIfMatches(filePath, '/');
 	//**SEPARATE THIS INTO FILE READING FUNCTION
 	std::ifstream file(filePath, std::ios::binary);

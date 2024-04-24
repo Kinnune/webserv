@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 
+
 Server::Server() : _nServers(0), _nClients(0)
 {
 	std::memset(&_pollFds[0], 0, sizeof(_pollFds));
@@ -20,15 +21,12 @@ void Server::initialize(std::string configFile)
 int Server::readConfig()
 {
 	return (_config.parse());
-	// _config.parse();
-	// _config.printConfigInfo();
-	// return (1);
 }
 
 void Server::setPorts()
 {
 	struct sockaddr_in address;
-	std::vector<struct hostConfig> hosts;
+	std::vector<Host> hosts;
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;	// INADDR_ANY = we're responding to any address
@@ -38,7 +36,7 @@ void Server::setPorts()
 
 	for (unsigned int i = 0; i < _nServers; i++)
 	{
-		_ports.push_back(hosts.at(i).portInt);
+		_ports.push_back(hosts.at(i).getPortInt());
 		address.sin_port = htons(_ports.at(i));	// htons = host to network, short (converts port number to network byte order, which is big-endian)
 		_addresses.push_back(address);
 		_pollFds[i].events = POLLIN;
@@ -82,9 +80,18 @@ void Server::startListen()
 
 void Server::newClient(int i)
 {
-	Client newClient(_pollFds[i].fd, _ports.at(i));
+	Client newClient(_pollFds[i].fd, _ports.at(i), _config);
 
-	newClient.setConfig(_config);
+	// for (std::vector<Host>::iterator it = _config.getHosts().begin(); it != _config.getHosts().end(); it++)
+	// {
+	// 	if (it->getPortInt() == _ports.at(i))
+	// 	{
+	// 		newClient.setHost(*it);
+	// 		std::cout << "Locations on host: " << color(newClient.getHost().getLocations().size(), GREEN) << std::endl;
+	// 		break ;
+	// 	}
+	// }
+	// std::cout << "New client connected to server " << GREEN << newClient.getHost().getHost() << ":" << newClient.getHost().getPortInt() << RESET << std::endl;
 	_clients.insert(std::make_pair(newClient.getFd(), newClient));
 	_pollFds[getNfds()].fd = newClient.getFd();
 	_pollFds[getNfds()].events = (POLLIN | POLLOUT);
@@ -95,6 +102,7 @@ void Server::removeClient(int fd)
 {
 	unsigned int i;
 
+	std::cout << color("Client disconnected", RED) << std::endl;
 	_clients.erase(fd);
 	for (i = _nServers; i < getNfds(); i++)
 	{

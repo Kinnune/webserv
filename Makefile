@@ -4,9 +4,17 @@
 CPP = c++
 
 #-fsanitize=address -g
-CPPFLAGS =  -Wall -Wextra -Werror -std=c++11 -o 
+CPPFLAGS =  -Wall -Wextra -Werror -std=c++11 -g -o 
 
-SRC = src/main.cpp src/Server.cpp src/Client.cpp src/Request.cpp src/request_helpers.cpp src/ConfigurationFile.cpp src/Response.cpp
+SRC = 	src/main.cpp \
+		src/Server.cpp \
+		src/Client.cpp \
+		src/Request.cpp \
+		src/request_helpers.cpp \
+		src/ConfigurationFile.cpp \
+		src/Location.cpp \
+		src/Host.cpp \
+		src/Response.cpp
 
 NAME = webserv
 

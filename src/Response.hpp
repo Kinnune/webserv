@@ -57,6 +57,7 @@ class Response
 		int _pipeParent[2];
 		pid_t _pid;
 		Request _request;
+		Host _host;
 };
 
 #endif

@@ -9,17 +9,33 @@
 class Host
 {
 	private:
-		int							id;
-		int 						portInt;
-		std::string 				serverName;
-		std::string 				host;
-		std::string					portString;
-		std::string					root;
-		autoIndexState				autoIndex;
-		std::vector<std::string>	methods;
-		std::vector<std::string>	index_pages;
-		std::vector<std::string>	errorPages;
-		std::vector<Location>		locations;
+		int							_id;
+		int 						_portInt;
+		int							_statusCode;
+		std::string 				_serverName;
+		std::string 				_host;
+		std::string					_portString;
+		std::string					_root;
+		autoIndexState				_autoIndex;
+		std::vector<std::string>	_methods;
+		std::vector<std::string>	_indexPages;
+		std::vector<std::string>	_errorPages;
+		std::vector<Location>		_locations;
+
+		std::string					_resourcePath;
+		std::string					_requestedMethod;
+
+		// Private methods
+		bool isFile(const std::string &path);
+		bool isDirectory(const std::string &path);
+		bool locationExists(const std::string &location);
+		bool allowedMethod(std::vector<std::string> methods, std::string method);
+		void updateResourcePath();
+		void handleLocation(Location &location);
+		void handleNoLocation();
+		void updateAutoIndex(autoIndexState state);
+		void lookForIndexFile();
+
 	
 	public:
 		// Constructors/Destructors
@@ -36,10 +52,10 @@ class Host
 		std::string getPortString() const;
 		std::string getRoot() const;
 		autoIndexState getAutoIndex() const;
-		std::vector<std::string> getMethods() const;
-		std::vector<std::string> getIndexPages() const;
-		std::vector<std::string> getErrorPages() const;
-		std::vector<Location> getLocations() const;
+		std::vector<std::string> &getMethods();
+		std::vector<std::string> &getIndexPages();
+		std::vector<std::string> &getErrorPages();
+		std::vector<Location> &getLocations();
 
 		// Setters
 		void setId(int id);
@@ -55,10 +71,11 @@ class Host
 		void setLocations(std::vector<Location> locations);
 
 		// Add
-		void addLocation(Location location);
+		void addLocation(Location &location);
 
 		// Methods
-		bool isAllowedCGI(std::string extension);
+		bool isAllowedCGI(std::string &extension);
+		std::string updatePath(std::string const &path);
 };
 
 #endif

@@ -97,6 +97,31 @@ ConfigurationFile::~ConfigurationFile() {}
 
 std::vector<Host> &ConfigurationFile::getHosts() { return (_hosts); }
 
+Host *ConfigurationFile::getHost(std::string hostHeader)
+{
+	std::string name;
+	std::string port;
+	size_t pos;
+	
+	// Derive name and port from hostHeader
+	pos = hostHeader.find(":");
+	if (pos != std::string::npos)
+	{
+		name = hostHeader.substr(0, pos);
+		port = hostHeader.substr(pos + 1);
+	}
+
+	// Find host with correct name and port
+	for (std::vector<Host>::iterator host = _hosts.begin(); host != _hosts.end(); host++)
+	{
+		if (host->getServerName() == name && host->getPortString() == port)
+			return (&(*host));
+	}
+
+	// Return nullptr if host not found
+	return (nullptr);
+}
+
 
 //------------------------------------------------------------------------------
 //		HELPERS
@@ -240,7 +265,7 @@ int ConfigurationFile::storeLocationValues(Location& loc, std::string& line)
 		loc.setRoot(value);
 	else if (key == "INDEX")
 	{
-		std::vector<std::string> indexPages = loc.getIndexPages();
+		std::vector<std::string> indexPages;
 		if (!parseMultipleValues(indexPages, value, INDEX))
 			return (FAILURE);
 		loc.setIndexPages(indexPages);
@@ -249,14 +274,15 @@ int ConfigurationFile::storeLocationValues(Location& loc, std::string& line)
 		loc.setAlias(value);
 	else if (key == "METHODS")
 	{
-		std::vector<std::string> methods = loc.getMethods();
+		std::vector<std::string> methods;
 		if (!parseMultipleValues(methods, value, METHODS))
 			return (FAILURE);
 		loc.setMethods(methods);
+
 	}
 	else if (key == "CGI_EXT")
 	{
-		std::vector<std::string> cgiExtensions = loc.getCgiExtensions();
+		std::vector<std::string> cgiExtensions;
 		if (!parseMultipleValues(cgiExtensions, value, CGI))
 			return (FAILURE);
 		loc.setCgiExtensions(cgiExtensions);
@@ -320,9 +346,6 @@ int ConfigurationFile::parseLocations(Host& host, std::ifstream& file, std::stri
 
 			if (!setLocation(loc, line))
 				return (FAILURE);
-			
-			// Here we set default values for the location struct. Empty strings, -1, etc...
-			// setDefaultLocationValues(loc);
 
 			nextInfo(file, line);	// error check for starting curly brace?
 			nextInfo(file, line);
@@ -332,7 +355,12 @@ int ConfigurationFile::parseLocations(Host& host, std::ifstream& file, std::stri
 					return (FAILURE);
 				nextInfo(file, line);
 			}
-			host.addLocation(loc);		
+			host.addLocation(loc);
+
+			// DEBUG START
+			std::cout << "Location: " << color(host.getLocations().back().getLocation(), YELLOW) << " has " << color(host.getLocations().back().getMethods().size(), GREEN) << " methods." << std::endl;
+			// DEBUG END
+
 			nextInfo(file, line);
 		}
 		if (line.at(0) == '}')
@@ -370,7 +398,7 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 		host.setHost(value);
 	else if (key == "METHODS")
 	{
-		std::vector<std::string> methods = host.getMethods();
+		std::vector<std::string> methods;
 		if (!parseMultipleValues(methods, value, METHODS))
 			return (FAILURE);
 		host.setMethods(methods);
@@ -379,7 +407,7 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 		host.setRoot(value);
 	else if (key == "INDEX")
 	{
-		std::vector<std::string> indexPages = host.getIndexPages();
+		std::vector<std::string> indexPages;
 		if (!parseMultipleValues(indexPages, value, INDEX))
 			return (FAILURE);
 		host.setIndexPages(indexPages);
@@ -395,7 +423,7 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 	}
 	else if (key == "ERROR_PAGES")
 	{
-		std::vector<std::string> errorPages = host.getErrorPages();
+		std::vector<std::string> errorPages;
 		if (!parseMultipleValues(errorPages, value, ERROR_PAGES))
 			return (FAILURE);
 		host.setErrorPages(errorPages);
@@ -448,10 +476,20 @@ int ConfigurationFile::parseHostConfig(std::ifstream& file, std::string& line)
 
 	// Check if default values were set!	example: if (server.serverName.empty())
 
+
+	parseLocations(host, file, line);
+
 	// Store host in _hosts
 	_hosts.push_back(host);
 
-	parseLocations(_hosts.back(), file, line);
+	// DEBUG START
+	std::cout << color("Locations parsed!", PURPLE) << std::endl;
+	for (std::vector<Location>::iterator loc = _hosts.back().getLocations().begin(); loc != _hosts.back().getLocations().end(); loc++)
+	{
+		std::cout << "Location: " << color(loc->getLocation(), GREEN) << " has " << color(loc->getMethods().size(), GREEN) << " methods." << std::endl;
+	}
+	// DEBUG END
+
 
 	if (line.at(0) == '}') // End of server
 	{
