@@ -78,6 +78,7 @@ void Response::setContentLengthHeader(size_t length)
 void Response::setStatus(int status)
 {
 	_statusCode = std::to_string(status);
+	_version = "HTTP/1.1";
 	switch (status)
 	{
 		case 200:
@@ -85,7 +86,6 @@ void Response::setStatus(int status)
 			break ;
 		case 404:
 			_statusMessage = "Not Found";
-			_version = "HTTP/1.1";
 			body404();
 			break ;
 
@@ -121,6 +121,14 @@ int Response::completeResponse()
 	else if (_request.getMethod() == "GET")
 	{
 		handleGetMethod();
+	}
+	else if (_request.getMethod() == "POST")
+	{
+		// handlePostMethod();
+	}
+	else if (_request.getMethod() == "DELETE")
+	{
+		// handleDeleteMethod();
 	}
 	return (1);
 }
@@ -385,6 +393,11 @@ void Response::handleGetMethod()
 		return ;
 	}
 
+	if (_host.isAutoindexOn())
+	{
+		// provide a list of files in the directory
+	}
+
 	std::cout << "Resource requested: " << color(_request.getTarget(), GREEN) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget());
 	
@@ -417,4 +430,14 @@ void Response::handleGetMethod()
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = contentType;
+}
+
+void Response::handlePostMethod()
+{
+	//**TODO
+}
+
+void Response::handleDeleteMethod()
+{
+	//**TODO
 }

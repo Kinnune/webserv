@@ -33,7 +33,6 @@ class Response
 		int completeResponse();
 		void setStatus(int status);
 		void body404();
-		void handleGetMethod();
 		bool supportedCGI();
 		std::string toString();
 		void setContentLengthHeader(size_t length);
@@ -43,6 +42,11 @@ class Response
 		bool hasRequest() { return (_request.getIsComplete()); }
 		bool childReady();
 		bool getWaitCGI() { return (_waitCGI); }
+
+		// Method handlers
+		void handleGetMethod();
+		void handlePostMethod();
+		void handleDeleteMethod();
 
 		std::string _version;
 		std::string _statusCode;

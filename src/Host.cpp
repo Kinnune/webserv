@@ -111,11 +111,11 @@ bool Host::isDirectory(const std::string &path)
 
 //------------------------------------------------------------------------------
 
-bool Host::locationExists(const std::string &location)
+bool Host::locationExists(std::string const &path, std::string const &location)
 {
-	if (std::strncmp(_resourcePath.c_str(), location.c_str(), location.length()) == 0)
+	if (std::strncmp(path.c_str(), location.c_str(), location.length()) == 0)
 	{
-		if (_resourcePath.length() == location.length() || _resourcePath[location.length()] == '/')
+		if (path.length() == location.length() || path[location.length()] == '/')
 		{
 			return true;
 		}
@@ -127,11 +127,9 @@ bool Host::locationExists(const std::string &location)
 
 bool Host::isAllowedMethod(std::string &path, std::string method)
 {
-	_resourcePath = path;
-
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
-		if (locationExists(loc->getLocation()))
+		if (locationExists(path, loc->getLocation()))
 		{
 			std::vector<std::string> methods = loc->getMethods();
 			return std::find(methods.begin(), methods.end(), method) != methods.end();
@@ -144,11 +142,9 @@ bool Host::isAllowedMethod(std::string &path, std::string method)
 
 bool Host::isAllowedCGI(std::string &path, std::string &extension)
 {
-	_resourcePath = path;
-
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
-		if (locationExists(loc->getLocation()))
+		if (locationExists(path, loc->getLocation()))
 		{
 			std::vector<std::string> extensions = loc->getCgiExtensions();
 			return std::find(extensions.begin(), extensions.end(), extension) != extensions.end();
@@ -161,11 +157,9 @@ bool Host::isAllowedCGI(std::string &path, std::string &extension)
 
 bool Host::isRedirection(std::string &path)
 {
-	_resourcePath = path;
-	
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
-		if (locationExists(loc->getLocation()))
+		if (locationExists(path, loc->getLocation()))
 		{
 			return loc->getRedirection() != "";
 		}
@@ -185,43 +179,37 @@ bool Host::isAutoindexOn()
 //	UPDATE RESOURCE PATH
 //------------------------------------------------------------------------------
 
-std::string Host::updateResourcePath(std::string const &path)
+std::string Host::updateResourcePath(std::string path)
 {
-	_resourcePath = path;
 	_autoIndex = autoIndexState::NONE;
-
-	std::cout << "Updating resource path" << std::endl;
-	std::cout << "Path: " << color(_resourcePath, CYAN) << std::endl;
-	std::cout << "Port: " << color(_portInt, CYAN) << std::endl;
-	std::cout << "Host: " << color(_host, CYAN) << std::endl;
 
 	updateAutoIndex(_autoIndex);
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
 		std::cout << "Looking for location: " << color(loc->getLocation(), CYAN) << std::endl;
-		if (locationExists(loc->getLocation()))
+		if (locationExists(path, loc->getLocation()))
 		{
 			std::cout << "Location found: " << color(loc->getLocation(), CYAN) << std::endl;
 			updateAutoIndex(loc->getAutoIndex());
-			handleLocation(*loc);
-			return _resourcePath;
+			handleLocation(path, *loc);
+			return path;
 		}
 	}
 	std::cout << color("No location found", RED) << std::endl;
-	handleNoLocation();
-	return _resourcePath;
+	handleNoLocation(path);
+	return path;
 }
 
 //------------------------------------------------------------------------------
 
-void Host::handleLocation(Location &loc)
+void Host::handleLocation(std::string &path, Location &loc)
 {
 	// handle redirection
 	if (loc.getRedirection() != "")
 	{
 		std::cout << "REDIRECTION: " << loc.getRedirection() << std::endl;
 		_statusCode = 301;
-		_resourcePath = loc.getRedirection();
+		path = loc.getRedirection();
 		return ;
 	}
 
@@ -229,39 +217,39 @@ void Host::handleLocation(Location &loc)
 	if (loc.getRoot() != "")
 	{
 		std::cout << "LOC-ROOT: " << color(loc.getRoot(), GREEN) << std::endl;
-		if (isFile(loc.getRoot() + _resourcePath))
+		if (isFile(loc.getRoot() + path))
 		{
 			std::cout << "Resource path is a file" << std::endl;
-			_resourcePath = loc.getRoot() + _resourcePath;
+			path = loc.getRoot() + path;
 			return ;
 		}
 		std::cout << "Resource path is a directory" << std::endl;
-		_resourcePath = loc.getRoot() + _resourcePath.substr(loc.getLocation().length());
+		path = loc.getRoot() + path.substr(loc.getLocation().length());
 	}
 	else if (loc.getAlias() != "")
 	{
 		std::cout << "LOC-ALIAS: " << color(loc.getAlias(), GREEN) << std::endl;
-		_resourcePath = loc.getAlias();
+		path = loc.getAlias();
 	}
 	else if (_root != "")
 	{
 		std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
-		_resourcePath = _root + _resourcePath.substr(loc.getLocation().length());
+		path = _root + path.substr(loc.getLocation().length());
 	}
 
 	// handle index and autoindex
-	if (isDirectory(_resourcePath))
+	if (isDirectory(path))
 	{
-		_resourcePath.append("/");
+		path.append("/");
 		if (loc.getIndexPages().size() > 0)
 		{
 			for (std::vector<std::string>::iterator it = loc.getIndexPages().begin(); it != loc.getIndexPages().end(); it++)
 			{
-				std::string indexPage = _resourcePath;
+				std::string indexPage = path;
 				indexPage.append(*it);
 				if (isFile(indexPage))
 				{
-					_resourcePath.append(*it);
+					path.append(*it);
 					return ;
 				}
 			}
@@ -271,11 +259,11 @@ void Host::handleLocation(Location &loc)
 		{
 			for (std::vector<std::string>::iterator it = _indexPages.begin(); it != _indexPages.end(); it++)
 			{
-				std::string indexPage = _resourcePath;
+				std::string indexPage = path;
 				indexPage.append(*it);
 				if (isFile(indexPage))
 				{
-					_resourcePath.append(*it);
+					path.append(*it);
 					return ;
 				}
 			}
@@ -284,7 +272,7 @@ void Host::handleLocation(Location &loc)
 		else if (_autoIndex != autoIndexState::ON)
 		{
 			std::cout << "No index directive found. Looking for index file" << std::endl;
-			lookForIndexFile();
+			lookForIndexFile(path);
 		}
 		else if (_autoIndex == autoIndexState::ON)
 		{
@@ -296,24 +284,24 @@ void Host::handleLocation(Location &loc)
 
 //------------------------------------------------------------------------------
 
-void Host::handleNoLocation()
+void Host::handleNoLocation(std::string &path)
 {
 	if (_root != "")
 	{
 		std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
-		_resourcePath = _root + _resourcePath;
+		path = _root + path;
 	}
-	if (isDirectory(_resourcePath))
+	if (isDirectory(path))
 	{
 		if (_indexPages.size() > 0)
 		{
 			for (std::vector<std::string>::iterator it = _indexPages.begin(); it != _indexPages.end(); it++)
 			{
-				std::string indexPage = _resourcePath;
+				std::string indexPage = path;
 				indexPage.append(*it);
 				if (isFile(indexPage))
 				{
-					_resourcePath.append(*it);
+					path.append(*it);
 					return ;
 				}
 			}
@@ -322,7 +310,7 @@ void Host::handleNoLocation()
 		else if (_autoIndex != autoIndexState::ON)
 		{
 			std::cout << "No index directive found. Looking for index file" << std::endl;
-			lookForIndexFile();
+			lookForIndexFile(path);
 		}
 		else if (_autoIndex == autoIndexState::ON)
 		{
@@ -344,15 +332,14 @@ void Host::updateAutoIndex(autoIndexState state)
 
 //------------------------------------------------------------------------------
 
-void Host::lookForIndexFile()
+void Host::lookForIndexFile(std::string &path)
 {
-	std::string path = _resourcePath;
 	std::string indexFiles[] = {"index.html", "index.htm", "index.php"};
 	for (int i = 0; i < 3; i++)
 	{
 		if (isFile(path + indexFiles[i]))
 		{
-			_resourcePath = path + indexFiles[i];
+			path = path + indexFiles[i];
 			return ;
 		}
 	}

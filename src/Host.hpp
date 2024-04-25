@@ -23,17 +23,14 @@ class Host
 		std::vector<std::string>	_errorPages;
 		std::vector<Location>		_locations;
 
-		std::string					_resourcePath;
-		std::string					_requestedMethod;
-
 		// Private methods
-		bool isFile(const std::string &path);
-		bool isDirectory(const std::string &path);
-		bool locationExists(const std::string &location);
-		void handleLocation(Location &location);
-		void handleNoLocation();
+		bool isFile(std::string const &path);
+		bool isDirectory(std::string const &path);
+		bool locationExists(std::string const &path, std::string const &location);
+		void handleLocation(std::string &path, Location &location);
+		void handleNoLocation(std::string &path);
 		void updateAutoIndex(autoIndexState state);
-		void lookForIndexFile();
+		void lookForIndexFile(std::string &path);
 
 	
 	public:
@@ -77,7 +74,7 @@ class Host
 		bool isAllowedMethod(std::string &path, std::string method);
 		bool isRedirection(std::string &path);
 		bool isAutoindexOn();
-		std::string updateResourcePath(std::string const &path);
+		std::string updateResourcePath(std::string path);
 };
 
 #endif
