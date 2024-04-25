@@ -73,8 +73,8 @@ class Host
 		void addLocation(Location &location);
 
 		// Methods
-		bool isAllowedCGI(std::string &extension);
-		bool isAllowedMethod(std::string path, std::string method);
+		bool isAllowedCGI(std::string &path, std::string &extension);
+		bool isAllowedMethod(std::string &path, std::string method);
 		bool isRedirection(std::string &path);
 		bool isAutoindexOn();
 		std::string updateResourcePath(std::string const &path);

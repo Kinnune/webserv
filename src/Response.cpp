@@ -120,7 +120,7 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "GET")
 	{
-		getMethod();
+		handleGetMethod();
 	}
 	return (1);
 }
@@ -239,9 +239,11 @@ std::string Response::detectContentType(const std::string &filePath)
 bool Response::supportedCGI()
 {
 	std::string fileExtension = getFileExtension(_request.getTarget());
-
-	//**these values could/should be read from the config
-	return (fileExtension == "js" | fileExtension == "py");
+	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
+	{
+		return true;
+	}
+	return false;
 }
 
 //------------------------------------------------------------------------------
@@ -365,10 +367,27 @@ int Response::doCGI()
 //	HANDLE METHODS
 //------------------------------------------------------------------------------
 
-void Response::getMethod()
+void Response::handleGetMethod()
 {
+	std::string requestedPath = _request.getTarget();
+	
+	// Check if the requested method is allowed
+	if (_host.isAllowedMethod(requestedPath, "GET") == false)
+	{
+		setStatus(405);
+		return ;
+	}
+
+	// Check if there's a redirection
+	if (_host.isRedirection(requestedPath))
+	{
+		setStatus(301);
+		return ;
+	}
+
 	std::cout << "Resource requested: " << color(_request.getTarget(), GREEN) << std::endl;
-	std::string filePath = _host.updatePath(_request.getTarget());
+	std::string filePath = _host.updateResourcePath(_request.getTarget());
+	
 	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 	std::string contentType = detectContentType(filePath);
 	

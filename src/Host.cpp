@@ -88,12 +88,6 @@ void Host::addLocation(Location &location) { _locations.push_back(location); }
 
 
 //------------------------------------------------------------------------------
-//	METHODS
-//------------------------------------------------------------------------------
-
-
-
-//------------------------------------------------------------------------------
 //	BOOL FUNCTIONS
 //------------------------------------------------------------------------------
 
@@ -131,7 +125,7 @@ bool Host::locationExists(const std::string &location)
 
 //------------------------------------------------------------------------------
 
-bool Host::isAllowedMethod(std::string path, std::string method)
+bool Host::isAllowedMethod(std::string &path, std::string method)
 {
 	_resourcePath = path;
 
@@ -148,8 +142,10 @@ bool Host::isAllowedMethod(std::string path, std::string method)
 
 //------------------------------------------------------------------------------
 
-bool Host::isAllowedCGI(std::string &extension)
+bool Host::isAllowedCGI(std::string &path, std::string &extension)
 {
+	_resourcePath = path;
+
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
 		if (locationExists(loc->getLocation()))
@@ -165,6 +161,8 @@ bool Host::isAllowedCGI(std::string &extension)
 
 bool Host::isRedirection(std::string &path)
 {
+	_resourcePath = path;
+	
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
 		if (locationExists(loc->getLocation()))
