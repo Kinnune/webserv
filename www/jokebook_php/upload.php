@@ -1,7 +1,5 @@
-// Description: This file is used to upload files to the server.
-
-// PHP tag to start the code
 <?php
+// Description: This file is used to upload files to the server.
 
 // Check if the submit button is clicked
 if (isset($_POST['submit']))

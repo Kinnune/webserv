@@ -135,8 +135,12 @@ int Response::completeResponse()
 
 void Response::body404()
 {
-	std::string bodyStr("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The page you are looking for could not be found.</p></body></html>");
-	_body = std::vector<unsigned char>(bodyStr.begin(), bodyStr.end());
+	// std::string bodyStr("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The page you are looking for could not be found.</p></body></html>");
+
+	std::ifstream file("www/error_pages/404.html", std::ios::binary);
+	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
+
+	// _body = std::vector<unsigned char>(bodyStr.begin(), bodyStr.end());
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = "text/html; charset=utf-8";
 }
@@ -377,24 +381,20 @@ int Response::doCGI()
 
 void Response::handleGetMethod()
 {
-	std::string requestedPath = _request.getTarget();
-	
-	// Check if the requested method is allowed
-	if (_host.isAllowedMethod(requestedPath, "GET") == false)
-	{
-		setStatus(405);
-		return ;
-	}
+	std::cout << "HOST: requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 
 	// Check if there's a redirection
-	if (_host.isRedirection(requestedPath))
+	if (_host.isRedirection(_request.getTarget()))
 	{
+		std::cout << "HOST: redirection found" << std::endl;
 		setStatus(301);
-		return ;
+		// return ;
 	}
 
+	// Check if autoindex is on
 	if (_host.isAutoindexOn())
 	{
+		std::cout << "HOST: autoindex is on" << std::endl;
 		// provide a list of files in the directory
 	}
 
@@ -411,7 +411,6 @@ void Response::handleGetMethod()
 	{
 		// 500 internal server error
 		std::cerr << "Failed to open file: " << filePath << std::endl;
-		// std::cerr << "Failed to open file: " << color(filePath, RED) << std::endl;
 		setStatus(404);
 		return ;
 	}
@@ -425,6 +424,17 @@ void Response::handleGetMethod()
 		return ;
 	}
 	std::cout << "Number of bytes read: " << _body.size() << std::endl;
+
+	
+	// Check if the requested method is allowed
+	if (_host.isAllowedMethod(_request.getTarget(), "GET") == false)
+	{
+		std::cerr << color("Method not allowed", RED) << std::endl;
+		setStatus(405);
+		return ;
+	}
+	
+
 	//something wrong with version, shows up as "  TP/1.1"
 	setStatus(200);
 	_version = "HTTP/1.1";

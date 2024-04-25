@@ -135,7 +135,7 @@ bool Host::isAllowedMethod(std::string &path, std::string method)
 			return std::find(methods.begin(), methods.end(), method) != methods.end();
 		}
 	}
-	return false;
+	return std::find(_methods.begin(), _methods.end(), method) != _methods.end();
 }
 
 //------------------------------------------------------------------------------

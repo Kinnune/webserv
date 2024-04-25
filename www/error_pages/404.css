@@ -1,0 +1,93 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+	background-color: #212121;
+	font-family: 'Roboto', sans-serif;
+	font-weight: bold;
+}
+
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+	width: 80%;
+	color: #d99c19;
+    font-size: 650px;
+	position: relative;
+}
+
+.digit {
+	position: absolute;
+	top: 10vh;
+    margin: 0 40px;
+    opacity: 0;
+	visibility: hidden;
+	transform: translateX(-50%);
+}
+
+.fade {
+	position: absolute;
+	top: 10vh;
+	margin: 0 40px;
+	opacity: 0;
+	visibility: hidden;
+	transform: translateX(-50%);
+}
+
+.first {
+	left: 30%;
+}
+
+.middle {
+	left: 50%;
+}
+
+.last {
+	left: 70%;
+}
+
+@keyframes scale {
+	0% { transform: scale(0); opacity: 0; visibility: hidden; }
+	100% { transform: scale(1); opacity: 1; visibility: visible;}
+}
+
+.a {
+	animation: scale 0.5s ease-in forwards;
+}
+
+.b {
+	animation: scale 0.5s ease-in forwards 0.5s;
+}
+
+.c {
+	animation: scale 0.5s ease-in forwards 1s;
+}
+
+@keyframes fade {
+	0% { transform: scale(1); opacity: 1; visibility: visible; }
+	100% { transform: scale(2); opacity: 0; visibility: hidden; }
+}
+
+.d {
+	animation: fade 0.8s ease-out forwards 0.5s;
+}
+
+.e {
+	animation: fade 0.8s ease-out forwards 1s;
+}
+
+.f {
+	animation: fade 0.8s ease-out forwards 1.5s;
+}
+
+.explanation {
+	position: absolute;
+	top: 60vh;
+	left: 50%;
+	transform: translateX(-50%);
+	text-align: center;
+	font-size: 30px;
+	color: #d99c19;
+}
