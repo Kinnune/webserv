@@ -91,16 +91,6 @@ void Host::addLocation(Location &location) { _locations.push_back(location); }
 //	METHODS
 //------------------------------------------------------------------------------
 
-bool Host::isAllowedCGI(std::string &extension)
-{
-	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
-	{
-		std::vector<std::string> extensions = loc->getCgiExtensions();
-		if (std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
-			return true;
-	}
-	return false;
-}
 
 
 //------------------------------------------------------------------------------
@@ -141,16 +131,55 @@ bool Host::locationExists(const std::string &location)
 
 //------------------------------------------------------------------------------
 
-bool Host::allowedMethod(std::vector<std::string> methods, std::string method)
+bool Host::isAllowedMethod(std::string path, std::string method)
 {
-	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); it++)
+	_resourcePath = path;
+
+	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
-		if (*it == method)
+		if (locationExists(loc->getLocation()))
 		{
-			return true;
+			std::vector<std::string> methods = loc->getMethods();
+			return std::find(methods.begin(), methods.end(), method) != methods.end();
 		}
 	}
 	return false;
+}
+
+//------------------------------------------------------------------------------
+
+bool Host::isAllowedCGI(std::string &extension)
+{
+	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
+	{
+		if (locationExists(loc->getLocation()))
+		{
+			std::vector<std::string> extensions = loc->getCgiExtensions();
+			return std::find(extensions.begin(), extensions.end(), extension) != extensions.end();
+		}
+	}
+	return false;
+}
+
+//------------------------------------------------------------------------------
+
+bool Host::isRedirection(std::string &path)
+{
+	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
+	{
+		if (locationExists(loc->getLocation()))
+		{
+			return loc->getRedirection() != "";
+		}
+	}
+	return false;
+}
+
+//------------------------------------------------------------------------------
+
+bool Host::isAutoindexOn()
+{
+	return _autoIndex == autoIndexState::ON;
 }
 
 
@@ -158,15 +187,11 @@ bool Host::allowedMethod(std::vector<std::string> methods, std::string method)
 //	UPDATE RESOURCE PATH
 //------------------------------------------------------------------------------
 
-std::string Host::updatePath(std::string const &path)
+std::string Host::updateResourcePath(std::string const &path)
 {
 	_resourcePath = path;
-	updateResourcePath();
-	return _resourcePath;
-}
+	_autoIndex = autoIndexState::NONE;
 
-void Host::updateResourcePath()
-{
 	std::cout << "Updating resource path" << std::endl;
 	std::cout << "Path: " << color(_resourcePath, CYAN) << std::endl;
 	std::cout << "Port: " << color(_portInt, CYAN) << std::endl;
@@ -181,15 +206,12 @@ void Host::updateResourcePath()
 			std::cout << "Location found: " << color(loc->getLocation(), CYAN) << std::endl;
 			updateAutoIndex(loc->getAutoIndex());
 			handleLocation(*loc);
-			return ;
+			return _resourcePath;
 		}
 	}
 	std::cout << color("No location found", RED) << std::endl;
 	handleNoLocation();
-	return ;
-
-	std::cout << color("No host found", RED) << std::endl;
-	// If we get this far, we have no host with the port we are looking for. This should probably be handled elsewhere.
+	return _resourcePath;
 }
 
 //------------------------------------------------------------------------------
@@ -245,7 +267,7 @@ void Host::handleLocation(Location &loc)
 					return ;
 				}
 			}
-			_statusCode = 403;
+			// _statusCode = 403;
 		}
 		else if (_indexPages.size() > 0)
 		{
@@ -259,7 +281,7 @@ void Host::handleLocation(Location &loc)
 					return ;
 				}
 			}
-			_statusCode = 403;
+			// _statusCode = 403;
 		}
 		else if (_autoIndex != autoIndexState::ON)
 		{
@@ -297,7 +319,7 @@ void Host::handleNoLocation()
 					return ;
 				}
 			}
-			_statusCode = 403;
+			// _statusCode = 403;
 		}
 		else if (_autoIndex != autoIndexState::ON)
 		{

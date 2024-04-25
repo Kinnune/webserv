@@ -30,8 +30,6 @@ class Host
 		bool isFile(const std::string &path);
 		bool isDirectory(const std::string &path);
 		bool locationExists(const std::string &location);
-		bool allowedMethod(std::vector<std::string> methods, std::string method);
-		void updateResourcePath();
 		void handleLocation(Location &location);
 		void handleNoLocation();
 		void updateAutoIndex(autoIndexState state);
@@ -76,7 +74,10 @@ class Host
 
 		// Methods
 		bool isAllowedCGI(std::string &extension);
-		std::string updatePath(std::string const &path);
+		bool isAllowedMethod(std::string path, std::string method);
+		bool isRedirection(std::string &path);
+		bool isAutoindexOn();
+		std::string updateResourcePath(std::string const &path);
 };
 
 #endif
