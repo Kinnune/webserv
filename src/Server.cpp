@@ -137,6 +137,7 @@ void Server::loop()
 			else if (_pollFds[i].revents)
 			{
 				_clients[_pollFds[i].fd].handleEvent(_pollFds[i].revents);
+				// if client fails to read or write in handleEvent -> remove client
 			}
 		}
 	}
