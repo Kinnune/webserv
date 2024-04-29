@@ -101,8 +101,10 @@ int Response::completeResponse()
 {
 	if (supportedCGI())
 	{
+		std::cout << "CGI supported" << std::endl;
 		if (_runCGI)
 		{
+			std::cout << "Running CGI" << std::endl;
 			doCGI();
 		}
 		if (!_waitCGI)
@@ -124,7 +126,7 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "POST")
 	{
-		// handlePostMethod();
+		handlePostMethod();
 	}
 	else if (_request.getMethod() == "DELETE")
 	{
@@ -132,6 +134,8 @@ int Response::completeResponse()
 	}
 	return (1);
 }
+
+//------------------------------------------------------------------------------
 
 void Response::body404()
 {
@@ -381,6 +385,8 @@ int Response::doCGI()
 
 void Response::handleGetMethod()
 {
+	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
+	std::cout << "Method: " << color("GET", GREEN) << std::endl;
 	std::cout << "HOST: requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 
 	// Check if there's a redirection
@@ -440,12 +446,38 @@ void Response::handleGetMethod()
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = contentType;
+	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 }
+
+//------------------------------------------------------------------------------
 
 void Response::handlePostMethod()
 {
-	//**TODO
+	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
+	std::cout << "Method: " << color("POST", GREEN) << std::endl;
+
+	// Update resource path
+	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+	std::string filePath = _host.updateResourcePath(_request.getTarget());
+	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+
+	if (_runCGI)
+	{
+		doCGI();
+	}
+
+	// Handle body
+
+	// Build response
+	setStatus(200);
+	_version = "HTTP/1.1";
+	setContentLengthHeader(_body.size());
+	_headers["Content-Type"] = "text/html";
+
+	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 }
+
+//------------------------------------------------------------------------------
 
 void Response::handleDeleteMethod()
 {

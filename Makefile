@@ -4,7 +4,7 @@
 CPP = c++
 
 #-fsanitize=address -g
-CPPFLAGS =  -Wall -Wextra -Werror -std=c++11 -g -o 
+CPPFLAGS =  -Wall -Wextra -Werror -std=c++11 -o 
 
 SRC = 	src/main.cpp \
 		src/Server.cpp \
@@ -22,7 +22,7 @@ all: $(NAME)
 
 $(NAME): $(SRC)
 	$(CPP) $(CPPFLAGS) $(NAME) $(SRC)
-
+	mkdir database
 
 clean:
 	rm $(NAME)
