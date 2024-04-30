@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <fstream>
 #include <unistd.h>
+#include <ctime>
 
 #include <cstring>
 #include "Server.hpp"
@@ -16,7 +17,6 @@
 
 class Response;
 class Request;
-
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 std::ostream &operator<<(std::ostream &o, Response response);
@@ -38,8 +38,6 @@ class Client
 		void handleEvent(short events);
 		void setConfig(ConfigurationFile &config);
 		ConfigurationFile &getConfig();
-	private:
-		ConfigurationFile _config;
 		bool isFile(const std::string &path);
 		bool isDirectory(const std::string &path);
 		bool locationExists(const std::string &path);
@@ -49,6 +47,9 @@ class Client
 		void handleNoLocation(hostConfig &host);
 		void updateAutoIndex(autoIndexState state);
 		void lookForIndexFile();
+		bool checkTimeout(time_t currentTime);
+	private:
+		ConfigurationFile _config;
 		std::string _resourcePath;
 		int _statusCode;
 		autoIndexState _autoIndex;
@@ -58,6 +59,7 @@ class Client
 		Buffer _buffer;
 		Request _request;
 		Response _response;
+		std::time_t _timeout;
 };
 
 

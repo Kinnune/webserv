@@ -43,6 +43,7 @@ class Response
 		bool hasRequest() { return (_request.getIsComplete()); }
 		bool childReady();
 		bool getWaitCGI() { return (_waitCGI); }
+		void setCGIEnvironmentVariables(char **envp);
 
 		std::string _version;
 		std::string _statusCode;

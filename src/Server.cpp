@@ -84,6 +84,7 @@ void Server::newClient(int i)
 {
 	Client newClient(_pollFds[i].fd, _ports.at(i));
 
+	std::cout << color("Client added: ", GREEN) << i << std::endl;
 	newClient.setConfig(_config);
 	_clients.insert(std::make_pair(newClient.getFd(), newClient));
 	_pollFds[getNfds()].fd = newClient.getFd();
@@ -95,6 +96,7 @@ void Server::removeClient(int fd)
 {
 	unsigned int i;
 
+	std::cout << color("Client removed: ", RED) << std::endl;
 	_clients.erase(fd);
 	for (i = _nServers; i < getNfds(); i++)
 	{
@@ -109,9 +111,11 @@ void Server::removeClient(int fd)
 void Server::loop()
 {
 	int timeout = 1 * 1000;
+	time_t currentTime;
 
 	while (true)
 	{
+		currentTime = std::time(nullptr);
 		poll(_pollFds, getNfds(), timeout);
 		for (unsigned int i = 0; i < getNfds(); i++)
 		{
@@ -122,7 +126,7 @@ void Server::loop()
 					newClient(i);
 				}
 			}
-			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))	// add timeout
+			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL) || _clients[_pollFds[i].fd].checkTimeout(currentTime))
 			{
 				removeClient(_pollFds[i].fd);
 			}

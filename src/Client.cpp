@@ -1,5 +1,5 @@
-#include "Client.hpp"
 #include "Colors.hpp"
+#include "Client.hpp"
 #include <iostream>
 #include <fstream>
 #include <unistd.h>		// access()
@@ -13,7 +13,9 @@
 Client::Client()
 	: _request(Request()),
 	_response(Response())
-{}
+{
+	_timeout = std::time(nullptr);
+}
 
 Client::~Client() {}
 
@@ -27,6 +29,7 @@ Client &Client::operator=(Client const &other)
 	_fd = other._fd;
 	_port = other._port;
 	_config = other._config;
+	_timeout = other._timeout;
 	return (*this);
 }
 
@@ -42,6 +45,7 @@ Client::Client(int serverFd, int port)
 	_port = port;
 	_fd = accept(serverFd, (struct sockaddr *)&_address, &adressSize);
 	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+	_timeout = std::time(nullptr);
 }
 
 
@@ -199,7 +203,7 @@ bool Client::respond()
 		_resourcePath = _request.getTarget();
 		updateResourcePath();
 		_request.setTarget(_resourcePath);
-		std::cout << "Updated path: " << color(_resourcePath, CYAN) << std::endl;
+		// std::cout << "Updated path: " << color(_resourcePath, CYAN) << std::endl;
 		_response = Response(_request);
 	}
 	if (_response.completeResponse())
@@ -219,33 +223,33 @@ bool Client::respond()
 
 void Client::updateResourcePath()
 {
-	std::cout << "Updating resource path" << std::endl;
-	std::cout << "Path: " << color(_resourcePath, CYAN) << std::endl;
-	std::cout << "Port: " << color(_port, CYAN) << std::endl;
-	std::cout << "Hosts: " << color(_config.getHosts().size(), CYAN) << std::endl;
+	// std::cout << "Updating resource path" << std::endl;
+	// std::cout << "Path: " << color(_resourcePath, CYAN) << std::endl;
+	// std::cout << "Port: " << color(_port, CYAN) << std::endl;
+	// std::cout << "Hosts: " << color(_config.getHosts().size(), CYAN) << std::endl;
 
 	for (std::vector<hostConfig>::iterator host = _config.getHosts().begin(); host != _config.getHosts().end(); host++)
 	{
 		if (host->portInt == _port)
 		{
-			std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
+			// std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
 			updateAutoIndex(host->autoIndex);
 			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
 			{
 				if (locationExists(loc->location))
 				{
-					std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
+					// std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
 					updateAutoIndex(loc->autoIndex);
 					handleLocation(*host, *loc);
 					return ;
 				}
 			}
-			std::cout << color("No location found", RED) << std::endl;
+			// std::cout << color("No location found", RED) << std::endl;
 			handleNoLocation(*host);
 			return ;
 		}
 	}
-	std::cout << color("No host found", RED) << std::endl;
+	// std::cout << color("No host found", RED) << std::endl;
 	// If we get this far, we have no host with the port we are looking for. This should probably be handled elsewhere.
 }
 
@@ -397,6 +401,15 @@ void Client::lookForIndexFile()
 	_statusCode = 403;
 }
 
+//------------------------------------------------------------------------------
+
+bool Client::checkTimeout(time_t currentTime)
+{
+	static const time_t maxTimeout = 12;
+
+	// std::cout << std::boolalpha << (currentTime - _timeout > maxTimeout) << "_timeout: " << _timeout << " currentTime: " << currentTime << std::endl;
+	return (currentTime - _timeout > maxTimeout);
+}
 
 //------------------------------------------------------------------------------
 //	HANDLE EVENT
@@ -429,16 +442,18 @@ void Client::handleEvent(short events)
 	}
 	if (events & POLLIN)
 	{
+		// _timeout = std::time(nullptr);
 		if (DEBUG)
-			std::cout << GREEN << "READING\n" << std::endl; 
+			std::cout << GREEN << "READING\n" << RESET << std::endl; 
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
-		std::cout << buffer << std::endl;
 		if (readCount < 0)
 		{
 			throw (std::runtime_error("EXCEPTION: reading failed"));
 		}
 		buffer[readCount] = '\0';
+		std::cout << buffer << std::endl;
 		_buffer.addToBuffer(&buffer[0], readCount);
+		std::cout << _buffer.getData() << std::endl;
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
@@ -461,8 +476,24 @@ void Client::handleEvent(short events)
 			//  close connection
 		}
 	}
-	else
+	else if (_request.getIsChunked() && !_request.getIsComplete())
 	{
+		ssize_t chunkSize;
+		chunkSize = _buffer.readChunkLength();
+		if (chunkSize == 0)
+		{
+			_request.setIsComplete(true);
+			_request.setContentLenght(_request.getContentLenght() + 1);
+		}
+		else if (chunkSize > 0)
+		{
+			std::vector<unsigned char>chunk = _buffer.extractChunk(chunkSize);
+			for (unsigned char c : chunk)
+			{
+				_request.getBody().push_back(c);
+			}
+			_request.setContentLenght(_request.getContentLenght() + chunkSize);
+		}
 		// std::cout << RED << "double newline NOT found" << RESET << std::endl;
 	}
 	// std::cout << _buffer.getData();
