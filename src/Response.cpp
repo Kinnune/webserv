@@ -349,7 +349,7 @@ int Response::doCGI()
 		//**hardcoding python example
 		//**TODO_set bs properly
 		const char *program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget())).c_str();
-		const char *argument = _request.getTarget().c_str();
+		const char *argument = _host.updateResourcePath(_request.getTarget()).c_str();
 		const char *args[] = {program, argument, nullptr};
 		//**TODO set enviroment variables according to request headers
 		execve(program, const_cast<char* const*>(args), nullptr);
@@ -460,11 +460,6 @@ void Response::handlePostMethod()
 	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget());
 	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
-
-	if (_runCGI)
-	{
-		doCGI();
-	}
 
 	// Handle body
 
