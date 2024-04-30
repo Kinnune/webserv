@@ -47,6 +47,7 @@ class Host
 		std::string getHost() const;
 		std::string getPortString() const;
 		std::string getRoot() const;
+		std::string getInterpreter(std::string &path, const std::string &extension);
 		autoIndexState getAutoIndex() const;
 		std::vector<std::string> &getMethods();
 		std::vector<std::string> &getIndexPages();

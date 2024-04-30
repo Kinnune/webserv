@@ -62,6 +62,26 @@ std::vector<std::string> &Host::getIndexPages() { return _indexPages; }
 std::vector<std::string> &Host::getErrorPages() { return _errorPages; }
 std::vector<Location> &Host::getLocations() { return _locations; }
 
+std::string Host::getInterpreter(std::string &path, const std::string &extension)
+{
+	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
+	{
+		if (locationExists(path, loc->getLocation()))
+		{
+			std::vector<std::string> extensions = loc->getCgiExtensions();
+			if (std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
+			{
+				return loc->getInterpreter();
+			}
+			else
+			{
+				return "";
+			}
+		}
+	}
+	return "";
+}
+
 
 //------------------------------------------------------------------------------
 //	SETTERS

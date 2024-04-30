@@ -348,8 +348,8 @@ int Response::doCGI()
 		// Execute the CGI script
 		//**hardcoding python example
 		//**TODO_set bs properly
-		const char *program = "/usr/bin/python";
-		const char *argument = "/Users/jbagger/code/GitHub/webserv/www/test.py";
+		const char *program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget())).c_str();
+		const char *argument = _request.getTarget().c_str();
 		const char *args[] = {program, argument, nullptr};
 		//**TODO set enviroment variables according to request headers
 		execve(program, const_cast<char* const*>(args), nullptr);
