@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <fstream>
 #include <unistd.h>
+#include <ctime>
 
 #include <cstring>
 #include "Server.hpp"
@@ -16,7 +17,6 @@
 
 class Response;
 class Request;
-
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 std::ostream &operator<<(std::ostream &o, Response response);
@@ -42,6 +42,7 @@ class Client
 		Buffer _buffer;
 		Request _request;
 		Response _response;
+		std::time_t _timeout;
 		ConfigurationFile _config;
 
 	public:

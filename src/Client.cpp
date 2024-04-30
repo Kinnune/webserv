@@ -1,5 +1,5 @@
-#include "Client.hpp"
 #include "Colors.hpp"
+#include "Client.hpp"
 #include <iostream>
 #include <fstream>
 #include <unistd.h>		// access()
@@ -13,7 +13,9 @@
 Client::Client()
 	: _request(Request()),
 	_response(Response())
-{}
+{
+	_timeout = std::time(nullptr);
+}
 
 Client::~Client() {}
 
@@ -33,6 +35,7 @@ Client &Client::operator=(Client const &other)
 	_request = other._request;
 	_response = other._response;
 	_config = other._config;
+	_timeout = other._timeout;
 	return (*this);
 }
 
@@ -49,6 +52,7 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 	_port = port;
 	_fd = accept(serverFd, (struct sockaddr *)&_address, &adressSize);
 	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+	_timeout = std::time(nullptr);
 }
 
 
@@ -147,6 +151,15 @@ bool Client::respond()
 	return (false);
 }
 
+//------------------------------------------------------------------------------
+
+bool Client::checkTimeout(time_t currentTime)
+{
+	static const time_t maxTimeout = 12;
+
+	// std::cout << std::boolalpha << (currentTime - _timeout > maxTimeout) << "_timeout: " << _timeout << " currentTime: " << currentTime << std::endl;
+	return (currentTime - _timeout > maxTimeout);
+}
 
 //------------------------------------------------------------------------------
 //	HANDLE EVENT
@@ -179,18 +192,18 @@ void Client::handleEvent(short events)
 	}
 	if (events & POLLIN)
 	{
+		// _timeout = std::time(nullptr);
 		if (DEBUG)
-			std::cout << GREEN << "READING\n" << std::endl; 
+			std::cout << GREEN << "READING\n" << RESET << std::endl; 
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
-		std::cout << std::endl << color("----REQUEST---------------------------------------------", PURPLE) << std::endl;
-		std::cout << buffer << std::endl;
-		std::cout << color("--------------------------------------------------------", PURPLE) << std::endl << std::endl;
 		if (readCount < 0)
 		{
 			throw (std::runtime_error("EXCEPTION: reading failed"));
 		}
 		buffer[readCount] = '\0';
+		std::cout << buffer << std::endl;
 		_buffer.addToBuffer(&buffer[0], readCount);
+		std::cout << _buffer.getData() << std::endl;
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
@@ -213,8 +226,24 @@ void Client::handleEvent(short events)
 			//  close connection
 		}
 	}
-	else
+	else if (_request.getIsChunked() && !_request.getIsComplete())
 	{
+		ssize_t chunkSize;
+		chunkSize = _buffer.readChunkLength();
+		if (chunkSize == 0)
+		{
+			_request.setIsComplete(true);
+			_request.setContentLenght(_request.getContentLenght() + 1);
+		}
+		else if (chunkSize > 0)
+		{
+			std::vector<unsigned char>chunk = _buffer.extractChunk(chunkSize);
+			for (unsigned char c : chunk)
+			{
+				_request.getBody().push_back(c);
+			}
+			_request.setContentLenght(_request.getContentLenght() + chunkSize);
+		}
 		// std::cout << RED << "double newline NOT found" << RESET << std::endl;
 	}
 	// std::cout << _buffer.getData();

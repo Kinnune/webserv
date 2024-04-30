@@ -37,9 +37,13 @@ class Request
 
 		// Getters
 		bool getIsValid() { return (_isValid); };
-		bool getIsComplete() { return (_completed); }
-		std::string &getTarget() { return (_target); }
+		bool getIsChunked() { return (_isChunked); };
 		std::string getVersion() { return (_version); };
+		bool getIsComplete() { return (_completed); }
+		void setIsComplete(bool value) { _completed = value; }
+		ssize_t getContentLenght() { return (_contentLength); }
+		void setContentLenght(ssize_t value) { _contentLength = value; }
+		std::string &getTarget() { return (_target); }
 		std::vector<unsigned char> getBody() { return (_body); };
 		std::string const &getMethod() const;
 		std::unordered_map<std::string, std::string> &getHeaders();

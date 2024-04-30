@@ -81,17 +81,6 @@ void Server::startListen()
 void Server::newClient(int i)
 {
 	Client newClient(_pollFds[i].fd, _ports.at(i), _config);
-
-	// for (std::vector<Host>::iterator it = _config.getHosts().begin(); it != _config.getHosts().end(); it++)
-	// {
-	// 	if (it->getPortInt() == _ports.at(i))
-	// 	{
-	// 		newClient.setHost(*it);
-	// 		std::cout << "Locations on host: " << color(newClient.getHost().getLocations().size(), GREEN) << std::endl;
-	// 		break ;
-	// 	}
-	// }
-	// std::cout << "New client connected to server " << GREEN << newClient.getHost().getHost() << ":" << newClient.getHost().getPortInt() << RESET << std::endl;
 	_clients.insert(std::make_pair(newClient.getFd(), newClient));
 	_pollFds[getNfds()].fd = newClient.getFd();
 	_pollFds[getNfds()].events = (POLLIN | POLLOUT);
@@ -117,9 +106,11 @@ void Server::removeClient(int fd)
 void Server::loop()
 {
 	int timeout = 1 * 1000;
+	time_t currentTime;
 
 	while (true)
 	{
+		currentTime = std::time(nullptr);
 		poll(_pollFds, getNfds(), timeout);
 		for (unsigned int i = 0; i < getNfds(); i++)
 		{
@@ -130,7 +121,7 @@ void Server::loop()
 					newClient(i);
 				}
 			}
-			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))	// add timeout
+			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL) || _clients[_pollFds[i].fd].checkTimeout(currentTime))
 			{
 				removeClient(_pollFds[i].fd);
 			}
