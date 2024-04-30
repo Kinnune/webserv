@@ -33,14 +33,14 @@ Response::Response()
 Response::Response(Request &request)
 	: _request(request)
 {
-	_runCGI = supportedCGI();
-	_waitCGI = false;
 	_statusCode = "";
 	_statusMessage = "";
 	_version = _request.getVersion();			
 	_headers = request.getHeaders();
 	_host = request.getHost();
 	_body.resize(0);
+	_waitCGI = false;
+	_runCGI = supportedCGI();
 	if (DEBUG)
 		std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
 };
@@ -101,7 +101,7 @@ int Response::completeResponse()
 {
 	if (supportedCGI())
 	{
-		std::cout << "CGI supported" << std::endl;
+		std::cout << std::boolalpha << "CGI supported, _runCGI: " << _runCGI << " _waitCGI: " << _waitCGI << std::endl;
 		if (_runCGI)
 		{
 			std::cout << "Running CGI" << std::endl;
@@ -255,10 +255,13 @@ std::string Response::detectContentType(const std::string &filePath)
 bool Response::supportedCGI()
 {
 	std::string fileExtension = getFileExtension(_request.getTarget());
+	std::cout << "File extension: " << color(fileExtension, GREEN) << std::endl;
 	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
 	{
+		std::cout << "CGI is " << color("allowed", GREEN) << std::endl;
 		return true;
 	}
+	std::cout << "CGI is " << color("not allowed", RED) << std::endl;
 	return false;
 }
 
@@ -346,12 +349,15 @@ int Response::doCGI()
 		dup2(_pipeParent[1], STDOUT_FILENO); // Redirect stdout to write end of pipe to parent
 
 		// Execute the CGI script
-		//**hardcoding python example
-		//**TODO_set bs properly
+		//**TODO set enviroment variables according to request headers
 		const char *program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget())).c_str();
 		const char *argument = _host.updateResourcePath(_request.getTarget()).c_str();
+		
+		if (getFileExtension(_request.getTarget()) == "out")
+		{
+			program = argument;
+		}
 		const char *args[] = {program, argument, nullptr};
-		//**TODO set enviroment variables according to request headers
 		execve(program, const_cast<char* const*>(args), nullptr);
 		std::cerr << "Exec failed"; // This line is executed only if execl fails
 		return 1; // Exit child process with failure status

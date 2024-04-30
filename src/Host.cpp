@@ -113,7 +113,7 @@ void Host::addLocation(Location &location) { _locations.push_back(location); }
 
 bool Host::isFile(const std::string &path)
 {
-	std::cout << "Checking if path is a file" << std::endl;
+	// std::cout << "Checking if path is a file" << std::endl;
 	struct stat path_stat;						// create a stat struct
 	if (stat(path.c_str(), &path_stat) != 0)	// get the stats of the path, and store them in the struct
 		return false;							// if the path does not exist, return false
@@ -166,8 +166,9 @@ bool Host::isAllowedCGI(std::string &path, std::string &extension)
 	{
 		if (locationExists(path, loc->getLocation()))
 		{
+			std::string ext = "." + extension;
 			std::vector<std::string> extensions = loc->getCgiExtensions();
-			return std::find(extensions.begin(), extensions.end(), extension) != extensions.end();
+			return std::find(extensions.begin(), extensions.end(), ext) != extensions.end();
 		}
 	}
 	return false;
@@ -206,16 +207,16 @@ std::string Host::updateResourcePath(std::string path)
 	updateAutoIndex(_autoIndex);
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
-		std::cout << "Looking for location: " << color(loc->getLocation(), CYAN) << std::endl;
+		// std::cout << "Looking for location: " << color(loc->getLocation(), CYAN) << std::endl;
 		if (locationExists(path, loc->getLocation()))
 		{
-			std::cout << "Location found: " << color(loc->getLocation(), CYAN) << std::endl;
+			// std::cout << "Location found: " << color(loc->getLocation(), CYAN) << std::endl;
 			updateAutoIndex(loc->getAutoIndex());
 			handleLocation(path, *loc);
 			return path;
 		}
 	}
-	std::cout << color("No location found", RED) << std::endl;
+	// std::cout << color("No location found", RED) << std::endl;
 	handleNoLocation(path);
 	return path;
 }
@@ -227,7 +228,7 @@ void Host::handleLocation(std::string &path, Location &loc)
 	// handle redirection
 	if (loc.getRedirection() != "")
 	{
-		std::cout << "REDIRECTION: " << loc.getRedirection() << std::endl;
+		// std::cout << "REDIRECTION: " << loc.getRedirection() << std::endl;
 		_statusCode = 301;
 		path = loc.getRedirection();
 		return ;
@@ -236,24 +237,24 @@ void Host::handleLocation(std::string &path, Location &loc)
 	// handle root/alias
 	if (loc.getRoot() != "")
 	{
-		std::cout << "LOC-ROOT: " << color(loc.getRoot(), GREEN) << std::endl;
+		// std::cout << "LOC-ROOT: " << color(loc.getRoot(), GREEN) << std::endl;
 		if (isFile(loc.getRoot() + path))
 		{
-			std::cout << "Resource path is a file" << std::endl;
+			// std::cout << "Resource path is a file" << std::endl;
 			path = loc.getRoot() + path;
 			return ;
 		}
-		std::cout << "Resource path is a directory" << std::endl;
+		// std::cout << "Resource path is a directory" << std::endl;
 		path = loc.getRoot() + path.substr(loc.getLocation().length());
 	}
 	else if (loc.getAlias() != "")
 	{
-		std::cout << "LOC-ALIAS: " << color(loc.getAlias(), GREEN) << std::endl;
+		// std::cout << "LOC-ALIAS: " << color(loc.getAlias(), GREEN) << std::endl;
 		path = loc.getAlias();
 	}
 	else if (_root != "")
 	{
-		std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
+		// std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
 		path = _root + path.substr(loc.getLocation().length());
 	}
 
@@ -291,12 +292,12 @@ void Host::handleLocation(std::string &path, Location &loc)
 		}
 		else if (_autoIndex != autoIndexState::ON)
 		{
-			std::cout << "No index directive found. Looking for index file" << std::endl;
+			// std::cout << "No index directive found. Looking for index file" << std::endl;
 			lookForIndexFile(path);
 		}
 		else if (_autoIndex == autoIndexState::ON)
 		{
-			std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
+			// std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
 			_autoIndex = autoIndexState::ON;
 		}
 	}
@@ -308,7 +309,7 @@ void Host::handleNoLocation(std::string &path)
 {
 	if (_root != "")
 	{
-		std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
+		// std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
 		path = _root + path;
 	}
 	if (isDirectory(path))
@@ -329,12 +330,12 @@ void Host::handleNoLocation(std::string &path)
 		}
 		else if (_autoIndex != autoIndexState::ON)
 		{
-			std::cout << "No index directive found. Looking for index file" << std::endl;
+			// std::cout << "No index directive found. Looking for index file" << std::endl;
 			lookForIndexFile(path);
 		}
 		else if (_autoIndex == autoIndexState::ON)
 		{
-			std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
+			// std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
 			_autoIndex = autoIndexState::ON;
 		}
 	}
