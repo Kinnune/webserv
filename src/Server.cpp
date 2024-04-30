@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 
+
 Server::Server() : _nServers(0), _nClients(0)
 {
 	std::memset(&_pollFds[0], 0, sizeof(_pollFds));
@@ -20,15 +21,12 @@ void Server::initialize(std::string configFile)
 int Server::readConfig()
 {
 	return (_config.parse());
-	// _config.parse();
-	// _config.printConfigInfo();
-	// return (1);
 }
 
 void Server::setPorts()
 {
 	struct sockaddr_in address;
-	std::vector<struct hostConfig> hosts;
+	std::vector<Host> hosts;
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;	// INADDR_ANY = we're responding to any address
@@ -38,7 +36,7 @@ void Server::setPorts()
 
 	for (unsigned int i = 0; i < _nServers; i++)
 	{
-		_ports.push_back(hosts.at(i).portInt);
+		_ports.push_back(hosts.at(i).getPortInt());
 		address.sin_port = htons(_ports.at(i));	// htons = host to network, short (converts port number to network byte order, which is big-endian)
 		_addresses.push_back(address);
 		_pollFds[i].events = POLLIN;
@@ -82,10 +80,7 @@ void Server::startListen()
 
 void Server::newClient(int i)
 {
-	Client newClient(_pollFds[i].fd, _ports.at(i));
-
-	std::cout << color("Client added: ", GREEN) << i << std::endl;
-	newClient.setConfig(_config);
+	Client newClient(_pollFds[i].fd, _ports.at(i), _config);
 	_clients.insert(std::make_pair(newClient.getFd(), newClient));
 	_pollFds[getNfds()].fd = newClient.getFd();
 	_pollFds[getNfds()].events = (POLLIN | POLLOUT);
@@ -96,7 +91,7 @@ void Server::removeClient(int fd)
 {
 	unsigned int i;
 
-	std::cout << color("Client removed: ", RED) << std::endl;
+	std::cout << color("Client disconnected", RED) << std::endl;
 	_clients.erase(fd);
 	for (i = _nServers; i < getNfds(); i++)
 	{
@@ -133,6 +128,7 @@ void Server::loop()
 			else if (_pollFds[i].revents)
 			{
 				_clients[_pollFds[i].fd].handleEvent(_pollFds[i].revents);
+				// if client fails to read or write in handleEvent -> remove client
 			}
 		}
 	}

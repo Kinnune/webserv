@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include "Colors.hpp"
 
 
 //------------------------------------------------------------------------------
@@ -33,6 +34,7 @@ Request &Request::operator=(Request const &other)
 	_headers = other._headers;
 	_body = other._body;
 	_isChunked = other._isChunked;
+	_host = other._host;
 	return (*this);
 }
 
@@ -58,6 +60,16 @@ Request::Request(std::vector<unsigned char> content)
 	}
 }
 
+Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
+	: _completed(false),
+	_isValid(false)
+{
+	if (parseContent(content) == -1)
+	{
+		throw (std::runtime_error("Failed to parse request"));
+	}
+	_host = *(config.getHost(_headers["Host"]));
+}
 
 //------------------------------------------------------------------------------
 //  PRINT FUNCTIONS

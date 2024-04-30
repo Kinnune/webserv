@@ -52,4 +52,12 @@ std::string color(T const &t, std::string const color)
     return (color + oss.str() + RESET);
 }
 
+template <typename T>
+std::string colour(T const &t, std::string const color)
+{
+    std::ostringstream oss;
+    oss << t;
+    return (color + oss.str() + RESET);
+}
+
 #endif

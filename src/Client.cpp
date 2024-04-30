@@ -26,17 +26,24 @@ Client::Client(Client const &other)
 
 Client &Client::operator=(Client const &other)
 {
+	_statusCode = other._statusCode;
+	_autoIndex = other._autoIndex;
 	_fd = other._fd;
 	_port = other._port;
+	_address = other._address;
+	_buffer = other._buffer;
+	_request = other._request;
+	_response = other._response;
 	_config = other._config;
 	_timeout = other._timeout;
 	return (*this);
 }
 
-Client::Client(int serverFd, int port)
+Client::Client(int serverFd, int port, ConfigurationFile &config)
 {
 	socklen_t adressSize = sizeof(_address);
 
+	_config = config;
 	_statusCode = 0;
 	_autoIndex = autoIndexState::NONE;
 	_address.sin_family = AF_INET;
@@ -70,85 +77,13 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 //	GETTERS & SETTERS
 //------------------------------------------------------------------------------
 
-ConfigurationFile &Client::getConfig()
-{
-	return (_config);
-}
+int Client::getFd() const { return (_fd); }
+int Client::getPort() const { return (_port); }
+// Host &Client::getHost() { return (_host); }
 
-void Client::setConfig(ConfigurationFile &config)
-{
-	_config = config;
-}
-
-void Client::setFd(int fd)
-{
-	_fd = fd;
-}
-
-void Client::setPort(int port)
-{
-	_port = port;
-}
-
-int Client::getFd() const
-{
-	return (_fd);
-}
-
-int Client::getPort() const
-{
-	return (_port);
-}
-
-
-//------------------------------------------------------------------------------
-//	BOOL FUNCTIONS
-//------------------------------------------------------------------------------
-
-bool Client::isFile(const std::string& path)
-{
-	struct stat path_stat;						// create a stat struct
-	if (stat(path.c_str(), &path_stat) != 0)	// get the stats of the path, and store them in the struct
-		return false;							// if the path does not exist, return false
-	return S_ISREG(path_stat.st_mode);			// check if the path is a regular file
-}
-
-//------------------------------------------------------------------------------
-
-bool Client::isDirectory(const std::string& path)
-{
-	struct stat path_stat;
-	stat(path.c_str(), &path_stat);
-	return S_ISDIR(path_stat.st_mode);
-}
-
-//------------------------------------------------------------------------------
-
-bool Client::locationExists(const std::string& location)
-{
-	if (std::strncmp(_resourcePath.c_str(), location.c_str(), location.length()) == 0)
-	{
-		if (_resourcePath.length() == location.length() || _resourcePath[location.length()] == '/')
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-//------------------------------------------------------------------------------
-
-bool Client::allowedMethod(std::vector<std::string> methods, std::string method)
-{
-	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); it++)
-	{
-		if (*it == method)
-		{
-			return true;
-		}
-	}
-	return false;
-}
+void Client::setFd(int fd) { _fd = fd; }
+void Client::setPort(int port) { _port = port; }
+// void Client::setHost(Host &host) { _host = host; }
 
 
 //------------------------------------------------------------------------------
@@ -200,9 +135,9 @@ bool Client::respond()
 
 	if (_response.hasRequest() == false)
 	{
-		_resourcePath = _request.getTarget();
-		updateResourcePath();
-		_request.setTarget(_resourcePath);
+		// _resourcePath = _request.getTarget();
+		// updateResourcePath();
+		// _request.setTarget(_resourcePath);
 		// std::cout << "Updated path: " << color(_resourcePath, CYAN) << std::endl;
 		_response = Response(_request);
 	}
@@ -214,191 +149,6 @@ bool Client::respond()
 		return (true);
 	}
 	return (false);
-}
-
-
-//------------------------------------------------------------------------------
-//	UPDATE RESOURCE PATH
-//------------------------------------------------------------------------------
-
-void Client::updateResourcePath()
-{
-	// std::cout << "Updating resource path" << std::endl;
-	// std::cout << "Path: " << color(_resourcePath, CYAN) << std::endl;
-	// std::cout << "Port: " << color(_port, CYAN) << std::endl;
-	// std::cout << "Hosts: " << color(_config.getHosts().size(), CYAN) << std::endl;
-
-	for (std::vector<hostConfig>::iterator host = _config.getHosts().begin(); host != _config.getHosts().end(); host++)
-	{
-		if (host->portInt == _port)
-		{
-			// std::cout << "Host found: " << color(host->portInt, CYAN) << std::endl;
-			updateAutoIndex(host->autoIndex);
-			for (std::vector<locationConfig>::iterator loc = host->locations.begin(); loc != host->locations.end(); loc++)
-			{
-				if (locationExists(loc->location))
-				{
-					// std::cout << "Location found: " << color(loc->location, CYAN) << std::endl;
-					updateAutoIndex(loc->autoIndex);
-					handleLocation(*host, *loc);
-					return ;
-				}
-			}
-			// std::cout << color("No location found", RED) << std::endl;
-			handleNoLocation(*host);
-			return ;
-		}
-	}
-	// std::cout << color("No host found", RED) << std::endl;
-	// If we get this far, we have no host with the port we are looking for. This should probably be handled elsewhere.
-}
-
-//------------------------------------------------------------------------------
-
-void Client::handleLocation(hostConfig &host, locationConfig &loc)
-{
-	// check if method is allowed
-	if (!allowedMethod(loc.methods, _request.getMethod()))
-	{
-		std::cout << "Method not allowed" << std::endl;
-		_statusCode = 405;
-		return ;
-	}
-
-	// handle redirection
-	if (loc.redirection != "" && _request.getMethod() == "GET")
-	{
-		std::cout << "REDIRECTION: " << loc.redirection << std::endl;
-		_statusCode = 301;
-		_resourcePath = loc.redirection;
-		return ;
-	}
-
-	// handle root/alias
-	if (loc.root != "")
-	{
-		std::cout << "LOC-ROOT: " << color(loc.root, GREEN) << std::endl;
-		if (isFile(loc.root + _resourcePath))
-		{
-			std::cout << "Resource path is a file" << std::endl;
-			_resourcePath = loc.root + _resourcePath;
-			return ;
-		}
-		_resourcePath = loc.root + _resourcePath.substr(loc.location.length());
-	}
-	else if (loc.alias != "")
-	{
-		std::cout << "LOC-ALIAS: " << color(loc.alias, GREEN) << std::endl;
-		_resourcePath = loc.alias;
-	}
-	else if (host.root != "")
-	{
-		std::cout << "HOST-ROOT: " << color(host.root, GREEN) << std::endl;
-		_resourcePath = host.root + _resourcePath.substr(loc.location.length());
-	}
-
-	// handle index and autoindex
-	if (isDirectory(_resourcePath))
-	{
-		_resourcePath.append("/");
-		if (loc.index_pages.size() > 0)
-		{
-			for (std::vector<std::string>::iterator it = loc.index_pages.begin(); it != loc.index_pages.end(); it++)
-			{
-				if (isFile(_resourcePath + *it))
-				{
-					_resourcePath.append(*it);
-					return ;
-				}
-			}
-			_statusCode = 403;
-		}
-		else if (host.index_pages.size() > 0)
-		{
-			for (std::vector<std::string>::iterator it = host.index_pages.begin(); it != host.index_pages.end(); it++)
-			{
-				if (isFile(_resourcePath + *it))
-				{
-					_resourcePath.append(*it);
-					return ;
-				}
-			}
-			_statusCode = 403;
-		}
-		else if (_autoIndex != autoIndexState::ON)
-		{
-			std::cout << "No index directive found. Looking for index file" << std::endl;
-			lookForIndexFile();
-		}
-		else if (_autoIndex == autoIndexState::ON)
-		{
-			std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
-			_autoIndex = autoIndexState::ON;
-		}
-	}
-}
-
-//------------------------------------------------------------------------------
-
-void Client::handleNoLocation(hostConfig &host)
-{
-	if (host.root != "")
-	{
-		std::cout << "HOST-ROOT: " << color(host.root, GREEN) << std::endl;
-		_resourcePath = host.root + _resourcePath;
-	}
-	if (isDirectory(_resourcePath))
-	{
-		if (host.index_pages.size() > 0)
-		{
-			for (std::vector<std::string>::iterator it = host.index_pages.begin(); it != host.index_pages.end(); it++)
-			{
-				if (isFile(_resourcePath + *it))
-				{
-					_resourcePath.append(*it);
-					return ;
-				}
-			}
-			_statusCode = 403;
-		}
-		else if (_autoIndex != autoIndexState::ON)
-		{
-			std::cout << "No index directive found. Looking for index file" << std::endl;
-			lookForIndexFile();
-		}
-		else if (_autoIndex == autoIndexState::ON)
-		{
-			std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
-			_autoIndex = autoIndexState::ON;
-		}
-	}
-}
-
-//------------------------------------------------------------------------------
-
-void Client::updateAutoIndex(autoIndexState state)
-{
-	if (state != autoIndexState::NONE)
-	{
-		_autoIndex = state;
-	}
-}
-
-//------------------------------------------------------------------------------
-
-void Client::lookForIndexFile()
-{
-	std::string path = _resourcePath;
-	std::string indexFiles[] = {"index.html", "index.htm", "index.php"};
-	for (int i = 0; i < 3; i++)
-	{
-		if (isFile(path + indexFiles[i]))
-		{
-			_resourcePath = path + indexFiles[i];
-			return ;
-		}
-	}
-	_statusCode = 403;
 }
 
 //------------------------------------------------------------------------------
@@ -419,7 +169,7 @@ void Client::handleEvent(short events)
 {
 	//* we might want to malloc this buffer
 	static const int MAX_BUFFER_SIZE = 4095;
-	static char buffer[MAX_BUFFER_SIZE + 1];
+	char buffer[MAX_BUFFER_SIZE + 1];
 	ssize_t readCount = 0;	// changed to ssize_t instead of size_t, because read() returns -1 on error, and size_t is unsigned
 	// static bool waitCGI = false;
 
@@ -464,7 +214,7 @@ void Client::handleEvent(short events)
 				std::cout << CYAN << _buffer.getData() << RESET << std::endl;
 		try
 		{
-			_request = Request(_buffer.spliceRequest());
+			_request = Request(_buffer.spliceRequest(), _config);
 		}
 		catch (std::exception &e)
 		{

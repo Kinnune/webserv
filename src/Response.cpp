@@ -39,6 +39,7 @@ Response::Response(Request &request)
 	_statusMessage = "";
 	_version = _request.getVersion();			
 	_headers = request.getHeaders();
+	_host = request.getHost();
 	_body.resize(0);
 	if (DEBUG)
 		std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
@@ -77,6 +78,7 @@ void Response::setContentLengthHeader(size_t length)
 void Response::setStatus(int status)
 {
 	_statusCode = std::to_string(status);
+	_version = "HTTP/1.1";
 	switch (status)
 	{
 		case 200:
@@ -84,7 +86,6 @@ void Response::setStatus(int status)
 			break ;
 		case 404:
 			_statusMessage = "Not Found";
-			_version = "HTTP/1.1";
 			body404();
 			break ;
 
@@ -100,8 +101,10 @@ int Response::completeResponse()
 {
 	if (supportedCGI())
 	{
+		std::cout << "CGI supported" << std::endl;
 		if (_runCGI)
 		{
+			std::cout << "Running CGI" << std::endl;
 			doCGI();
 		}
 		if (!_waitCGI)
@@ -119,15 +122,29 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "GET")
 	{
-		getMethod();
+		handleGetMethod();
+	}
+	else if (_request.getMethod() == "POST")
+	{
+		handlePostMethod();
+	}
+	else if (_request.getMethod() == "DELETE")
+	{
+		// handleDeleteMethod();
 	}
 	return (1);
 }
 
+//------------------------------------------------------------------------------
+
 void Response::body404()
 {
-	std::string bodyStr("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The page you are looking for could not be found.</p></body></html>");
-	_body = std::vector<unsigned char>(bodyStr.begin(), bodyStr.end());
+	// std::string bodyStr("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The page you are looking for could not be found.</p></body></html>");
+
+	std::ifstream file("www/error_pages/404.html", std::ios::binary);
+	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
+
+	// _body = std::vector<unsigned char>(bodyStr.begin(), bodyStr.end());
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = "text/html; charset=utf-8";
 }
@@ -238,9 +255,11 @@ std::string Response::detectContentType(const std::string &filePath)
 bool Response::supportedCGI()
 {
 	std::string fileExtension = getFileExtension(_request.getTarget());
-
-	//**these values could/should be read from the config
-	return (fileExtension == "js" | fileExtension == "py");
+	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
+	{
+		return true;
+	}
+	return false;
 }
 
 //------------------------------------------------------------------------------
@@ -355,8 +374,8 @@ int Response::doCGI()
 		// Execute the CGI script
 		//**hardcoding python example
 		//**TODO_set bs properly
-		const char *program = "/usr/bin/python";
-		const char *argument = "/Users/jbagger/code/GitHub/webserv/www/test.py";
+		const char *program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget())).c_str();
+		const char *argument = _host.updateResourcePath(_request.getTarget()).c_str();
 		const char *args[] = {program, argument, nullptr};
 		char *env[MAX_ENV_VARS + 1];
 		char *test = env[0];
@@ -400,15 +419,33 @@ int Response::doCGI()
 //	HANDLE METHODS
 //------------------------------------------------------------------------------
 
-void Response::getMethod()
+void Response::handleGetMethod()
 {
-	std::string filePath = _request.getTarget();
-	std::string contentType = detectContentType(filePath);
-	//**hardcoded favicon for now this whole filepath thing is not done correctly for now
-	if (filePath.find("favicon.ico") != std::string::npos)
+	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
+	std::cout << "Method: " << color("GET", GREEN) << std::endl;
+	std::cout << "HOST: requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+
+	// Check if there's a redirection
+	if (_host.isRedirection(_request.getTarget()))
 	{
-		filePath = "www/favicon.ico";
+		std::cout << "HOST: redirection found" << std::endl;
+		setStatus(301);
+		// return ;
 	}
+
+	// Check if autoindex is on
+	if (_host.isAutoindexOn())
+	{
+		std::cout << "HOST: autoindex is on" << std::endl;
+		// provide a list of files in the directory
+	}
+
+	std::cout << "Resource requested: " << color(_request.getTarget(), GREEN) << std::endl;
+	std::string filePath = _host.updateResourcePath(_request.getTarget());
+	
+	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	std::string contentType = detectContentType(filePath);
+	
 	removeFirstCharIfMatches(filePath, '/');
 	//**SEPARATE THIS INTO FILE READING FUNCTION
 	std::ifstream file(filePath, std::ios::binary);
@@ -416,7 +453,6 @@ void Response::getMethod()
 	{
 		// 500 internal server error
 		std::cerr << "Failed to open file: " << filePath << std::endl;
-		// std::cerr << "Failed to open file: " << color(filePath, RED) << std::endl;
 		setStatus(404);
 		return ;
 	}
@@ -430,9 +466,51 @@ void Response::getMethod()
 		return ;
 	}
 	std::cout << "Number of bytes read: " << _body.size() << std::endl;
+
+	
+	// Check if the requested method is allowed
+	if (_host.isAllowedMethod(_request.getTarget(), "GET") == false)
+	{
+		std::cerr << color("Method not allowed", RED) << std::endl;
+		setStatus(405);
+		return ;
+	}
+	
+
 	//something wrong with version, shows up as "  TP/1.1"
 	setStatus(200);
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = contentType;
+	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
+void Response::handlePostMethod()
+{
+	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
+	std::cout << "Method: " << color("POST", GREEN) << std::endl;
+
+	// Update resource path
+	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+	std::string filePath = _host.updateResourcePath(_request.getTarget());
+	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+
+	// Handle body
+
+	// Build response
+	setStatus(200);
+	_version = "HTTP/1.1";
+	setContentLengthHeader(_body.size());
+	_headers["Content-Type"] = "text/html";
+
+	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
+void Response::handleDeleteMethod()
+{
+	//**TODO
 }

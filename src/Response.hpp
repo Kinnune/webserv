@@ -33,7 +33,6 @@ class Response
 		int completeResponse();
 		void setStatus(int status);
 		void body404();
-		void getMethod();
 		bool supportedCGI();
 		std::string toString();
 		void setContentLengthHeader(size_t length);
@@ -44,6 +43,11 @@ class Response
 		bool childReady();
 		bool getWaitCGI() { return (_waitCGI); }
 		void setCGIEnvironmentVariables(char **envp);
+
+		// Method handlers
+		void handleGetMethod();
+		void handlePostMethod();
+		void handleDeleteMethod();
 
 		std::string _version;
 		std::string _statusCode;
@@ -58,6 +62,7 @@ class Response
 		int _pipeParent[2];
 		pid_t _pid;
 		Request _request;
+		Host _host;
 };
 
 #endif

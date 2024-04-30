@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Webpage</title>
+<style>
+    /* Add some basic styling for clarity */
+    body { font-family: Arial, sans-serif; }
+    form { margin-bottom: 20px; }
+    .quote-container { margin-top: 20px; }
+</style>
+</head>
+
+<body>
+<h1>Simple Webpage</h1>
+
+<!-- Form for Posting Quote and Uploading File -->
+<form id="postForm">
+    <label for="quoteInput">Enter Quote:</label>
+    <input type="text" id="quoteInput" name="quote" required>
+    <input type="file" id="fileInput" name="file" accept=".txt,.pdf" required>
+    <button type="submit">Post Quote</button>
+</form>
+
+<!-- Container for Displaying Quotes -->
+<div class="quote-container" id="quoteContainer">
+    <!-- Quotes will be dynamically added here -->
+</div>
+
+<script>
+// Function to handle form submission
+document.getElementById('postForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent default form submission
+
+    // Get form data
+    const quote = document.getElementById('quoteInput').value;
+    const file = document.getElementById('fileInput').files[0];
+
+    // Create FormData object to send data as multipart/form-data
+    const formData = new FormData();
+    formData.append('quote', quote);
+    formData.append('file', file);
+
+    // Send POST request using fetch API
+    fetch('/post-quote', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Network response was not ok.');
+    })
+    .then(data => {
+        console.log('Response from server:', data);
+        // Refresh quote display after successful post (you can update this logic)
+        fetchQuotes();
+    })
+    .catch(error => {
+        console.error('There was a problem with your fetch operation:', error);
+    });
+});
+
+// Function to fetch and display quotes
+function fetchQuotes() {
+    fetch('/get-quotes')
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Network response was not ok.');
+    })
+    .then(data => {
+        const quoteContainer = document.getElementById('quoteContainer');
+        quoteContainer.innerHTML = ''; // Clear previous quotes
+
+        // Add quotes to the container
+        data.forEach(quote => {
+            const quoteDiv = document.createElement('div');
+            quoteDiv.textContent = quote.text;
+
+            // Create delete button for each quote
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.addEventListener('click', function() {
+                deleteQuote(quote.id);
+            });
+
+            quoteDiv.appendChild(deleteButton);
+            quoteContainer.appendChild(quoteDiv);
+        });
+    })
+    .catch(error => {
+        console.error('There was a problem with your fetch operation:', error);
+    });
+}
+
+// Function to delete a quote
+function deleteQuote(quoteId) {
+    fetch(`/delete-quote/${quoteId}`, {
+        method: 'DELETE'
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Network response was not ok.');
+    })
+    .then(data => {
+        console.log('Quote deleted:', data);
+        // Refresh quote display after successful deletion
+        fetchQuotes();
+    })
+    .catch(error => {
+        console.error('There was a problem with your fetch operation:', error);
+    });
+}
+
+// Initial fetch to load quotes on page load
+fetchQuotes();
+</script>
+</body>
+</html>

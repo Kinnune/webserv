@@ -23,34 +23,17 @@ std::ostream &operator<<(std::ostream &o, Response response);
 
 class Client
 {
-	public:
-		Client();
-		~Client();
-		Client(Client const &other);
-		Client &operator=(Client const &other);
-		Client(int fd, int port);
-		void setFd(int fd);
-		void setPort(int port);
-		int getFd() const;
-		int getPort() const;
-		bool respond();
-		std::string  listDirectory(std::string path);
-		void handleEvent(short events);
-		void setConfig(ConfigurationFile &config);
-		ConfigurationFile &getConfig();
-		bool isFile(const std::string &path);
-		bool isDirectory(const std::string &path);
-		bool locationExists(const std::string &path);
-		bool allowedMethod(std::vector<std::string> methods, std::string method);
-		void updateResourcePath();
-		void handleLocation(hostConfig &host, locationConfig &loc);
-		void handleNoLocation(hostConfig &host);
-		void updateAutoIndex(autoIndexState state);
-		void lookForIndexFile();
-		bool checkTimeout(time_t currentTime);
 	private:
-		ConfigurationFile _config;
-		std::string _resourcePath;
+		// bool isFile(const std::string &path);
+		// bool isDirectory(const std::string &path);
+		// bool locationExists(const std::string &path);
+		// bool allowedMethod(std::vector<std::string> methods, std::string method);
+		// void updateResourcePath();
+		// void handleLocation(Location &loc);
+		// void handleNoLocation();
+		// void updateAutoIndex(autoIndexState state);
+		// void lookForIndexFile();
+		// std::string _resourcePath;
 		int _statusCode;
 		autoIndexState _autoIndex;
 		int _fd;
@@ -60,6 +43,31 @@ class Client
 		Request _request;
 		Response _response;
 		std::time_t _timeout;
+		ConfigurationFile _config;
+
+	public:
+		
+		// Constructors/Destructors
+		Client();
+		~Client();
+		Client(Client const &other);
+		Client &operator=(Client const &other);
+		Client(int fd, int port, ConfigurationFile &config);
+
+		// Getters
+		int getFd() const;
+		int getPort() const;
+		// Host &getHost();
+
+		// Setters
+		void setFd(int fd);
+		void setPort(int port);
+		// void setHost(Host &host);
+		
+		// Methods
+		bool respond();
+		std::string listDirectory(std::string path);
+		void handleEvent(short events);
 };
 
 
