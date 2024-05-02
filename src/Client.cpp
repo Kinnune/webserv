@@ -45,6 +45,7 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 {
 	socklen_t adressSize = sizeof(_address);
 
+	_failFlag = 0;
 	_config = config;
 	_statusCode = 0;
 	_autoIndex = autoIndexState::NONE;
@@ -52,10 +53,13 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 	_address.sin_addr.s_addr = INADDR_ANY;
 	_address.sin_port = htons(port);
 	_port = port;
-	_fd = accept(serverFd, (struct sockaddr *)&_address, &adressSize);
-	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 	_timeout = std::time(nullptr);
-	_failFlag = 0;
+	if ((_fd = accept(serverFd, (struct sockaddr *)&_address, &adressSize)) == -1)
+	{
+		_failFlag = 1;
+		return ;
+	}
+	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 }
 
 
@@ -149,7 +153,10 @@ bool Client::respond()
 	if (_response.completeResponse())
 	{
 		responseStr = _response.toString();
-		write(_fd, responseStr.c_str(), responseStr.length());
+		if (write(_fd, responseStr.c_str(), responseStr.length()) == -1)
+		{
+			_failFlag = 1;
+		}
 		_response = Response();
 		return (true);
 	}
@@ -203,6 +210,7 @@ void Client::handleEvent(short events)
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
 		if (readCount < 0)
 		{
+			_failFlag = 1;
 			throw (std::runtime_error("EXCEPTION: reading failed"));
 		}
 		buffer[readCount] = '\0';
