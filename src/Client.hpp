@@ -24,16 +24,6 @@ std::ostream &operator<<(std::ostream &o, Response response);
 class Client
 {
 	private:
-		// bool isFile(const std::string &path);
-		// bool isDirectory(const std::string &path);
-		// bool locationExists(const std::string &path);
-		// bool allowedMethod(std::vector<std::string> methods, std::string method);
-		// void updateResourcePath();
-		// void handleLocation(Location &loc);
-		// void handleNoLocation();
-		// void updateAutoIndex(autoIndexState state);
-		// void lookForIndexFile();
-		// std::string _resourcePath;
 		int _statusCode;
 		autoIndexState _autoIndex;
 		int _fd;
@@ -44,7 +34,7 @@ class Client
 		Response _response;
 		std::time_t _timeout;
 		ConfigurationFile _config;
-
+		short _failFlag;
 	public:
 		
 		// Constructors/Destructors
@@ -57,11 +47,14 @@ class Client
 		// Getters
 		int getFd() const;
 		int getPort() const;
+		short getFailFlag(void);
+		Response &getResponse() { return (_response); }
 		// Host &getHost();
 
 		// Setters
 		void setFd(int fd);
 		void setPort(int port);
+		void setFailFlag(short flag);
 		// void setHost(Host &host);
 		
 		// Methods

@@ -25,6 +25,7 @@ Response::Response()
 		_body(std::vector<unsigned char>()),
 		_runCGI(false),
 		_waitCGI(false),
+		_pid(0),
 		_request(Request())
 {
 	(void)_waitCGI;
@@ -33,6 +34,7 @@ Response::Response()
 Response::Response(Request &request)
 	: _request(request)
 {
+	_pid = 0;
 	_runCGI = supportedCGI();
 	_waitCGI = false;
 	_statusCode = "";
@@ -97,6 +99,14 @@ void Response::setStatus(int status)
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
 
+void Response::killChild()
+{
+	if (_waitCGI && _pid > 0)
+	{
+		kill(_pid, SIGKILL);
+	}
+}
+
 int Response::completeResponse()
 {
 	if (supportedCGI())
@@ -122,6 +132,7 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "GET")
 	{
+		std::cout << color("we went into get method", YELLOW) << std::endl;
 		handleGetMethod();
 	}
 	else if (_request.getMethod() == "POST")
@@ -255,6 +266,8 @@ std::string Response::detectContentType(const std::string &filePath)
 bool Response::supportedCGI()
 {
 	std::string fileExtension = getFileExtension(_request.getTarget());
+	std::cout << color("file extenstion as: " + fileExtension, BLUE) << std::endl;
+	fileExtension = "." + fileExtension;
 	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
 	{
 		return true;

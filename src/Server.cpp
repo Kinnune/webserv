@@ -92,13 +92,20 @@ void Server::removeClient(int fd)
 	unsigned int i;
 
 	std::cout << color("Client disconnected", RED) << std::endl;
+	close(fd);
+	_clients[fd].getResponse().killChild();
 	_clients.erase(fd);
 	for (i = _nServers; i < getNfds(); i++)
 	{
 		if (_pollFds[i].fd == fd)
+		{
 			break ;
+		}
 	}
-	_pollFds[i] = _pollFds[getNfds() - 1];
+	for (; i < getNfds() - 1; i++)
+	{
+		_pollFds[i] = _pollFds[i + 1];
+	}
 	_pollFds[getNfds() - 1] = (struct pollfd){};
 	_nClients--;
 }
@@ -128,6 +135,10 @@ void Server::loop()
 			else if (_pollFds[i].revents)
 			{
 				_clients[_pollFds[i].fd].handleEvent(_pollFds[i].revents);
+				if (_clients[_pollFds[i].fd].getFailFlag())
+				{
+					removeClient(_pollFds[i].fd);
+				}
 				// if client fails to read or write in handleEvent -> remove client
 			}
 		}

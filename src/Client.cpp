@@ -12,7 +12,8 @@
 
 Client::Client()
 	: _request(Request()),
-	_response(Response())
+	_response(Response()),
+	_failFlag(0)
 {
 	_timeout = std::time(nullptr);
 }
@@ -36,6 +37,7 @@ Client &Client::operator=(Client const &other)
 	_response = other._response;
 	_config = other._config;
 	_timeout = other._timeout;
+	_failFlag = other._failFlag;
 	return (*this);
 }
 
@@ -53,6 +55,7 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 	_fd = accept(serverFd, (struct sockaddr *)&_address, &adressSize);
 	fcntl(_fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 	_timeout = std::time(nullptr);
+	_failFlag = 0;
 }
 
 
@@ -79,10 +82,12 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 
 int Client::getFd() const { return (_fd); }
 int Client::getPort() const { return (_port); }
+short Client::getFailFlag() { return (_failFlag); }
 // Host &Client::getHost() { return (_host); }
 
 void Client::setFd(int fd) { _fd = fd; }
 void Client::setPort(int port) { _port = port; }
+void Client::setFailFlag(short flag) { _failFlag = _failFlag | flag; }
 // void Client::setHost(Host &host) { _host = host; }
 
 
@@ -155,7 +160,7 @@ bool Client::respond()
 
 bool Client::checkTimeout(time_t currentTime)
 {
-	static const time_t maxTimeout = 12;
+	static const time_t maxTimeout = 42;
 
 	// std::cout << std::boolalpha << (currentTime - _timeout > maxTimeout) << "_timeout: " << _timeout << " currentTime: " << currentTime << std::endl;
 	return (currentTime - _timeout > maxTimeout);
