@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <string>
 #include <unordered_map>
@@ -42,6 +43,8 @@ class Response
 		bool hasRequest() { return (_request.getIsComplete()); }
 		bool childReady();
 		bool getWaitCGI() { return (_waitCGI); }
+		void setCGIEnvironmentVariables(char **envp);
+		void killChild();
 
 		// Method handlers
 		void handleGetMethod();

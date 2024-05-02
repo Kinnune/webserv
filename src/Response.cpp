@@ -25,6 +25,7 @@ Response::Response()
 		_body(std::vector<unsigned char>()),
 		_runCGI(false),
 		_waitCGI(false),
+		_pid(0),
 		_request(Request())
 {
 	(void)_waitCGI;
@@ -33,6 +34,7 @@ Response::Response()
 Response::Response(Request &request)
 	: _request(request)
 {
+	_pid = 0;
 	_statusCode = "";
 	_statusMessage = "";
 	_version = _request.getVersion();			
@@ -97,6 +99,14 @@ void Response::setStatus(int status)
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
 
+void Response::killChild()
+{
+	if (_waitCGI && _pid > 0)
+	{
+		kill(_pid, SIGKILL);
+	}
+}
+
 int Response::completeResponse()
 {
 	if (supportedCGI())
@@ -122,6 +132,7 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "GET")
 	{
+		std::cout << color("we went into get method", YELLOW) << std::endl;
 		handleGetMethod();
 	}
 	else if (_request.getMethod() == "POST")
@@ -255,7 +266,8 @@ std::string Response::detectContentType(const std::string &filePath)
 bool Response::supportedCGI()
 {
 	std::string fileExtension = getFileExtension(_request.getTarget());
-	std::cout << "File extension: " << color(fileExtension, GREEN) << std::endl;
+	std::cout << color("file extenstion as: " + fileExtension, BLUE) << std::endl;
+	fileExtension = "." + fileExtension;
 	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
 	{
 		std::cout << "CGI is " << color("allowed", GREEN) << std::endl;
@@ -324,6 +336,32 @@ bool Response::childReady()
 
 //------------------------------------------------------------------------------
 
+#define MAX_ENV_VARS 100 
+
+void Response::setCGIEnvironmentVariables(char **envp)
+{
+    int index = 0;
+
+    envp[index++] = strdup(("SERVER_PROTOCOL=" + _version).c_str());
+    envp[index++] = strdup(("REQUEST_METHOD=" + _request.getMethod()).c_str());
+
+    for (std::pair<std::string, std::string> header : _headers)
+	{
+        std::string envVarName = "HTTP_" + header.first;
+        std::string envVarValue = header.second;
+        std::replace(envVarName.begin(), envVarName.end(), '-', '_'); // Replace '-' with '_'
+        std::transform(envVarName.begin(), envVarName.end(), envVarName.begin(), ::toupper); // Convert to uppercase
+        envp[index++] = strdup((envVarName + "=" + envVarValue).c_str());
+    }
+    std::string contentLength = std::to_string(_body.size());
+    envp[index++] = strdup(("CONTENT_LENGTH=" + contentLength).c_str());
+
+    // Set the last element of the array to nullptr as required by execve
+    envp[index] = nullptr;
+}
+
+//------------------------------------------------------------------------------
+
 int Response::doCGI()
 {
 	if (pipe(_pipeChild) == -1 || pipe(_pipeParent) == -1)
@@ -358,7 +396,18 @@ int Response::doCGI()
 			program = argument;
 		}
 		const char *args[] = {program, argument, nullptr};
-		execve(program, const_cast<char* const*>(args), nullptr);
+		char *env[MAX_ENV_VARS + 1];
+		char *test = env[0];
+		int i = 0;
+		while (test)
+		{
+			test = env[i];
+			i++;
+			std::cout << test << std::endl;
+		}
+		setCGIEnvironmentVariables(&env[0]);
+		//**TODO set enviroment variables according to request headers
+		execve(program, const_cast<char* const*>(args), const_cast<char* const*>(env));
 		std::cerr << "Exec failed"; // This line is executed only if execl fails
 		return 1; // Exit child process with failure status
 	}
