@@ -26,8 +26,8 @@ class Server
 		Server();
 		~Server();
 		void initialize(std::string configFile);
-		void readConfig();
-		void setPorts(std::vector<int> ports);
+		int readConfig();
+		void setPorts();
 		void startListen();
 		void newClient(int i);
 		void removeClient(int fd);
@@ -37,8 +37,8 @@ class Server
 		ConfigurationFile _config;
 		std::map<int, Client> _clients;
 		static const int _maxClients = 1024;
-		std::vector<int> _ports[1];
-		std::vector<struct sockaddr_in> _addresses[1];
+		std::vector<int> _ports;
+		std::vector<struct sockaddr_in> _addresses;
 		struct pollfd _pollFds[_maxClients];
 		nfds_t _nServers;
 		nfds_t _nClients;

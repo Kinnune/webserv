@@ -23,6 +23,10 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+	//  fixes having to w8 for bind after restart
+	int enable = 1;
+	setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+
     // Set up the server address structure
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
