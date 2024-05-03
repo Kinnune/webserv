@@ -1,0 +1,93 @@
+--------------------------------------------------------------------------------
+	SESSION
+--------------------------------------------------------------------------------
+
+
+- User logs in -> a session is created.
+- Creates a random unique session ID.
+- Session ID is sent to user's browser and stored as a cookie.
+- Server will create a session variable (ex. auth_user) where it stores the information of the logged in user.
+- Session data is stored on server as a file.
+- Name of file will be the session ID.
+- Now, user sends cookies with every request.
+- Server:
+	- receives incoming request
+	- retrieves the session ID
+	- searches for associated session
+		- if session is found, retrieves the data
+	- checks existence of auth_user
+		- if exists, respond with requested page
+
+
+[--------]	<--<--<--<--<--<--<--<--<--<--<--<--<--<--<--<--<--<-	[--------]
+[ SERVER ]		GET http://example.com/ HTTP/1.1					[ CLIENT ]
+[--------]															[--------]
+
+[--------]	->-->-->-->-->-->-->-->-->-->-->-->-->-->-->-->-->-->	[--------]
+[ SERVER ]		HTTP/1.1 200 OK										[ CLIENT ]
+[--------]		Set-Cookie: session-id=12345						[--------]
+
+[--------]	<--<--<--<--<--<--<--<--<--<--<--<--<--<--<--<--<--<-	[--------]
+[ SERVER ]		GET http://example.com/ HTTP/1.1					[ CLIENT ]
+[--------]		Cookie: session-id=12345							[--------]
+
+
+
+
+--------------------------------------------------------------------------------
+	CODE EXAMPLE
+--------------------------------------------------------------------------------
+
+
+[LOGIN.HTML]
+
+- First, we'll create an html for the login page, which includes a form for submitting:
+- The ACTION attribute is where to send the request.
+- The METHOD attribute is the HTTP method that will be used.
+
+
+<form action="./login.php" method="POST">
+	<label class="block" for="name">Name</label>
+	<input class="box" type="name" name="name" id="name" placeholder="Enter your name" required>
+	<label class="block" for="password">Password</label>
+	<input class="box" type="password" name="password" id="password" placeholder="Enter your password" required>
+	<input class="button" type="submit" value="Submit">
+</form>
+
+
+
+[LOGIN.PHP]
+
+- Server will run login.php.
+- login.php will:
+	- first make sure all form fields are filled
+	- check if name/password combination match an already existing user
+	- if it finds a user, user will be authenticated and redirected to the dashboard page
+
+
+if ($_SERVER["REQUEST_METHOD"] === "POST")
+{
+	if (isset($_POST['name']) && isset($_POST['password']))
+	{
+		$new_user = array(
+			'name' => $_POST['name'],
+			'password' => $_POST['password']
+		);
+
+		$users = get_users();
+		$user_exists = false;
+
+		foreach ($users as $user)
+		{
+			if ($user['name'] == $new_user['name'] && $user['password'] == $new_user['password'])
+			{
+				echo "mlp";
+				$user_exists = true;
+				$_SESSION['user_auth'] = $user;
+
+				header("location: http://localhost/dashboard.php");
+				exit();
+			}
+		}
+	}
+}
