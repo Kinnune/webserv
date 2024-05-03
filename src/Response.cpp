@@ -12,7 +12,7 @@ std::string getFileExtension(const std::string &filePath)
 
 	if (dotPosition != std::string::npos)
 	{
-		return (filePath.substr(dotPosition + 1));
+		return (filePath.substr(dotPosition));
 	}
 	return "";
 }
@@ -266,8 +266,7 @@ std::string Response::detectContentType(const std::string &filePath)
 bool Response::supportedCGI()
 {
 	std::string fileExtension = getFileExtension(_request.getTarget());
-	std::cout << color("file extenstion as: " + fileExtension, BLUE) << std::endl;
-	fileExtension = "." + fileExtension;
+
 	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
 	{
 		std::cout << "CGI is " << color("allowed", GREEN) << std::endl;
