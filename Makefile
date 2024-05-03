@@ -1,11 +1,8 @@
-
-#THIS IS NOT A PROPER MAKEFILE#
-
+NAME = webserv
 CPP = c++
-
-#-fsanitize=address -g
-CPPFLAGS =  -Wall -Wextra -Werror -std=c++11 -o 
-
+FLAGS =  -Wall -Wextra -Werror -std=c++11
+SRCDIR = src
+OBJDIR = obj
 SRC = 	src/main.cpp \
 		src/Server.cpp \
 		src/Client.cpp \
@@ -15,22 +12,33 @@ SRC = 	src/main.cpp \
 		src/Location.cpp \
 		src/Host.cpp \
 		src/Response.cpp
+OBJ = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRC))
 
-NAME = webserv
+.PHONY: all clean fclean re run test
 
-all: $(NAME)
+all: $(OBJDIR) $(NAME)
 
-$(NAME): $(SRC)
-	$(CPP) $(CPPFLAGS) $(NAME) $(SRC)
-	mkdir database
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+$(NAME): $(OBJ)
+	$(CPP) $(FLAGS) -o $(NAME) $(OBJ)
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CPP) $(FLAGS) -c $< -o $@
 
 clean:
-	rm $(NAME)
+	rm -rf $(OBJDIR) $(NAME)
 
 fclean: clean
 
 re: fclean
 	make
+
+run: $(NAME)
+	make
+	clear
+	./$(NAME) config/webserver.conf
 
 test:
 	$(CPP) -Wall -Werror -Wextra  testmain.cpp Request.cpp request_helpers.cpp -o test
@@ -38,7 +46,4 @@ test:
 	@./test
 	@rm test
 	@echo --------------------------------------------------------------------------------
-run: $(NAME)
-	make
-	clear
-	./$(NAME) config/webserver.conf
+	

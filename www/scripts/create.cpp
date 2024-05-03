@@ -1,9 +1,19 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <cstdlib> // For getenv()
 
 int main()
 {
+	// std::string formData;
+
+	// std::cout << "----THIS IS A SCRIPT------------------------------------" << std::endl;
+	// while (std::getline(std::cin, formData))
+	// {
+	// 	std::cout << formData << std::endl;
+	// }
+	// std::cout << "--------------------------------------------------------" << std::endl;
+
     std::cout << "Content-type:text/html\r\n\r\n";
     std::cout << "<html><head><title>Account Creation</title></head><body>";
 
@@ -14,9 +24,6 @@ int main()
         std::string formData;
         std::getline(std::cin, formData);
 
-        // Process form data (e.g., extract username, password)
-        // For simplicity, let's assume form data is in format "username=value&password=value"
-        // You'll need to parse this data according to your form's structure
 
         // Example: Extract username and password
         std::string username, password;
@@ -36,7 +43,7 @@ int main()
 
         // Process the extracted data (e.g., store in a file or database)
         // Example: Store in a file (for demonstration purposes)
-        std::ofstream outfile("user_accounts.txt", std::ios::app);
+        std::ofstream outfile("user_accounts.txt", std::ios_base::app);
         if (outfile.is_open()) {
             outfile << "Username: " << username << ", Password: " << password << "\n";
             outfile.close();
