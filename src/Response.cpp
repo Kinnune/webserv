@@ -31,7 +31,7 @@ Response::Response()
 	(void)_waitCGI;
 };
 
-Response::Response(Request &request)
+Response::Response(Request &request, std::string sessionID)
 	: _request(request)
 {
 	_pid = 0;
@@ -43,6 +43,10 @@ Response::Response(Request &request)
 	_body.resize(0);
 	_waitCGI = false;
 	_runCGI = supportedCGI();
+	// if (_headers.find("Cookie") != _headers.end())
+	// {
+	// 	_headers["Set-Cookie"] = "session_id=" + sessionID;
+	// }
 	if (DEBUG)
 		std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
 };
@@ -111,7 +115,7 @@ int Response::completeResponse()
 {
 	if (supportedCGI())
 	{
-		std::cout << std::boolalpha << "CGI supported, _runCGI: " << _runCGI << " _waitCGI: " << _waitCGI << std::endl;
+		// std::cout << std::boolalpha << "CGI supported, _runCGI: " << _runCGI << " _waitCGI: " << _waitCGI << std::endl;
 		if (_runCGI)
 		{
 			std::cout << "Running CGI" << std::endl;
@@ -269,10 +273,8 @@ bool Response::supportedCGI()
 
 	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
 	{
-		std::cout << "CGI is " << color("allowed", GREEN) << std::endl;
 		return true;
 	}
-	std::cout << "CGI is " << color("not allowed", RED) << std::endl;
 	return false;
 }
 
@@ -360,7 +362,7 @@ void Response::setCGIEnvironmentVariables(char **envp)
 }
 
 //------------------------------------------------------------------------------
-
+#include <stdlib.h>
 int Response::doCGI()
 {
 	if (pipe(_pipeChild) == -1 || pipe(_pipeParent) == -1)
@@ -368,64 +370,41 @@ int Response::doCGI()
 		std::cerr << "Pipe creation failed";
 		return 1;
 	}
- // Fork a child process
 	_pid = fork();
-
 	if (_pid == -1)
-	{ // Fork failed
+	{
 		std::cerr << "Fork failed";
 		return 1;
 	}
 	else if (_pid == 0)
 	{ // Child process
-		close(_pipeChild[1]); // Close unused write end of pipe to child
-		close(_pipeParent[0]); // Close unused read end of pipe from parent
+		close(_pipeChild[1]);
+		close(_pipeParent[0]);
+		dup2(_pipeChild[0], STDIN_FILENO);
+		dup2(_pipeParent[1], STDOUT_FILENO);
 
-		// Redirect standard input and output to pipes
-		dup2(_pipeChild[0], STDIN_FILENO); // Redirect stdin to read end of pipe from parent
-		dup2(_pipeParent[1], STDOUT_FILENO); // Redirect stdout to write end of pipe to parent
-
-		// Execute the CGI script
-		//**TODO set enviroment variables according to request headers
-		const char *program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget())).c_str();
-		const char *argument = _host.updateResourcePath(_request.getTarget()).c_str();
-		
+		std::string program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget()));
+		std::string argument = _host.updateResourcePath(_request.getTarget());
 		if (getFileExtension(_request.getTarget()) == "out")
 		{
 			program = argument;
 		}
-		const char *args[] = {program, argument, nullptr};
-		char *env[MAX_ENV_VARS + 1];
-		char *test = env[0];
-		int i = 0;
-		while (test)
-		{
-			test = env[i];
-			i++;
-			std::cout << test << std::endl;
-		}
-		setCGIEnvironmentVariables(&env[0]);
-		//**TODO set enviroment variables according to request headers
-		execve(program, const_cast<char* const*>(args), const_cast<char* const*>(env));
-		std::cerr << "Exec failed"; // This line is executed only if execl fails
-		return 1; // Exit child process with failure status
+		const char *args[] = {program.c_str(), argument.c_str(), nullptr};
+		char **env = (char **)malloc(sizeof(char*) * (MAX_ENV_VARS + 1));
+		setCGIEnvironmentVariables(env);
+		execve(program.c_str(), const_cast<char* const*>(args), const_cast<char* const*>(env));
+		std::cerr << "Exec failed";
+		return 1;
 	}
 	else
 	{ // Parent process
-		close(_pipeChild[0]); // Close unused read end of pipe to child
-		close(_pipeParent[1]); // Close unused write end of pipe from parent
-
-		// Set non-blocking mode for pipes
-		fcntl(_pipeChild[1], F_SETFL, O_NONBLOCK); // Set write end of pipe to child as non-blocking
-		fcntl(_pipeParent[0], F_SETFL, O_NONBLOCK); // Set read end of pipe from child as non-blocking
-
-		// Write HTTP request data to the child process
-		std::string requestData = std::string(_request.getBody().begin(), _request.getBody().end()); // Replace with actual request data
-		write(_pipeChild[1], requestData.c_str(), requestData.size()); // Write request data to pipe to child
-		close(_pipeChild[1]); // Close write end of pipe to child to signal end of input
-
-		// Read response from the child process and send it to the client
-		std::cout << GREEN << "ALL GOOD SOFAR" << RESET << std::endl;
+		close(_pipeChild[0]);
+		close(_pipeParent[1]);
+		fcntl(_pipeChild[1], F_SETFL, O_NONBLOCK);
+		fcntl(_pipeParent[0], F_SETFL, O_NONBLOCK);
+		std::string requestData = std::string(_request.getBody().begin(), _request.getBody().end());
+		write(_pipeChild[1], requestData.c_str(), requestData.size());
+		close(_pipeChild[1]);
 	}
 	_runCGI = false;
 	_waitCGI = true;
