@@ -99,36 +99,6 @@ void Client::setFailFlag(short flag) { _failFlag = _failFlag | flag; }
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
 
-std::string Client::listDirectory(std::string path)
-{
-	std::string directoryListResponse;
-	DIR* directory = opendir(path.c_str());
-	struct dirent* entry;
-
-	if (directory != nullptr)
-	{
-        directoryListResponse.append("<table border=\"1\">");
-        directoryListResponse.append("<tr><th>File Name</th></tr>");
-
-		while ((entry = readdir(directory)) != nullptr)
-		{
-            directoryListResponse.append("<tr><td>" + std::string(entry->d_name) + "</td></tr>");
-			if (DEBUG)
-				std::cout << entry->d_name << std::endl;
-		}
-
-        directoryListResponse.append("</table>");
-		if (DEBUG)
-	        std::cout << "</table>" << std::endl;
-		closedir(directory);
-	}
-	else
-	{
-		std::cerr << "Unable to open directory: " << path << std::endl;
-	}
-	return (directoryListResponse);
-}
-
 //------------------------------------------------------------------------------
 
 // void Client::errorResponse(int status)

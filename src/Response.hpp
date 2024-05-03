@@ -13,6 +13,7 @@
 #include <fstream>
 #include <filesystem>
 #include <sstream>
+#include <dirent.h>
 
 #include "Request.hpp"
 #include "ConfigurationFile.hpp"
@@ -45,6 +46,7 @@ class Response
 		bool getWaitCGI() { return (_waitCGI); }
 		void setCGIEnvironmentVariables(char **envp);
 		void killChild();
+		std::string listDirectory(std::string path);
 
 		// Method handlers
 		void handleGetMethod();
@@ -56,6 +58,7 @@ class Response
 		std::string _statusMessage;
 		std::unordered_map<std::string, std::string> _headers;
 		std::vector<unsigned char> _body;
+
 
 	private:
 		bool _runCGI;

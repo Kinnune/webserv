@@ -34,12 +34,9 @@ Response::Response()
 Response::Response(Request &request)
 	: _request(request)
 {
-<<<<<<< HEAD
 	_pid = 0;
 	_runCGI = supportedCGI();
 	_waitCGI = false;
-=======
->>>>>>> jbagger
 	_statusCode = "";
 	_statusMessage = "";
 	_version = _request.getVersion();			
@@ -271,12 +268,8 @@ std::string Response::detectContentType(const std::string &filePath)
 bool Response::supportedCGI()
 {
 	std::string fileExtension = getFileExtension(_request.getTarget());
-<<<<<<< HEAD
 	std::cout << color("file extenstion as: " + fileExtension, BLUE) << std::endl;
 	fileExtension = "." + fileExtension;
-=======
-	std::cout << "File extension: " << color(fileExtension, GREEN) << std::endl;
->>>>>>> jbagger
 	if (_host.isAllowedCGI(_request.getTarget(), fileExtension))
 	{
 		std::cout << "CGI is " << color("allowed", GREEN) << std::endl;
@@ -405,7 +398,6 @@ int Response::doCGI()
 			program = argument;
 		}
 		const char *args[] = {program, argument, nullptr};
-<<<<<<< HEAD
 		char *env[MAX_ENV_VARS + 1];
 		char *test = env[0];
 		int i = 0;
@@ -418,9 +410,6 @@ int Response::doCGI()
 		setCGIEnvironmentVariables(&env[0]);
 		//**TODO set enviroment variables according to request headers
 		execve(program, const_cast<char* const*>(args), const_cast<char* const*>(env));
-=======
-		execve(program, const_cast<char* const*>(args), nullptr);
->>>>>>> jbagger
 		std::cerr << "Exec failed"; // This line is executed only if execl fails
 		return 1; // Exit child process with failure status
 	}
@@ -474,8 +463,18 @@ void Response::handleGetMethod()
 
 	std::cout << "Resource requested: " << color(_request.getTarget(), GREEN) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget());
-	
-	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	if(_host.getDirList())
+	{
+		std::ofstream file;
+		file.open("www/directoryList.html");
+		file << listDirectory(filePath);
+		file.close();
+		filePath = "www/directoryList.html";
+		std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	}
+	else
+	 	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	//std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 	std::string contentType = detectContentType(filePath);
 	
 	removeFirstCharIfMatches(filePath, '/');
@@ -545,4 +544,34 @@ void Response::handlePostMethod()
 void Response::handleDeleteMethod()
 {
 	//**TODO
+}
+
+std::string Response::listDirectory(std::string path)
+{
+	std::string directoryListResponse;
+	DIR* directory = opendir(path.c_str());
+	struct dirent* entry;
+
+	if (directory != nullptr)
+	{
+        directoryListResponse.append("<table border=\"1\">");
+        directoryListResponse.append("<tr><th>File Name</th></tr>");
+
+		while ((entry = readdir(directory)) != nullptr)
+		{
+            directoryListResponse.append("<tr><td><a href=\""+ std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+			if (DEBUG)
+				std::cout << entry->d_name << std::endl;
+		}
+
+        directoryListResponse.append("</table>");
+		if (DEBUG)
+	        std::cout << "</table>" << std::endl;
+		closedir(directory);
+	}
+	else
+	{
+		std::cerr << "Unable to open directory: " << path << std::endl;
+	}
+	return (directoryListResponse);
 }
