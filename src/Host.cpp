@@ -293,12 +293,14 @@ void Host::handleLocation(std::string &path, Location &loc)
 		else if (_autoIndex != autoIndexState::ON)
 		{
 			// std::cout << "No index directive found. Looking for index file" << std::endl;
+			std::cout << "ARE WE OFFFFF" << std::endl;
 			lookForIndexFile(path);
 		}
 		else if (_autoIndex == autoIndexState::ON)
 		{
 			// std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
 			_autoIndex = autoIndexState::ON;
+			std::cout << "ARE WE ONNNNNNNN" << std::endl;
 		}
 	}
 }
@@ -331,11 +333,13 @@ void Host::handleNoLocation(std::string &path)
 		else if (_autoIndex != autoIndexState::ON)
 		{
 			// std::cout << "No index directive found. Looking for index file" << std::endl;
+			std::cout << "ARE WE OFFFFF" << std::endl;
 			lookForIndexFile(path);
 		}
 		else if (_autoIndex == autoIndexState::ON)
 		{
 			// std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
+			std::cout << "ARE WE ONNNNNNNN" << std::endl;
 			_autoIndex = autoIndexState::ON;
 		}
 	}
