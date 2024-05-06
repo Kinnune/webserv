@@ -53,6 +53,7 @@ class Response
 		void handleGetMethod();
 		void handlePostMethod();
 		void handleDeleteMethod();
+		void generateErrorPage();
 
 		std::string _version;
 		std::string _statusCode;
