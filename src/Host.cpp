@@ -54,6 +54,7 @@ Host &Host::operator=(Host const &other)
 
 int Host::getId() const { return _id; }
 int Host::getPortInt() const { return _portInt; }
+bool Host::getDirList() { return _dirList; }
 std::string Host::getServerName() const { return _serverName; }
 std::string Host::getHost() const { return _host; }
 std::string Host::getPortString() const { return _portString; }
@@ -365,9 +366,4 @@ void Host::lookForIndexFile(std::string &path)
 		}
 	}
 	_statusCode = 403;
-}
-
-bool Host::getDirList(void)
-{
-	return _dirList;
 }
