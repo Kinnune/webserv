@@ -59,7 +59,6 @@ class Client
 		
 		// Methods
 		bool respond();
-		std::string listDirectory(std::string path);
 		void handleEvent(short events);
 		bool checkTimeout(time_t currentTime);
 };
