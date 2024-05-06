@@ -22,6 +22,7 @@ class Host
 		std::vector<std::string>	_indexPages;
 		std::vector<std::string>	_errorPages;
 		std::vector<Location>		_locations;
+		bool						_dirList;
 
 		// Private methods
 		bool isFile(std::string const &path);
@@ -53,6 +54,7 @@ class Host
 		std::vector<std::string> &getIndexPages();
 		std::vector<std::string> &getErrorPages();
 		std::vector<Location> &getLocations();
+		bool getDirList(void);
 
 		// Setters
 		void setId(int id);

@@ -13,7 +13,8 @@
 Client::Client()
 	: _request(Request()),
 	_response(Response()),
-	_failFlag(0)
+	_failFlag(0),
+	_sessionID("")
 {
 	_timeout = std::time(nullptr);
 }
@@ -38,6 +39,7 @@ Client &Client::operator=(Client const &other)
 	_config = other._config;
 	_timeout = other._timeout;
 	_failFlag = other._failFlag;
+	_sessionID = other._sessionID;
 	return (*this);
 }
 
@@ -45,6 +47,7 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 {
 	socklen_t adressSize = sizeof(_address);
 
+	_sessionID = "";
 	_failFlag = 0;
 	_config = config;
 	_statusCode = 0;
@@ -99,36 +102,6 @@ void Client::setFailFlag(short flag) { _failFlag = _failFlag | flag; }
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
 
-std::string Client::listDirectory(std::string path)
-{
-	std::string directoryListResponse;
-	DIR* directory = opendir(path.c_str());
-	struct dirent* entry;
-
-	if (directory != nullptr)
-	{
-        directoryListResponse.append("<table border=\"1\">");
-        directoryListResponse.append("<tr><th>File Name</th></tr>");
-
-		while ((entry = readdir(directory)) != nullptr)
-		{
-            directoryListResponse.append("<tr><td>" + std::string(entry->d_name) + "</td></tr>");
-			if (DEBUG)
-				std::cout << entry->d_name << std::endl;
-		}
-
-        directoryListResponse.append("</table>");
-		if (DEBUG)
-	        std::cout << "</table>" << std::endl;
-		closedir(directory);
-	}
-	else
-	{
-		std::cerr << "Unable to open directory: " << path << std::endl;
-	}
-	return (directoryListResponse);
-}
-
 //------------------------------------------------------------------------------
 
 // void Client::errorResponse(int status)
@@ -144,11 +117,7 @@ bool Client::respond()
 
 	if (_response.hasRequest() == false)
 	{
-		// _resourcePath = _request.getTarget();
-		// updateResourcePath();
-		// _request.setTarget(_resourcePath);
-		// std::cout << "Updated path: " << color(_resourcePath, CYAN) << std::endl;
-		_response = Response(_request);
+		_response = Response(_request, _sessionID);
 	}
 	if (_response.completeResponse())
 	{
@@ -177,57 +146,97 @@ bool Client::checkTimeout(time_t currentTime)
 //	HANDLE EVENT
 //------------------------------------------------------------------------------
 
+std::unordered_map<std::string, std::string> parseHeader(std::string header)
+{
+    std::unordered_map<std::string, std::string> headerValues;
+
+    std::stringstream ss(header);
+    std::string token;
+    while (std::getline(ss, token, ';'))
+	{
+        std::size_t pos = token.find('=');
+        if (pos != std::string::npos)
+		{
+            std::string key = token.substr(0, pos);
+            std::string value = token.substr(pos + 1);
+            key.erase(0, key.find_first_not_of(" \t"));
+            key.erase(key.find_last_not_of(" \t") + 1);
+            value.erase(0, value.find_first_not_of(" \t"));
+            value.erase(value.find_last_not_of(" \t") + 1);
+            headerValues[key] = value;
+        }
+    }
+    return (headerValues);
+}
+
+
+std::string Client::generateSessionId()
+{
+    static unsigned int idPrefix = 0;
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::chrono::system_clock::duration duration = now.time_since_epoch();
+    long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+    std::stringstream ss;
+    ss << milliseconds << '-' << idPrefix++;
+    return (ss.str());
+}
+
+void Client::setSessionID()
+{
+	if (_request.getHeaders().find("Cookie") != _request.getHeaders().end())
+	{
+		std::unordered_map<std::string, std::string>values = parseHeader(_request.getHeaders().find("Cookie")->second);
+		if (values.find("session_id") != values.end())
+		{
+			_sessionID = values.find("session_id")->second;
+		}
+		else
+		{
+			_sessionID = generateSessionId();
+		}
+	}
+	else
+	{
+		_sessionID = generateSessionId();
+	}
+}
+
 void Client::handleEvent(short events)
 {
 	//* we might want to malloc this buffer
 	static const int MAX_BUFFER_SIZE = 4095;
 	char buffer[MAX_BUFFER_SIZE + 1];
-	ssize_t readCount = 0;	// changed to ssize_t instead of size_t, because read() returns -1 on error, and size_t is unsigned
-	// static bool waitCGI = false;
+	ssize_t readCount = 0;
 
 	if (events & POLLOUT)
 	{
-		static int i = 0;
 		if (_request.getIsComplete() || _request.tryToComplete(_buffer))
 		{
-			if (DEBUG)
-				std::cout << RED << "i: " << i << RESET << std::endl;
-			if (DEBUG)
-				_request.printRequest();
 			if (respond())
 			{
 				_request.clear();
 			}
-			// mockResponse(_fd);
-			i++;
 		}
 	}
 	if (events & POLLIN)
 	{
-		// _timeout = std::time(nullptr);
-		if (DEBUG)
-			std::cout << GREEN << "READING\n" << RESET << std::endl; 
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
 		if (readCount < 0)
 		{
 			_failFlag = 1;
-			throw (std::runtime_error("EXCEPTION: reading failed"));
 		}
 		buffer[readCount] = '\0';
-		std::cout << buffer << std::endl;
 		_buffer.addToBuffer(&buffer[0], readCount);
-		std::cout << _buffer.getData() << std::endl;
+		// std::cout << buffer << std::endl;
+		// std::cout << _buffer.getData() << std::endl;
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{
-		if (DEBUG)
-			std::cout << GREEN << "double newline found" << RESET << std::endl;
-		if (_buffer.getSize())
-			if (DEBUG)
-				std::cout << CYAN << _buffer.getData() << RESET << std::endl;
 		try
 		{
 			_request = Request(_buffer.spliceRequest(), _config);
+			setSessionID();
 		}
 		catch (std::exception &e)
 		{
@@ -257,7 +266,5 @@ void Client::handleEvent(short events)
 			}
 			_request.setContentLenght(_request.getContentLenght() + chunkSize);
 		}
-		// std::cout << RED << "double newline NOT found" << RESET << std::endl;
-	}
-	// std::cout << _buffer.getData();
+ 	}
 }

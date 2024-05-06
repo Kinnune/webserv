@@ -17,7 +17,8 @@ Host::Host()
 	_host = "";
 	_portString = "";
 	_root = "";
-	_autoIndex = autoIndexState::NONE;
+	_dirList = false;
+	_autoIndex = autoIndexState::ON;
 }
 
 Host::~Host()
@@ -42,6 +43,7 @@ Host &Host::operator=(Host const &other)
 	_methods = other._methods;
 	_errorPages = other._errorPages;
 	_locations = other._locations;
+	_dirList = other._dirList;
 	return *this;
 }
 
@@ -52,6 +54,7 @@ Host &Host::operator=(Host const &other)
 
 int Host::getId() const { return _id; }
 int Host::getPortInt() const { return _portInt; }
+bool Host::getDirList() { return _dirList; }
 std::string Host::getServerName() const { return _serverName; }
 std::string Host::getHost() const { return _host; }
 std::string Host::getPortString() const { return _portString; }
@@ -201,9 +204,9 @@ bool Host::isAutoindexOn()
 
 std::string Host::updateResourcePath(std::string path)
 {
-	_autoIndex = autoIndexState::NONE;
+	//_autoIndex = autoIndexState::NONE;
 
-	updateAutoIndex(_autoIndex);
+	//updateAutoIndex(_autoIndex);
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
 		// std::cout << "Looking for location: " << color(loc->getLocation(), CYAN) << std::endl;
@@ -232,7 +235,6 @@ void Host::handleLocation(std::string &path, Location &loc)
 		path = loc.getRedirection();
 		return ;
 	}
-
 	// handle root/alias
 	if (loc.getRoot() != "")
 	{
@@ -313,29 +315,29 @@ void Host::handleNoLocation(std::string &path)
 	}
 	if (isDirectory(path))
 	{
-		if (_indexPages.size() > 0)
-		{
-			for (std::vector<std::string>::iterator it = _indexPages.begin(); it != _indexPages.end(); it++)
-			{
-				std::string indexPage = path;
-				indexPage.append(*it);
-				if (isFile(indexPage))
-				{
-					path.append(*it);
-					return ;
-				}
-			}
-			// _statusCode = 403;
-		}
-		else if (_autoIndex != autoIndexState::ON)
+		if (_autoIndex == autoIndexState::OFF)
 		{
 			// std::cout << "No index directive found. Looking for index file" << std::endl;
-			lookForIndexFile(path);
+			_dirList = true;
 		}
-		else if (_autoIndex == autoIndexState::ON)
+		else if (_autoIndex != autoIndexState::OFF)
 		{
+			if (_indexPages.size() > 0)
+			{
+				for (std::vector<std::string>::iterator it = _indexPages.begin(); it != _indexPages.end(); it++)
+				{
+					std::string indexPage = path;
+					indexPage.append(*it);
+					if (isFile(indexPage))
+					{
+						path.append(*it);
+						return ;
+					}
+				}
+				// _statusCode = 403;
+			}
+			lookForIndexFile(path);
 			// std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
-			_autoIndex = autoIndexState::ON;
 		}
 	}
 }
@@ -365,4 +367,3 @@ void Host::lookForIndexFile(std::string &path)
 	}
 	_statusCode = 403;
 }
-
