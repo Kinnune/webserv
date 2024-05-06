@@ -29,7 +29,7 @@ class Response
 {
 	public:
 		Response();
-		Response(Request &request);
+		Response(Request &request, std::string sessionID);
 		~Response();
 
 		int completeResponse();
@@ -44,6 +44,7 @@ class Response
 		bool hasRequest() { return (_request.getIsComplete()); }
 		bool childReady();
 		bool getWaitCGI() { return (_waitCGI); }
+		bool getRunCGI() { return (_runCGI); }
 		void setCGIEnvironmentVariables(char **envp);
 		void killChild();
 		std::string listDirectory(std::string path);

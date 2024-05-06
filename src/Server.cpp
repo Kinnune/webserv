@@ -91,7 +91,7 @@ void Server::removeClient(int fd)
 {
 	unsigned int i;
 
-	std::cout << color("Client disconnected", RED) << std::endl;
+	std::cout << color("Client disconnected " + std::to_string(_clients[fd].getFailFlag()), RED) << std::endl;
 	close(fd);
 	_clients[fd].getResponse().killChild();
 	_clients.erase(fd);
@@ -117,8 +117,8 @@ void Server::loop()
 
 	while (true)
 	{
-		currentTime = std::time(nullptr);
 		poll(_pollFds, getNfds(), timeout);
+		currentTime = std::time(nullptr);
 		for (unsigned int i = 0; i < getNfds(); i++)
 		{
 			if (i < _nServers)

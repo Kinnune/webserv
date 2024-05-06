@@ -7,6 +7,9 @@
 #include <fstream>
 #include <unistd.h>
 #include <ctime>
+#include <random>
+#include <chrono>
+#include <sstream>
 
 #include <cstring>
 #include "Server.hpp"
@@ -35,8 +38,10 @@ class Client
 		std::time_t _timeout;
 		ConfigurationFile _config;
 		short _failFlag;
+		std::string _sessionID;
+
+		std::string generateSessionId();
 	public:
-		
 		// Constructors/Destructors
 		Client();
 		~Client();
@@ -49,6 +54,7 @@ class Client
 		int getPort() const;
 		short getFailFlag(void);
 		Response &getResponse() { return (_response); }
+		std::string getSessionId() { return (_sessionID); }
 		// Host &getHost();
 
 		// Setters
@@ -61,6 +67,8 @@ class Client
 		bool respond();
 		void handleEvent(short events);
 		bool checkTimeout(time_t currentTime);
+		void setSessionID();
+
 };
 
 

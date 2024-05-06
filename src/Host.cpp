@@ -168,9 +168,8 @@ bool Host::isAllowedCGI(std::string &path, std::string &extension)
 	{
 		if (locationExists(path, loc->getLocation()))
 		{
-			std::string ext = "." + extension;
 			std::vector<std::string> extensions = loc->getCgiExtensions();
-			return std::find(extensions.begin(), extensions.end(), ext) != extensions.end();
+			return std::find(extensions.begin(), extensions.end(), extension) != extensions.end();
 		}
 	}
 	return false;
