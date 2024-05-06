@@ -2,6 +2,7 @@
 #define HOST_HPP
 #include <string>
 #include <vector>
+#include <map>
 #include "Location.hpp"
 #include "utilityHeader.hpp"
 
@@ -20,7 +21,8 @@ class Host
 		autoIndexState				_autoIndex;
 		std::vector<std::string>	_methods;
 		std::vector<std::string>	_indexPages;
-		std::vector<std::string>	_errorPages;
+		// std::vector<std::string>	_errorPages;
+		std::map<std::string, std::string>	_errorPages;
 		std::vector<Location>		_locations;
 		bool						_dirList;
 
@@ -52,7 +54,7 @@ class Host
 		autoIndexState getAutoIndex() const;
 		std::vector<std::string> &getMethods();
 		std::vector<std::string> &getIndexPages();
-		std::vector<std::string> &getErrorPages();
+		std::map<std::string, std::string> &getErrorPages();
 		std::vector<Location> &getLocations();
 		bool getDirList(void);
 
@@ -66,11 +68,12 @@ class Host
 		void setAutoIndex(autoIndexState autoIndex);
 		void setMethods(std::vector<std::string> methods);
 		void setIndexPages(std::vector<std::string> index_pages);
-		void setErrorPages(std::vector<std::string> errorPages);
+		void setErrorPages(std::map<std::string, std::string> errorPages);
 		void setLocations(std::vector<Location> locations);
 
 		// Add
 		void addLocation(Location &location);
+		void addErrorPage(std::string &errorPage, std::string &path);
 
 		// Methods
 		bool isAllowedCGI(std::string &path, std::string &extension);

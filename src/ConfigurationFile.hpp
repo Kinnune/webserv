@@ -17,9 +17,11 @@ class ConfigurationFile
 		bool _configSyntaxError;
 		bool _eof;
 		void printMultipleValues(std::vector<std::string> &values);
+		void printErrorpages(std::map<std::string, std::string> &errorPages);
 		int parseHostConfig(std::ifstream &file, std::string &line);
 		int parseHostDefaultValues(Host& host, std::ifstream& file, std::string& line);
 		int parseMultipleValues(std::vector<std::string>& values, std::string& line, int type);
+		int parseErrorPages(Host& host, std::string& line);
 		int storeLocationValues(Location& loc, std::string& line);
 		int setLocation(Location& loc, std::string& line);
 		int parseLocations(Host& host, std::ifstream& file, std::string& line);
@@ -29,6 +31,7 @@ class ConfigurationFile
 		int serverFound(std::ifstream& file, std::string& line);
 		int getKey(std::string& line, std::string& key);
 		int getValue(std::string& line, std::string& value);
+		int getLastValue(std::string& line, std::string& value);
 	public:
 
 		// Constructors/Destructors

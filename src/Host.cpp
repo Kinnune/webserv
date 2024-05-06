@@ -62,7 +62,7 @@ std::string Host::getRoot() const { return _root; }
 autoIndexState Host::getAutoIndex() const { return _autoIndex; }
 std::vector<std::string> &Host::getMethods() { return _methods; }
 std::vector<std::string> &Host::getIndexPages() { return _indexPages; }
-std::vector<std::string> &Host::getErrorPages() { return _errorPages; }
+std::map<std::string, std::string> &Host::getErrorPages() { return _errorPages; }
 std::vector<Location> &Host::getLocations() { return _locations; }
 
 std::string Host::getInterpreter(std::string &path, const std::string &extension)
@@ -99,7 +99,7 @@ void Host::setRoot(std::string root) { _root = root; }
 void Host::setAutoIndex(autoIndexState autoIndex) { _autoIndex = autoIndex; }
 void Host::setMethods(std::vector<std::string> methods) { _methods = methods; }
 void Host::setIndexPages(std::vector<std::string> index_pages) { _indexPages = index_pages; }
-void Host::setErrorPages(std::vector<std::string> errorPages) { _errorPages = errorPages; }
+void Host::setErrorPages(std::map<std::string, std::string> errorPages) { _errorPages = errorPages; }
 void Host::setLocations(std::vector<Location> locations) { _locations = locations; }
 
 
@@ -108,6 +108,7 @@ void Host::setLocations(std::vector<Location> locations) { _locations = location
 //------------------------------------------------------------------------------
 
 void Host::addLocation(Location &location) { _locations.push_back(location); }
+void Host::addErrorPage(std::string &errorPage, std::string &path) { _errorPages.insert(std::pair<std::string, std::string>(errorPage, path)); }
 
 
 //------------------------------------------------------------------------------

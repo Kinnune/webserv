@@ -23,6 +23,13 @@ void ConfigurationFile::printMultipleValues(std::vector<std::string> &values)
 	std::cout << std::endl;
 }
 
+void ConfigurationFile::printErrorpages(std::map<std::string, std::string> &errorPages)
+{
+	for (std::map<std::string, std::string>::iterator it = errorPages.begin(); it != errorPages.end(); it++)
+		std::cout << color(it->first, GREEN) << " -> " << color(it->second, GREEN) << " ";
+	std::cout << std::endl;
+}
+
 //------------------------------------------------------------------------------
 
 void ConfigurationFile::printConfigInfo()
@@ -43,8 +50,8 @@ void ConfigurationFile::printConfigInfo()
 		std::vector<std::string> indexPages = host->getIndexPages();
 		std::cout << "INDEX:\t\t"; printMultipleValues(indexPages);
 		std::cout << "AUTOINDEX:\t" << color((int)host->getAutoIndex(), GREEN) << std::endl;
-		std::vector<std::string> errorPages = host->getErrorPages();
-		std::cout << "ERRPAG:\t\t"; printMultipleValues(errorPages);
+		std::map<std::string, std::string> errorPages = host->getErrorPages();
+		std::cout << "ERRPAG:\t\t"; printErrorpages(errorPages);
 		std::cout << "LOC-n:\t\t" << color(host->getLocations().size(), GREEN) << std::endl;
 		for (std::vector<Location>::iterator loc = host->getLocations().begin(); loc != host->getLocations().end(); loc++)
 		{
@@ -187,6 +194,28 @@ int ConfigurationFile::getValue(std::string& line, std::string& value)
 
 //------------------------------------------------------------------------------
 
+int ConfigurationFile::getLastValue(std::string& line, std::string& value)
+{
+	size_t pos;
+
+	pos = line.find_last_not_of(" \t");
+	if (pos == std::string::npos)
+		return (err("Syntax error1: Expected value"));
+	line = line.substr(0, pos + 1);
+	pos = line.find_last_of(" \t");
+	if (pos == std::string::npos)
+		return (err("Syntax error2: Expected value"));
+	value = line.substr(pos + 1);
+	line = line.substr(0, pos);
+	pos = line.find_last_not_of(" \t");
+	if (pos == std::string::npos)
+		return (err("Syntax error3: Expected value"));
+	line = line.substr(0, pos + 1);
+	return (SUCCESS);
+}
+
+//------------------------------------------------------------------------------
+
 int ConfigurationFile::parseMultipleValues(std::vector<std::string>& values, std::string& line, int type)
 {
 	std::string value;
@@ -232,10 +261,7 @@ int ConfigurationFile::parseMultipleValues(std::vector<std::string>& values, std
 		}
 		else if (type == ERROR_PAGES)
 		{
-			if (value.find_first_not_of("0123456789") == std::string::npos)
-				values.push_back(value);
-			else
-				return (err("Invalid error page: " + value));
+			values.push_back(value);
 		}
 		else
 		{
@@ -243,6 +269,32 @@ int ConfigurationFile::parseMultipleValues(std::vector<std::string>& values, std
 		}
 		line = line.substr(pos);
 	}
+	return (SUCCESS);
+}
+
+//------------------------------------------------------------------------------
+
+int ConfigurationFile::parseErrorPages(Host& host, std::string& line)
+{
+	std::string value;
+
+	std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
+
+	if (!getLastValue(line, value))
+		return (FAILURE);
+
+	std::cout << "Value: [" << color(value, GREEN) << "]" << std::endl;
+	std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
+
+	std::vector<std::string> errorPages;
+	if (!parseMultipleValues(errorPages, line, ERROR_PAGES))
+		return (FAILURE);
+	
+	for (std::vector<std::string>::iterator it = errorPages.begin(); it != errorPages.end(); it++)
+	{
+		host.addErrorPage(*it, value);
+	}
+	
 	return (SUCCESS);
 }
 
@@ -423,10 +475,9 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 	}
 	else if (key == "ERROR_PAGES")
 	{
-		std::vector<std::string> errorPages;
-		if (!parseMultipleValues(errorPages, value, ERROR_PAGES))
+		if (!parseErrorPages(host, value))
 			return (FAILURE);
-		host.setErrorPages(errorPages);
+		// host.setErrorPages(errorPages);
 	}
 	else
 		return (err("Unknown key: " + key));

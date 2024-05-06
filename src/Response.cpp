@@ -101,9 +101,18 @@ void Response::setStatus(int status)
 
 void Response::generateErrorPage()
 {
-
-
-	//**Check if there is default error page, if not go here.
+	if (_host.getErrorPages().size() > 0)
+	{
+		// std::string errorPageName = _statusCode + ".html";
+		// for (std::map<std::string, std::string>::iterator it = _host.getErrorPages().begin(); it != _host.getErrorPages().end(); it++)
+		// {
+		// 	if (*it == errorPageName)
+		// 	{
+				
+		// 	}
+		// }
+	}
+	else
 	{
 		std::string errorPage = "<!DOCTYPE html> \
 		<html lang=\"en\"> \
