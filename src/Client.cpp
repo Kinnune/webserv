@@ -147,7 +147,6 @@ bool Client::respond()
 
 	if (_response.hasRequest() == false)
 	{
-		std::cout << color("GOING TO RESPONSE(REQUEST) CONSTRUCTOR", CYAN) << std::endl;
 		_response = Response(_request, _sessionID);
 	}
 	if (_response.completeResponse())
@@ -183,10 +182,11 @@ std::unordered_map<std::string, std::string> parseHeader(std::string header)
 
     std::stringstream ss(header);
     std::string token;
-    while (std::getline(ss, token, ';')) {
-
+    while (std::getline(ss, token, ';'))
+	{
         std::size_t pos = token.find('=');
-        if (pos != std::string::npos) {
+        if (pos != std::string::npos)
+		{
             std::string key = token.substr(0, pos);
             std::string value = token.substr(pos + 1);
             key.erase(0, key.find_first_not_of(" \t"));
@@ -196,7 +196,7 @@ std::unordered_map<std::string, std::string> parseHeader(std::string header)
             headerValues[key] = value;
         }
     }
-    return headerValues;
+    return (headerValues);
 }
 
 void Client::setSessionID()
@@ -212,6 +212,10 @@ void Client::setSessionID()
 		{
 			_sessionID = generateSessionId();
 		}
+	}
+	else
+	{
+		_sessionID = generateSessionId();
 	}
 }
 

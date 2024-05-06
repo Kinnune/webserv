@@ -40,7 +40,6 @@ class Client
 		short _failFlag;
 		std::string _sessionID;
 	public:
-		
 		// Constructors/Destructors
 		Client();
 		~Client();

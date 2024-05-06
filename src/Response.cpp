@@ -43,10 +43,10 @@ Response::Response(Request &request, std::string sessionID)
 	_body.resize(0);
 	_waitCGI = false;
 	_runCGI = supportedCGI();
-	// if (_headers.find("Cookie") != _headers.end())
-	// {
-	// 	_headers["Set-Cookie"] = "session_id=" + sessionID;
-	// }
+	if (_headers.find("Cookie") == _headers.end())
+	{
+		_headers["Set-Cookie"] = "session_id=" + sessionID;
+	}
 	if (DEBUG)
 		std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
 };
@@ -202,6 +202,11 @@ std::string Response::detectContentType(const std::string &filePath)
 {
 	std::string fileExtension = getFileExtension(filePath);
 
+	if (!fileExtension.empty() && fileExtension[0] == '.')
+	{
+		fileExtension = fileExtension.substr(1);
+	}
+	std::cout << "file extension recognized as: " << fileExtension << std::endl;
 	//**Incase of javascript or python files we will run the script and provide its output as html
 	if (supportedCGI())
 	{
