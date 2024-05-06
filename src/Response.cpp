@@ -391,7 +391,7 @@ int Response::doCGI()
 
 		std::string program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget()));
 		std::string argument = _host.updateResourcePath(_request.getTarget());
-		if (getFileExtension(_request.getTarget()) == "out")
+		if (getFileExtension(_request.getTarget()) == ".out")
 		{
 			program = argument;
 		}
