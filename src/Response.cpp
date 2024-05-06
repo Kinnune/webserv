@@ -92,12 +92,32 @@ void Response::setStatus(int status)
 			break ;
 		case 404:
 			_statusMessage = "Not Found";
-			body404();
+			generateErrorPage();
 			break ;
-
 	}
 }
 
+void Response::generateErrorPage()
+{
+
+
+	//**Check if there is default error page, if not go here.
+	{
+		std::string errorPage = "<!DOCTYPE html> \
+		<html lang=\"en\"> \
+		<head> \
+		<title>Error: " + _statusCode + "</title> \
+		</head> \
+		<body> \
+		  <h1>Oops! Something went wrong.</h1> \
+		  <p>Error, " + _statusCode + " (" + _statusMessage + ")," + " occurred while processing your request.</p> \
+		</body> \
+		</html>";
+		_body = std::vector<unsigned char>(errorPage.begin(), errorPage.end());
+	}
+	setContentLengthHeader(_body.size());
+	_headers["Content-Type"] = "text/html";
+}
 
 //------------------------------------------------------------------------------
 //	MEMBER FUNCTIONS
@@ -206,7 +226,7 @@ std::string Response::detectContentType(const std::string &filePath)
 	{
 		fileExtension = fileExtension.substr(1);
 	}
-	std::cout << "file extension recognized as: " << fileExtension << std::endl;
+	// std::cout << "file extension recognized as: " << fileExtension << std::endl;
 	//**Incase of javascript or python files we will run the script and provide its output as html
 	if (supportedCGI())
 	{
@@ -373,13 +393,14 @@ int Response::doCGI()
 	if (pipe(_pipeChild) == -1 || pipe(_pipeParent) == -1)
 	{
 		std::cerr << "Pipe creation failed";
-		return 1;
+		// setStatus(500);
+		return (1);
 	}
 	_pid = fork();
 	if (_pid == -1)
 	{
 		std::cerr << "Fork failed";
-		return 1;
+		return (1);
 	}
 	else if (_pid == 0)
 	{ // Child process
@@ -399,7 +420,7 @@ int Response::doCGI()
 		setCGIEnvironmentVariables(env);
 		execve(program.c_str(), const_cast<char* const*>(args), const_cast<char* const*>(env));
 		std::cerr << "Exec failed";
-		return 1;
+		return (1);
 	}
 	else
 	{ // Parent process
@@ -413,7 +434,7 @@ int Response::doCGI()
 	}
 	_runCGI = false;
 	_waitCGI = true;
-	return 0; // Exit main process with success status
+	return (0);
 }
 
 

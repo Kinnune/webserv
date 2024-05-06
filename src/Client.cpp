@@ -202,13 +202,13 @@ std::unordered_map<std::string, std::string> parseHeader(std::string header)
 
 std::string Client::generateSessionId()
 {
-    static unsigned int idPrefix = 0;
+    static unsigned int idSuffix = 0;
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
     std::chrono::system_clock::duration duration = now.time_since_epoch();
     long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 
     std::stringstream ss;
-    ss << milliseconds << '-' << idPrefix++;
+    ss << milliseconds << '-' << idSuffix++;
     return (ss.str());
 }
 
