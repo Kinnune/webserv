@@ -390,7 +390,7 @@ int Response::doCGI()
 		const char *program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget())).c_str();
 		const char *argument = _host.updateResourcePath(_request.getTarget()).c_str();
 		
-		if (getFileExtension(_request.getTarget()) == "out")
+		if (getFileExtension(_request.getTarget()) == ".out")
 		{
 			program = argument;
 		}
