@@ -39,6 +39,8 @@ class Client
 		ConfigurationFile _config;
 		short _failFlag;
 		std::string _sessionID;
+
+		std::string generateSessionId();
 	public:
 		// Constructors/Destructors
 		Client();
@@ -68,19 +70,6 @@ class Client
 		bool checkTimeout(time_t currentTime);
 		void setSessionID();
 
-		std::string generateSessionId() {
-		    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-		    std::chrono::system_clock::duration duration = now.time_since_epoch();
-		    long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
-
-		    std::random_device rd;
-		    std::mt19937 gen(rd());
-		    std::uniform_int_distribution<> dis(0, 9999);
-		    int randomNumber = dis(gen);
-		    std::stringstream ss;
-		    ss << milliseconds << '-' << randomNumber;
-		    return ss.str();
-		}
 };
 
 

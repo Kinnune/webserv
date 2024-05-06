@@ -199,6 +199,19 @@ std::unordered_map<std::string, std::string> parseHeader(std::string header)
     return (headerValues);
 }
 
+
+std::string Client::generateSessionId()
+{
+    static unsigned int idPrefix = 0;
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::chrono::system_clock::duration duration = now.time_since_epoch();
+    long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+    std::stringstream ss;
+    ss << milliseconds << '-' << idPrefix++;
+    return (ss.str());
+}
+
 void Client::setSessionID()
 {
 	if (_request.getHeaders().find("Cookie") != _request.getHeaders().end())
