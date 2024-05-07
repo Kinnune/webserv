@@ -18,7 +18,7 @@ Host::Host()
 	_portString = "";
 	_root = "";
 	_dirList = false;
-	_autoIndex = autoIndexState::ON;
+	_autoIndex = autoIndexState::OFF;
 }
 
 Host::~Host()
@@ -232,7 +232,7 @@ void Host::handleLocation(std::string &path, Location &loc)
 	if (loc.getRedirection() != "")
 	{
 		// std::cout << "REDIRECTION: " << loc.getRedirection() << std::endl;
-		_statusCode = 301;
+		// _statusCode = 301;
 		path = loc.getRedirection();
 		return ;
 	}

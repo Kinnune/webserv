@@ -21,7 +21,6 @@ class Host
 		autoIndexState				_autoIndex;
 		std::vector<std::string>	_methods;
 		std::vector<std::string>	_indexPages;
-		// std::vector<std::string>	_errorPages;
 		std::map<std::string, std::string>	_errorPages;
 		std::vector<Location>		_locations;
 		bool						_dirList;

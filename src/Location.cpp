@@ -15,7 +15,7 @@ Location::Location()
 	this->cgiPath = "";
 	this->interpreter = "";
 	this->redirection = "";
-	this->autoIndex = autoIndexState::NONE;
+	this->autoIndex = autoIndexState::OFF;
 }
 
 Location::~Location()
