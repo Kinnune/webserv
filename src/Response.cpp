@@ -452,29 +452,46 @@ int Response::doCGI()
 //	HANDLE METHODS
 //------------------------------------------------------------------------------
 
+int readFile(std::string filePath, std::vector<unsigned char> &body)
+{
+	std::ifstream file(filePath, std::ios::binary);
+	if (!file)
+	{
+		std::cerr << "Failed to open file: " << filePath << std::endl;
+		return (1);
+	}
+	body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
+	file.close();
+	if (!file)
+	{
+		std::cerr << "Failed to read file." << std::endl;
+		return (1);
+	}
+	return (0);
+}
+
 void Response::handleGetMethod()
 {
 	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
 	std::cout << "Method: " << color("GET", GREEN) << std::endl;
-	std::cout << "HOST: requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+
+	std::string filePath;
 
 	// Check if there's a redirection
 	if (_host.isRedirection(_request.getTarget()))
 	{
 		std::cout << "HOST: redirection found" << std::endl;
+		filePath = _host.getRedirectionPath(_request.getTarget());
 		setStatus(301);
-		// return ;
+		return ;
 	}
 
-	// Check if autoindex is on
-	if (_host.isAutoindexOn())
-	{
-		std::cout << "HOST: autoindex is on" << std::endl;
-		// provide a list of files in the directory
-	}
+	// Update resource path
+	if ()
 
 	std::cout << "Resource requested: " << color(_request.getTarget(), GREEN) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget());
+
 	if(_host.getDirList())
 	{
 		std::ofstream file;
@@ -526,6 +543,11 @@ void Response::handleGetMethod()
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = contentType;
 	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+}
+
+void handleGet()
+{
+
 }
 
 //------------------------------------------------------------------------------

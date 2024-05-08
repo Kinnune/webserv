@@ -203,7 +203,7 @@ bool Host::isAutoindexOn()
 //	UPDATE RESOURCE PATH
 //------------------------------------------------------------------------------
 
-std::string Host::updateResourcePath(std::string path)
+void Host::updateResourcePath(std::string &path, int &statusCode)
 {
 	//_autoIndex = autoIndexState::NONE;
 
@@ -215,27 +215,30 @@ std::string Host::updateResourcePath(std::string path)
 		{
 			// std::cout << "Location found: " << color(loc->getLocation(), CYAN) << std::endl;
 			updateAutoIndex(loc->getAutoIndex());
-			handleLocation(path, *loc);
-			return path;
+			handleLocation(*loc, path, statusCode);
+			return ;
 		}
 	}
 	// std::cout << color("No location found", RED) << std::endl;
-	handleNoLocation(path);
-	return path;
+	handleNoLocation(path, statusCode);
+	return ;
 }
 
 //------------------------------------------------------------------------------
 
-void Host::handleLocation(std::string &path, Location &loc)
+void handleRedirection(Location &loc, std::string &path, int &statusCode)
 {
-	// handle redirection
+	statusCode = 301;
+	path = loc.getRedirection();
+}
+
+void Host::handleLocation(Location &loc, std::string &path, int &statusCode)
+{
 	if (loc.getRedirection() != "")
 	{
-		// std::cout << "REDIRECTION: " << loc.getRedirection() << std::endl;
-		// _statusCode = 301;
-		path = loc.getRedirection();
-		return ;
+		return handleRedirection(loc, path, statusCode);
 	}
+
 	// handle root/alias
 	if (loc.getRoot() != "")
 	{
@@ -307,7 +310,7 @@ void Host::handleLocation(std::string &path, Location &loc)
 
 //------------------------------------------------------------------------------
 
-void Host::handleNoLocation(std::string &path)
+void Host::handleNoLocation(std::string &path, int &statusCode)
 {
 	if (_root != "")
 	{

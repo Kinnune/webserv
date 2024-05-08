@@ -26,13 +26,13 @@ class Host
 		bool						_dirList;
 
 		// Private methods
-		bool isFile(std::string const &path);
-		bool isDirectory(std::string const &path);
-		bool locationExists(std::string const &path, std::string const &location);
-		void handleLocation(std::string &path, Location &location);
-		void handleNoLocation(std::string &path);
-		void updateAutoIndex(autoIndexState state);
-		void lookForIndexFile(std::string &path);
+		bool	isFile(std::string const &path);
+		bool	isDirectory(std::string const &path);
+		bool	locationExists(std::string const &path, std::string const &location);
+		void	handleLocation(Location &location, std::string &path, int &statusCode);
+		void	handleNoLocation(std::string &path, int &statusCode);
+		void	updateAutoIndex(autoIndexState state);
+		void	lookForIndexFile(std::string &path);
 
 	
 	public:
@@ -79,7 +79,7 @@ class Host
 		bool isAllowedMethod(std::string &path, std::string method);
 		bool isRedirection(std::string &path);
 		bool isAutoindexOn();
-		std::string updateResourcePath(std::string path);
+		void updateResourcePath(std::string &path, int &statusCode);
 };
 
 #endif
