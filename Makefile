@@ -1,6 +1,6 @@
 NAME = webserv
 CPP = c++
-FLAGS =  -Wall -Wextra -Werror -std=c++11
+FLAGS =  -Wall -Wextra -Werror -std=c++11 -g -fsanitize=address
 SRCDIR = src
 OBJDIR = obj
 SRC = 	src/main.cpp \

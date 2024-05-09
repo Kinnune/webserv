@@ -55,6 +55,7 @@ class Response
 		void handleDeleteMethod();
 		void generateErrorPage();
 
+		int _statusCodeInt;
 		std::string _version;
 		std::string _statusCode;
 		std::string _statusMessage;

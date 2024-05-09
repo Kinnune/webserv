@@ -18,7 +18,8 @@ std::string getFileExtension(const std::string &filePath)
 }
 
 Response::Response()
-	: _version(""),
+	: _statusCodeInt(0),
+		_version(""),
 		_statusCode(""),
 		_statusMessage(""),
 		_headers(std::unordered_map<std::string, std::string>()),
@@ -37,6 +38,7 @@ Response::Response(Request &request, std::string sessionID)
 	_pid = 0;
 	_runCGI = supportedCGI();
 	_waitCGI = false;
+	_statusCodeInt = 0;
 	_statusCode = "";
 	_statusMessage = "";
 	_version = _request.getVersion();			
@@ -93,39 +95,40 @@ void Response::setStatus(int status)
 			_statusMessage = "OK";
 			break ;
 		case 404:
+			std::cout << "404 Not Found" << std::endl;
 			_statusMessage = "Not Found";
-			generateErrorPage();
 			break ;
 	}
 }
 
 void Response::generateErrorPage()
 {
-	if (_host.getErrorPages().size() > 0)
+	// Search for custom error page
+	for (std::pair<std::string, std::string> errorPage : _host.getErrorPages())
 	{
-		// std::string errorPageName = _statusCode + ".html";
-		// for (std::map<std::string, std::string>::iterator it = _host.getErrorPages().begin(); it != _host.getErrorPages().end(); it++)
-		// {
-		// 	if (*it == errorPageName)
-		// 	{
-				
-		// 	}
-		// }
+		if (errorPage.first == _statusCode)
+		{
+			std::string errorPageName = errorPage.second + "/" + _statusCode + ".html";
+			std::ifstream file(errorPageName, std::ios::binary);
+			_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
+			setContentLengthHeader(_body.size());
+			_headers["Content-Type"] = "text/html";
+			return ;
+		}
 	}
-	else
-	{
-		std::string errorPage = "<!DOCTYPE html> \
-		<html lang=\"en\"> \
-		<head> \
-		<title>Error: " + _statusCode + "</title> \
-		</head> \
-		<body> \
-		  <h1>Oops! Something went wrong.</h1> \
-		  <p>Error, " + _statusCode + " (" + _statusMessage + ")," + " occurred while processing your request.</p> \
-		</body> \
-		</html>";
-		_body = std::vector<unsigned char>(errorPage.begin(), errorPage.end());
-	}
+
+	// Default error page
+	std::string errorPage = "<!DOCTYPE html> \
+	<html lang=\"en\"> \
+	<head> \
+	<title>Error: " + _statusCode + "</title> \
+	</head> \
+	<body> \
+		<h1>Oops! Something went wrong.</h1> \
+		<p>Error, " + _statusCode + " (" + _statusMessage + ")," + " occurred while processing your request.</p> \
+	</body> \
+	</html>";
+	_body = std::vector<unsigned char>(errorPage.begin(), errorPage.end());
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = "text/html";
 }
@@ -420,7 +423,7 @@ int Response::doCGI()
 		dup2(_pipeParent[1], STDOUT_FILENO);
 
 		std::string program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget()));
-		std::string argument = _host.updateResourcePath(_request.getTarget());
+		std::string argument = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
 		if (getFileExtension(_request.getTarget()) == ".out")
 		{
 			program = argument;
@@ -454,77 +457,54 @@ int Response::doCGI()
 
 void Response::handleGetMethod()
 {
-	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
-	std::cout << "Method: " << color("GET", GREEN) << std::endl;
-	std::cout << "HOST: requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+	// update path and status code
+	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
+	
+	// Check if the requested method is allowed
+	if (_host.isAllowedMethod(_request.getTarget(), "GET") == false)
+		_statusCodeInt = 405;
 
-	// Check if there's a redirection
-	if (_host.isRedirection(_request.getTarget()))
+	setStatus(_statusCodeInt);
+
+	if (_statusCodeInt != 200)
 	{
-		std::cout << "HOST: redirection found" << std::endl;
-		setStatus(301);
-		// return ;
+		generateErrorPage();
+		return ;
 	}
 
-	// Check if autoindex is on
-	if (_host.isAutoindexOn())
-	{
-		std::cout << "HOST: autoindex is on" << std::endl;
-		// provide a list of files in the directory
-	}
-
-	std::cout << "Resource requested: " << color(_request.getTarget(), GREEN) << std::endl;
-	std::string filePath = _host.updateResourcePath(_request.getTarget());
+	// handle directory listing if necessary
 	if(_host.getDirList())
 	{
-		std::ofstream file;
-		file.open("www/directoryList.html");
-		file << listDirectory(filePath);
-		file.close();
+		std::ofstream file2;
+		file2.open("www/directoryList.html");
+		file2 << listDirectory(filePath);
+		file2.close();
 		filePath = "www/directoryList.html";
-		std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 	}
-	else
-	 	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
-	//std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
-	std::string contentType = detectContentType(filePath);
 	
 	removeFirstCharIfMatches(filePath, '/');
+	
 	//**SEPARATE THIS INTO FILE READING FUNCTION
 	std::ifstream file(filePath, std::ios::binary);
 	if (!file)
 	{
 		// 500 internal server error
 		std::cerr << "Failed to open file: " << filePath << std::endl;
-		setStatus(404);
 		return ;
 	}
 	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
 	file.close();
-	if (!file)
-	{
-		// 500 internal server error
-		setStatus(404);
-		std::cerr << "Failed to read file." << std::endl;
-		return ;
-	}
-	std::cout << "Number of bytes read: " << _body.size() << std::endl;
+	// if (!file)
+	// {
+	// 	// 500 internal server error
+	// 	std::cerr << "Failed to read file." << std::endl;
+	// 	return ;
+	// }
 
-	
-	// Check if the requested method is allowed
-	if (_host.isAllowedMethod(_request.getTarget(), "GET") == false)
-	{
-		std::cerr << color("Method not allowed", RED) << std::endl;
-		setStatus(405);
-		return ;
-	}
-	
-
-	//something wrong with version, shows up as "  TP/1.1"
-	setStatus(200);
+	// something wrong with version, shows up as "  TP/1.1"
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
-	_headers["Content-Type"] = contentType;
+	_headers["Content-Type"] = detectContentType(filePath);
 	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 }
 
@@ -537,7 +517,7 @@ void Response::handlePostMethod()
 
 	// Update resource path
 	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
-	std::string filePath = _host.updateResourcePath(_request.getTarget());
+	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
 	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 
 	// Handle body
@@ -572,13 +552,9 @@ std::string Response::listDirectory(std::string path)
 		while ((entry = readdir(directory)) != nullptr)
 		{
             directoryListResponse.append("<tr><td><a href=\""+ std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
-			if (DEBUG)
-				std::cout << entry->d_name << std::endl;
 		}
 
         directoryListResponse.append("</table>");
-		if (DEBUG)
-	        std::cout << "</table>" << std::endl;
 		closedir(directory);
 	}
 	else

@@ -117,7 +117,6 @@ void Host::addErrorPage(std::string &errorPage, std::string &path) { _errorPages
 
 bool Host::isFile(const std::string &path)
 {
-	// std::cout << "Checking if path is a file" << std::endl;
 	struct stat path_stat;						// create a stat struct
 	if (stat(path.c_str(), &path_stat) != 0)	// get the stats of the path, and store them in the struct
 		return false;							// if the path does not exist, return false
@@ -198,65 +197,68 @@ bool Host::isAutoindexOn()
 	return _autoIndex == autoIndexState::ON;
 }
 
+//------------------------------------------------------------------------------
+
+bool stringEndsWithString(std::string const &fullString, std::string const &ending)
+{
+	if (fullString.length() >= ending.length())
+	{
+		return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+	}
+	else
+	{
+		return false;
+	}
+}
+
 
 //------------------------------------------------------------------------------
 //	UPDATE RESOURCE PATH
 //------------------------------------------------------------------------------
 
-std::string Host::updateResourcePath(std::string path)
+std::string Host::updateResourcePath(std::string &path, int &statusCode)
 {
-	//_autoIndex = autoIndexState::NONE;
-
-	//updateAutoIndex(_autoIndex);
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{
-		// std::cout << "Looking for location: " << color(loc->getLocation(), CYAN) << std::endl;
 		if (locationExists(path, loc->getLocation()))
 		{
-			// std::cout << "Location found: " << color(loc->getLocation(), CYAN) << std::endl;
 			updateAutoIndex(loc->getAutoIndex());
-			handleLocation(path, *loc);
+			handleLocation(*loc, path, statusCode);
 			return path;
 		}
 	}
-	// std::cout << color("No location found", RED) << std::endl;
-	handleNoLocation(path);
+	handleNoLocation(path, statusCode);
 	return path;
 }
 
 //------------------------------------------------------------------------------
 
-void Host::handleLocation(std::string &path, Location &loc)
+void Host::handleLocation(Location &loc, std::string &path, int &statusCode)
 {
 	// handle redirection
 	if (loc.getRedirection() != "")
 	{
-		// std::cout << "REDIRECTION: " << loc.getRedirection() << std::endl;
-		// _statusCode = 301;
+		statusCode = 301;
 		path = loc.getRedirection();
 		return ;
 	}
+	
 	// handle root/alias
 	if (loc.getRoot() != "")
 	{
-		// std::cout << "LOC-ROOT: " << color(loc.getRoot(), GREEN) << std::endl;
 		if (isFile(loc.getRoot() + path))
 		{
-			// std::cout << "Resource path is a file" << std::endl;
 			path = loc.getRoot() + path;
 			return ;
 		}
-		// std::cout << "Resource path is a directory" << std::endl;
 		path = loc.getRoot() + path.substr(loc.getLocation().length());
 	}
 	else if (loc.getAlias() != "")
 	{
-		// std::cout << "LOC-ALIAS: " << color(loc.getAlias(), GREEN) << std::endl;
 		path = loc.getAlias();
 	}
 	else if (_root != "")
 	{
-		// std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
 		path = _root + path.substr(loc.getLocation().length());
 	}
 
@@ -264,22 +266,40 @@ void Host::handleLocation(std::string &path, Location &loc)
 	if (isDirectory(path))
 	{
 		path.append("/");
-		if (loc.getIndexPages().size() > 0)
+		if (loc.getIndexPages().size() > 0)	// if index directive is found
 		{
-			for (std::vector<std::string>::iterator it = loc.getIndexPages().begin(); it != loc.getIndexPages().end(); it++)
+			// append location index to path if it exists
+			std::vector<std::string> indexPages = loc.getIndexPages();
+			for (std::vector<std::string>::iterator it = indexPages.begin(); it != indexPages.end(); it++)
 			{
 				std::string indexPage = path;
 				indexPage.append(*it);
 				if (isFile(indexPage))
 				{
 					path.append(*it);
-					return ;
+					break ;
 				}
 			}
-			// _statusCode = 403;
+			if (isFile(path))
+			{
+				statusCode = 200;
+			}
+			else
+			{
+				if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
+				{
+					statusCode = 200;
+					_dirList = true;
+				}
+				else
+				{
+					statusCode = 403;
+				}
+			}
 		}
-		else if (_indexPages.size() > 0)
+		else if (_indexPages.size() > 0) // if root index directive is found
 		{
+			// append root index to path if it exists
 			for (std::vector<std::string>::iterator it = _indexPages.begin(); it != _indexPages.end(); it++)
 			{
 				std::string indexPage = path;
@@ -287,59 +307,146 @@ void Host::handleLocation(std::string &path, Location &loc)
 				if (isFile(indexPage))
 				{
 					path.append(*it);
-					return ;
+					break ;
 				}
 			}
-			// _statusCode = 403;
+
+			if (isFile(path))
+			{
+				statusCode = 200;
+			}
+			else
+			{
+				if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
+				{
+					statusCode = 200;
+					_dirList = true;
+				}
+				else
+				{
+					statusCode = 403;
+				}
+			}
 		}
-		else if (_autoIndex != autoIndexState::ON)
+		else
 		{
-			// std::cout << "No index directive found. Looking for index file" << std::endl;
-			lookForIndexFile(path);
+			if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
+			{
+				statusCode = 200;
+				_dirList = true;
+			}
+			else
+			{
+				statusCode = 404;
+			}
 		}
-		else if (_autoIndex == autoIndexState::ON)
+	}
+	else if (isFile(path))
+	{
+		statusCode = 200;
+	}
+	else
+	{
+		if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
 		{
-			// std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
-			_autoIndex = autoIndexState::ON;
+			if (stringEndsWithString(path, "index.html") || stringEndsWithString(path, "index.htm") || stringEndsWithString(path, "index.php"))
+			{
+				statusCode = 200;
+				_dirList = true;
+			}
+			else
+			{
+				statusCode = 404;
+			}
 		}
+		else
+		{
+			statusCode = 404;
+		}
+
 	}
 }
 
 //------------------------------------------------------------------------------
 
-void Host::handleNoLocation(std::string &path)
+void Host::handleNoLocation(std::string &path, int &statusCode)
 {
 	if (_root != "")
 	{
 		// std::cout << "HOST-ROOT: " << color(_root, GREEN) << std::endl;
 		path = _root + path;
 	}
+
+	// handle index and autoindex
 	if (isDirectory(path))
 	{
-		if (_autoIndex == autoIndexState::OFF)
+		path.append("/");
+		if (_indexPages.size() > 0) // if root index directive is found
 		{
-			// std::cout << "No index directive found. Looking for index file" << std::endl;
-			_dirList = true;
-		}
-		else if (_autoIndex != autoIndexState::OFF)
-		{
-			if (_indexPages.size() > 0)
+			// append root index to path if it exists
+			for (std::vector<std::string>::iterator it = _indexPages.begin(); it != _indexPages.end(); it++)
 			{
-				for (std::vector<std::string>::iterator it = _indexPages.begin(); it != _indexPages.end(); it++)
+				std::string indexPage = path;
+				indexPage.append(*it);
+				if (isFile(indexPage))
 				{
-					std::string indexPage = path;
-					indexPage.append(*it);
-					if (isFile(indexPage))
-					{
-						path.append(*it);
-						return ;
-					}
+					path.append(*it);
+					break ;
 				}
-				// _statusCode = 403;
 			}
-			lookForIndexFile(path);
-			// std::cout << "AUTOINDEX: " << color("true", GREEN) << std::endl;
+			if (isFile(path))
+			{
+				statusCode = 200;
+			}
+			else
+			{
+				if (_autoIndex == autoIndexState::ON)
+				{
+					statusCode = 200;
+					_dirList = true;
+				}
+				else
+				{
+					statusCode = 403;
+				}
+			}
 		}
+		else
+		{
+			if (_autoIndex == autoIndexState::ON)
+			{
+				statusCode = 200;
+				_dirList = true;
+			}
+			else
+			{
+				statusCode = 404;
+			}
+		}
+	}
+	else if (isFile(path))
+	{
+		statusCode = 200;
+	}
+	else
+	{
+		if (_autoIndex == autoIndexState::ON)
+		{
+			if (stringEndsWithString(path, "index.html") || stringEndsWithString(path, "index.htm") || stringEndsWithString(path, "index.php"))
+			{
+				statusCode = 200;
+				_dirList = true;
+			}
+			else
+			{
+				statusCode = 404;
+			}
+		}
+		else
+		{
+			statusCode = 404;
+		}
+
 	}
 }
 

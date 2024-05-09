@@ -29,8 +29,8 @@ class Host
 		bool isFile(std::string const &path);
 		bool isDirectory(std::string const &path);
 		bool locationExists(std::string const &path, std::string const &location);
-		void handleLocation(std::string &path, Location &location);
-		void handleNoLocation(std::string &path);
+		void handleLocation(Location &loc, std::string &path, int &statusCode);
+		void handleNoLocation(std::string &path, int &statusCode);
 		void updateAutoIndex(autoIndexState state);
 		void lookForIndexFile(std::string &path);
 
@@ -79,7 +79,7 @@ class Host
 		bool isAllowedMethod(std::string &path, std::string method);
 		bool isRedirection(std::string &path);
 		bool isAutoindexOn();
-		std::string updateResourcePath(std::string path);
+		std::string updateResourcePath(std::string &path, int &statusCode);
 };
 
 #endif
