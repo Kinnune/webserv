@@ -106,6 +106,9 @@ void Response::setStatus(int status)
 		case 400:
 			_statusMessage = "Bad Request";
 			break ;
+		case 403:
+			_statusMessage = "Forbidden";
+			break ;
 		case 404:
 			_statusMessage = "Not Found";
 			break ;
@@ -174,9 +177,20 @@ void Response::killChild()
 
 int Response::completeResponse()
 {
+	/*
+		Added check for content type that isn't urlencoded.
+		If it isn't, return 501 (Not Implemented).
+		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
+	*/
+	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
+	{
+		setStatus(501);
+		generateErrorPage();
+		return (1);
+	}
+
 	if (supportedCGI())
 	{
-		// std::cout << std::boolalpha << "CGI supported, _runCGI: " << _runCGI << " _waitCGI: " << _waitCGI << std::endl;
 		if (_runCGI)
 		{
 			std::cout << "Running CGI" << std::endl;
@@ -208,20 +222,6 @@ int Response::completeResponse()
 		// handleDeleteMethod();
 	}
 	return (1);
-}
-
-//------------------------------------------------------------------------------
-
-void Response::body404()
-{
-	// std::string bodyStr("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The page you are looking for could not be found.</p></body></html>");
-
-	std::ifstream file("www/error_pages/404.html", std::ios::binary);
-	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
-
-	// _body = std::vector<unsigned char>(bodyStr.begin(), bodyStr.end());
-	setContentLengthHeader(_body.size());
-	_headers["Content-Type"] = "text/html; charset=utf-8";
 }
 
 //------------------------------------------------------------------------------
@@ -423,6 +423,12 @@ void Response::setCGIEnvironmentVariables(char **envp)
 
     // Set the last element of the array to nullptr as required by execve
     envp[index] = nullptr;
+
+	std::cout << color("Environment variables set", PURPLE) << std::endl;
+	for (int i = 0; i < index; i++)
+	{
+		std::cout << color(envp[i], YELLOW) << std::endl;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -432,13 +438,16 @@ int Response::doCGI()
 	if (pipe(_pipeChild) == -1 || pipe(_pipeParent) == -1)
 	{
 		std::cerr << "Pipe creation failed";
-		// setStatus(500);
+		setStatus(500);
+		generateErrorPage();
 		return (1);
 	}
 	_pid = fork();
 	if (_pid == -1)
 	{
 		std::cerr << "Fork failed";
+		setStatus(500);
+		generateErrorPage();
 		return (1);
 	}
 	else if (_pid == 0)
@@ -459,6 +468,8 @@ int Response::doCGI()
 		setCGIEnvironmentVariables(env);
 		execve(program.c_str(), const_cast<char* const*>(args), const_cast<char* const*>(env));
 		std::cerr << "Exec failed";
+		setStatus(500);
+		generateErrorPage();
 		return (1);
 	}
 	else
@@ -467,7 +478,9 @@ int Response::doCGI()
 		close(_pipeParent[1]);
 		fcntl(_pipeChild[1], F_SETFL, O_NONBLOCK);
 		fcntl(_pipeParent[0], F_SETFL, O_NONBLOCK);
-		std::string requestData = std::string(_request.getBody().begin(), _request.getBody().end());
+		std::vector<unsigned char> bodyData = _request.getBody();
+		std::string requestData(bodyData.begin(), bodyData.end());
+		std::cout << "Request data: " << color(requestData, CYAN) << std::endl;	// How do we use the request body in a CGI script?
 		write(_pipeChild[1], requestData.c_str(), requestData.size());
 		close(_pipeChild[1]);
 	}
