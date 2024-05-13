@@ -94,9 +94,32 @@ void Response::setStatus(int status)
 		case 200:
 			_statusMessage = "OK";
 			break ;
+		case 201:
+			_statusMessage = "Created";
+			break ;
+		case 204:
+			_statusMessage = "No Content";
+			break ;
+		case 301:
+			_statusMessage = "Moved Permanently";
+			break ;
+		case 400:
+			_statusMessage = "Bad Request";
+			break ;
 		case 404:
-			std::cout << "404 Not Found" << std::endl;
 			_statusMessage = "Not Found";
+			break ;
+		case 405:
+			_statusMessage = "Method Not Allowed";
+			break ;
+		case 500:
+			_statusMessage = "Internal Server Error";
+			break ;
+		case 501:
+			_statusMessage = "Not Implemented";
+			break ;
+		default:
+			_statusMessage = "Internal Server Error";
 			break ;
 	}
 }
@@ -170,7 +193,6 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "GET")
 	{
-		std::cout << color("we went into get method", YELLOW) << std::endl;
 		handleGetMethod();
 	}
 	else if (_request.getMethod() == "POST")
@@ -466,6 +488,16 @@ void Response::handleGetMethod()
 
 	setStatus(_statusCodeInt);
 
+	// handle redirection if necessary
+	if (_statusCodeInt == 301)
+	{
+		_version = "HTTP/1.1";
+		_headers["Location"] = filePath;
+		setContentLengthHeader(0);
+		return ;
+	}
+
+	// handle error page if necessary
 	if (_statusCodeInt != 200)
 	{
 		generateErrorPage();
@@ -477,6 +509,12 @@ void Response::handleGetMethod()
 	{
 		std::ofstream file2;
 		file2.open("www/directoryList.html");
+		if (!file2)
+		{
+			setStatus(500);
+			generateErrorPage();
+			return ;
+		}
 		file2 << listDirectory(filePath);
 		file2.close();
 		filePath = "www/directoryList.html";
@@ -488,8 +526,9 @@ void Response::handleGetMethod()
 	std::ifstream file(filePath, std::ios::binary);
 	if (!file)
 	{
-		// 500 internal server error
 		std::cerr << "Failed to open file: " << filePath << std::endl;
+		setStatus(500);
+		generateErrorPage();
 		return ;
 	}
 	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
@@ -500,6 +539,13 @@ void Response::handleGetMethod()
 	// 	std::cerr << "Failed to read file." << std::endl;
 	// 	return ;
 	// }
+
+	if (_statusCodeInt != 200)
+	{
+		generateErrorPage();
+		return ;
+	}
+
 
 	// something wrong with version, shows up as "  TP/1.1"
 	_version = "HTTP/1.1";
