@@ -132,6 +132,10 @@ void Response::generateErrorPage()
 		if (errorPage.first == _statusCode)
 		{
 			std::string errorPageName = errorPage.second + "/" + _statusCode + ".html";
+			if (_host.isFile(errorPageName) == false)
+			{
+				break ;
+			}
 			std::ifstream file(errorPageName, std::ios::binary);
 			_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
 			setContentLengthHeader(_body.size());

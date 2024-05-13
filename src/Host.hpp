@@ -26,7 +26,6 @@ class Host
 		bool						_dirList;
 
 		// Private methods
-		bool isFile(std::string const &path);
 		bool isDirectory(std::string const &path);
 		bool locationExists(std::string const &path, std::string const &location);
 		void handleLocation(Location &loc, std::string &path, int &statusCode);
@@ -75,6 +74,7 @@ class Host
 		void addErrorPage(std::string &errorPage, std::string &path);
 
 		// Methods
+		bool isFile(std::string const &path);
 		bool isAllowedCGI(std::string &path, std::string &extension);
 		bool isAllowedMethod(std::string &path, std::string method);
 		bool isRedirection(std::string &path);
