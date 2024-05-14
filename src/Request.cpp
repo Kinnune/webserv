@@ -156,8 +156,6 @@ int Request::headerLineParse(std::vector<unsigned char> &line)
 		value.pop_back();
 	if (value.back() == '\r')
 		value.pop_back();
-	if (DEBUG)
-		std::cout << "value as: (" << value << ")" << std::endl;
 	_headers[key] = value;
 	return (0);
 }

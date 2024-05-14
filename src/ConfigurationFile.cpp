@@ -26,8 +26,7 @@ void ConfigurationFile::printMultipleValues(std::vector<std::string> &values)
 void ConfigurationFile::printErrorpages(std::map<std::string, std::string> &errorPages)
 {
 	for (std::map<std::string, std::string>::iterator it = errorPages.begin(); it != errorPages.end(); it++)
-		std::cout << color(it->first, GREEN) << " -> " << color(it->second, GREEN) << " ";
-	std::cout << std::endl;
+		std::cout << "ERRPAG:\t\t" << color(it->first, GREEN) << " -> " << color(it->second, GREEN) << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -51,7 +50,7 @@ void ConfigurationFile::printConfigInfo()
 		std::cout << "INDEX:\t\t"; printMultipleValues(indexPages);
 		std::cout << "AUTOINDEX:\t" << color((int)host->getAutoIndex(), GREEN) << std::endl;
 		std::map<std::string, std::string> errorPages = host->getErrorPages();
-		std::cout << "ERRPAG:\t\t"; printErrorpages(errorPages);
+		printErrorpages(errorPages);
 		std::cout << "LOC-n:\t\t" << color(host->getLocations().size(), GREEN) << std::endl;
 		for (std::vector<Location>::iterator loc = host->getLocations().begin(); loc != host->getLocations().end(); loc++)
 		{

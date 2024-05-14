@@ -94,9 +94,35 @@ void Response::setStatus(int status)
 		case 200:
 			_statusMessage = "OK";
 			break ;
+		case 201:
+			_statusMessage = "Created";
+			break ;
+		case 204:
+			_statusMessage = "No Content";
+			break ;
+		case 301:
+			_statusMessage = "Moved Permanently";
+			break ;
+		case 400:
+			_statusMessage = "Bad Request";
+			break ;
+		case 403:
+			_statusMessage = "Forbidden";
+			break ;
 		case 404:
-			std::cout << "404 Not Found" << std::endl;
 			_statusMessage = "Not Found";
+			break ;
+		case 405:
+			_statusMessage = "Method Not Allowed";
+			break ;
+		case 500:
+			_statusMessage = "Internal Server Error";
+			break ;
+		case 501:
+			_statusMessage = "Not Implemented";
+			break ;
+		default:
+			_statusMessage = "Internal Server Error";
 			break ;
 	}
 }
@@ -109,6 +135,10 @@ void Response::generateErrorPage()
 		if (errorPage.first == _statusCode)
 		{
 			std::string errorPageName = errorPage.second + "/" + _statusCode + ".html";
+			if (_host.isFile(errorPageName) == false)
+			{
+				break ;
+			}
 			std::ifstream file(errorPageName, std::ios::binary);
 			_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
 			setContentLengthHeader(_body.size());
@@ -147,9 +177,20 @@ void Response::killChild()
 
 int Response::completeResponse()
 {
+	/*
+		Added check for content type that isn't urlencoded.
+		If it isn't, return 501 (Not Implemented).
+		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
+	*/
+	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
+	{
+		setStatus(501);
+		generateErrorPage();
+		return (1);
+	}
+
 	if (supportedCGI())
 	{
-		// std::cout << std::boolalpha << "CGI supported, _runCGI: " << _runCGI << " _waitCGI: " << _waitCGI << std::endl;
 		if (_runCGI)
 		{
 			std::cout << "Running CGI" << std::endl;
@@ -170,7 +211,6 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "GET")
 	{
-		std::cout << color("we went into get method", YELLOW) << std::endl;
 		handleGetMethod();
 	}
 	else if (_request.getMethod() == "POST")
@@ -182,20 +222,6 @@ int Response::completeResponse()
 		// handleDeleteMethod();
 	}
 	return (1);
-}
-
-//------------------------------------------------------------------------------
-
-void Response::body404()
-{
-	// std::string bodyStr("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The page you are looking for could not be found.</p></body></html>");
-
-	std::ifstream file("www/error_pages/404.html", std::ios::binary);
-	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
-
-	// _body = std::vector<unsigned char>(bodyStr.begin(), bodyStr.end());
-	setContentLengthHeader(_body.size());
-	_headers["Content-Type"] = "text/html; charset=utf-8";
 }
 
 //------------------------------------------------------------------------------
@@ -397,6 +423,12 @@ void Response::setCGIEnvironmentVariables(char **envp)
 
     // Set the last element of the array to nullptr as required by execve
     envp[index] = nullptr;
+
+	std::cout << color("Environment variables set", PURPLE) << std::endl;
+	for (int i = 0; i < index; i++)
+	{
+		std::cout << color(envp[i], YELLOW) << std::endl;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -406,13 +438,16 @@ int Response::doCGI()
 	if (pipe(_pipeChild) == -1 || pipe(_pipeParent) == -1)
 	{
 		std::cerr << "Pipe creation failed";
-		// setStatus(500);
+		setStatus(500);
+		generateErrorPage();
 		return (1);
 	}
 	_pid = fork();
 	if (_pid == -1)
 	{
 		std::cerr << "Fork failed";
+		setStatus(500);
+		generateErrorPage();
 		return (1);
 	}
 	else if (_pid == 0)
@@ -433,6 +468,8 @@ int Response::doCGI()
 		setCGIEnvironmentVariables(env);
 		execve(program.c_str(), const_cast<char* const*>(args), const_cast<char* const*>(env));
 		std::cerr << "Exec failed";
+		setStatus(500);
+		generateErrorPage();
 		return (1);
 	}
 	else
@@ -441,7 +478,9 @@ int Response::doCGI()
 		close(_pipeParent[1]);
 		fcntl(_pipeChild[1], F_SETFL, O_NONBLOCK);
 		fcntl(_pipeParent[0], F_SETFL, O_NONBLOCK);
-		std::string requestData = std::string(_request.getBody().begin(), _request.getBody().end());
+		std::vector<unsigned char> bodyData = _request.getBody();
+		std::string requestData(bodyData.begin(), bodyData.end());
+		std::cout << "Request data: " << color(requestData, CYAN) << std::endl;	// How do we use the request body in a CGI script?
 		write(_pipeChild[1], requestData.c_str(), requestData.size());
 		close(_pipeChild[1]);
 	}
@@ -466,6 +505,16 @@ void Response::handleGetMethod()
 
 	setStatus(_statusCodeInt);
 
+	// handle redirection if necessary
+	if (_statusCodeInt == 301)
+	{
+		_version = "HTTP/1.1";
+		_headers["Location"] = filePath;
+		setContentLengthHeader(0);
+		return ;
+	}
+
+	// handle error page if necessary
 	if (_statusCodeInt != 200)
 	{
 		generateErrorPage();
@@ -477,6 +526,12 @@ void Response::handleGetMethod()
 	{
 		std::ofstream file2;
 		file2.open("www/directoryList.html");
+		if (!file2)
+		{
+			setStatus(500);
+			generateErrorPage();
+			return ;
+		}
 		file2 << listDirectory(filePath);
 		file2.close();
 		filePath = "www/directoryList.html";
@@ -488,8 +543,9 @@ void Response::handleGetMethod()
 	std::ifstream file(filePath, std::ios::binary);
 	if (!file)
 	{
-		// 500 internal server error
 		std::cerr << "Failed to open file: " << filePath << std::endl;
+		setStatus(500);
+		generateErrorPage();
 		return ;
 	}
 	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
@@ -500,6 +556,13 @@ void Response::handleGetMethod()
 	// 	std::cerr << "Failed to read file." << std::endl;
 	// 	return ;
 	// }
+
+	if (_statusCodeInt != 200)
+	{
+		generateErrorPage();
+		return ;
+	}
+
 
 	// something wrong with version, shows up as "  TP/1.1"
 	_version = "HTTP/1.1";

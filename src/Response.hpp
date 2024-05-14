@@ -34,7 +34,6 @@ class Response
 
 		int completeResponse();
 		void setStatus(int status);
-		void body404();
 		bool supportedCGI();
 		std::string toString();
 		void setContentLengthHeader(size_t length);
