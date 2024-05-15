@@ -1,32 +1,15 @@
-import os
-import hashlib
-import sys
+import os		# path, mkdir, environ
+import hashlib	# sha256
+import sys		# stdin
 
-def hash_password(password):
+#-------------------------------------------------------------------------------
+
+def hash(password):
     # Hash the password using SHA-256
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     return hashed_password
 
-def check_credentials(username, password):
-    # Hash the input password
-    hashed_input_password = hash_password(password)
-    
-    # Iterate through session ID folders
-    database_folder = "database"
-    for session_id_folder in os.listdir(database_folder):
-        credentials_file = os.path.join(database_folder, session_id_folder, "credentials.txt")
-        if os.path.isfile(credentials_file):
-            # Read hashed password from credentials file
-            with open(credentials_file, 'r') as file:
-                stored_hashed_password = file.read().strip()
-            
-            # Compare hashed passwords
-            if stored_hashed_password == hashed_input_password:
-                print("Login successful for user '{username}'")
-                return True
-    
-    print("Login failed. Invalid username or password.")
-    return False
+#-------------------------------------------------------------------------------
 
 def get_session_id(env):
     # Get the value of the HTTP_COOKIE from the environment variables
@@ -43,21 +26,39 @@ def get_session_id(env):
     
     return session_id
 
+#-------------------------------------------------------------------------------
+
+def check_credentials(user_folder, password):
+    # Hash the password
+    hashed_password = hash(password)
+	# Check if credentials file exists
+    credentials_file = os.path.join(user_folder, "credentials.txt")
+    if os.path.isfile(credentials_file):
+		# Read hashed password from credentials file
+        with open(credentials_file, 'r') as file:
+            stored_hashed_password = file.read().strip()
+		
+		# Compare hashed passwords
+        if stored_hashed_password == hashed_password:
+            print("Login successful for user '{username}'")
+            return True
+    
+    print("Login failed. Invalid username or password.")
+    return False
+
+#-------------------------------------------------------------------------------
+
 def main():
 
+	# Variables
 	env = os.environ
-
-	# Get the session ID from the environment variables
 	session_id = get_session_id(env)
+	username = None
+	password = None
 
-	print("Session ID: ", session_id)
-
+	# Read input from standard input
 	for line in sys.stdin:
 		key_value_pairs = line.strip().split('&')	# Strip newline characters and split the line into key-value pairs
-
-		# Initialize variables to store username and password
-		username = None
-		password = None
 
 		# Iterate through key-value pairs to extract username and password
 		for pair in key_value_pairs:
@@ -69,27 +70,33 @@ def main():
 
 		# Process extracted username and password
 		if username and password:
-			print("Username:", username)
-			print("Password:", password)
-		else:
-			print("Error: Username or password not found in input")
+			break
 
-		# For simplicity, assume username is the folder name
-		user_folder = os.path.join("database", session_id)
+	# Check if we have both username and password
+	if not username and not password:
+		print("Error: Username or password not found in input")
+		return
 
-		# Create folder if user does not exist
-		if not os.path.isdir(user_folder):
-			print("User not found... Creating new user folder.")
-			try:
-				os.mkdir(user_folder)
-			except OSError as error:  
-				print(error)
-			print("User folder created. New folder: ", user_folder)
-			return
+	# Create folder if user does not exist
+	user_folder = os.path.join("database", username)
+	if not os.path.isdir(user_folder):
+		try:
+			os.mkdir(user_folder)
+		except OSError as error:  
+			print(error)
 		
-		# Check credentials
-		print("Checking credentials for user:", username)
-		check_credentials(username, password)
+		# Create file named credentials.txt in user folder
+		credentials_file = os.path.join(user_folder, "credentials.txt")
+		
+		# Write username and hashed password to credentials file
+		with open(credentials_file, 'w') as file:
+			file.write("pw=" + hash(password))
+		print("New user created", username)
+		return
+	
+	print("User [", username, "] already exists...")
+
+#-------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()
