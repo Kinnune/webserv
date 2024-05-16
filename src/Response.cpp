@@ -194,7 +194,9 @@ int Response::completeResponse()
 		if (_runCGI)
 		{
 			std::cout << "Running CGI" << std::endl;
+			std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
 			doCGI();
+			std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 		}
 		if (!_waitCGI)
 		{
@@ -211,15 +213,21 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "GET")
 	{
+		std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
 		handleGetMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 	}
 	else if (_request.getMethod() == "POST")
 	{
+		std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
 		handlePostMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 	}
 	else if (_request.getMethod() == "DELETE")
 	{
+		std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
 		// handleDeleteMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 	}
 	return (1);
 }
@@ -371,11 +379,11 @@ bool Response::childReady()
 		{
 			// Read data from pipe from child
 			bytesRead = read(_pipeParent[0], buffer, sizeof(buffer));
-			if (bytesRead > 0)
-			{ // If data was read successfully
-				std::cout.write(buffer, bytesRead); // Write data to standard output (client response)
-			}
-			else if (bytesRead == 0)
+			// if (bytesRead > 0)
+			// { // If data was read successfully
+			// 	std::cout.write(buffer, bytesRead); // Write data to standard output (client response)
+			// }
+			if (bytesRead == 0)
 			{ // End of file reached (child process exited)
 				break; // Exit loop
 			}
@@ -424,11 +432,11 @@ void Response::setCGIEnvironmentVariables(char **envp)
     // Set the last element of the array to nullptr as required by execve
     envp[index] = nullptr;
 
-	std::cout << color("Environment variables set", PURPLE) << std::endl;
-	for (int i = 0; i < index; i++)
-	{
-		std::cout << color(envp[i], YELLOW) << std::endl;
-	}
+	// std::cout << color("Environment variables set", PURPLE) << std::endl;
+	// for (int i = 0; i < index; i++)
+	// {
+	// 	std::cout << color(envp[i], YELLOW) << std::endl;
+	// }
 }
 
 //------------------------------------------------------------------------------
@@ -498,6 +506,10 @@ void Response::handleGetMethod()
 {
 	// update path and status code
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
+
+	// DEBUG
+	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+	std::cout << "Updated path: " << color(filePath, GREEN) << std::endl;
 	
 	// Check if the requested method is allowed
 	if (_host.isAllowedMethod(_request.getTarget(), "GET") == false)
@@ -568,14 +580,12 @@ void Response::handleGetMethod()
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = detectContentType(filePath);
-	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 }
 
 //------------------------------------------------------------------------------
 
 void Response::handlePostMethod()
 {
-	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
 	std::cout << "Method: " << color("POST", GREEN) << std::endl;
 
 	// Update resource path
@@ -590,8 +600,6 @@ void Response::handlePostMethod()
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = "text/html";
-
-	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 }
 
 //------------------------------------------------------------------------------

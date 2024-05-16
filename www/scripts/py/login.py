@@ -1,10 +1,25 @@
-import os		# path, mkdir, environ
+import os		# environ
 import sys		# stdin
 import hashlib	# sha256
 
 #-------------------------------------------------------------------------------
 
-def generate_response_user_exists():
+def generate_response_profile(user_folder, username):
+
+	# Variables
+	joke_file = os.path.join(user_folder, "jokes.txt")
+	jokes = []
+	
+	# Get jokes from file
+	with open(joke_file, 'r') as file:
+		jokes = file.read().strip().split('\n')
+	
+	# Generate response
+	
+
+#-------------------------------------------------------------------------------
+
+def generate_response_wrong_password():
 	print("<!DOCTYPE html>")
 	print("<html lang=\"en\">")
 	print("<head>")
@@ -16,7 +31,7 @@ def generate_response_user_exists():
 	print("</head>")
 	print("<body>")
 	print("\t<div class=\"container\">")
-	print("\t\t<div class=\"error_message\">User already exists! Try another user or logging in instead.</div>")
+	print("\t\t<div class=\"error_message\">Wrong password! Try again. Or not. It's up to you.</div>")
 	print("\t\t<div class=\"title\">JokeBook</div>")
 	print("\t\t<div class=\"login-container\">")
 	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"py/login.py\">")
@@ -38,18 +53,19 @@ def generate_response_user_exists():
 
 #-------------------------------------------------------------------------------
 
-def generate_response_account_created():
+def generate_response_nonexisting_user():
 	print("<!DOCTYPE html>")
 	print("<html lang=\"en\">")
 	print("<head>")
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"jokebook/login.css\">")
+	print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
 	print("\t<div class=\"container\">")
+	print("\t\t<div class=\"error_message\">User doesn't exist! You either have the wrong name or meant to create a new account.</div>")
 	print("\t\t<div class=\"title\">JokeBook</div>")
 	print("\t\t<div class=\"login-container\">")
 	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"py/login.py\">")
@@ -103,65 +119,74 @@ def check_if_user_exists(username, password):
 
 #-------------------------------------------------------------------------------
 
-def create_account(username, password):
-	# Create user folder
-	user_folder = os.path.join("database", username)
-	try:
-		os.mkdir(user_folder)
-	except OSError as error:  
-		print(error)
+def check_credentials(user_folder, password):
+    # Hash the password
+    hashed_password = hash(password)
+	# Check if credentials file exists
+    credentials_file = os.path.join(user_folder, "credentials.txt")
+    if os.path.isfile(credentials_file):
+		# Read hashed password from credentials file
+        with open(credentials_file, 'r') as file:
+            stored_hashed_password = file.read().strip()
+		
+		# Compare hashed passwords
+        if stored_hashed_password == hashed_password:
+            # print("Login successful for user '{username}'")
+            return True
+    
+    # print("Login failed. Invalid username or password.")
+    return False
+
+#-------------------------------------------------------------------------------
+
+def create_session(session_id, username):
+	# Get the session folder path
+	session_folder = os.path.join("sessions", session_id)
 	
-	# Create file named credentials.txt in user folder
-	credentials_file = os.path.join(user_folder, "credentials.txt")
+	# If session folder exists, remove it
+	if os.path.isdir(session_folder):
+		shutil.rmtree(session_folder)
 	
-	# Write username and hashed password to credentials file
-	with open(credentials_file, 'w') as file:
-		file.write("pw=" + hash(password))
-	# print("New user created", username)
+	# Create the session folder
+	os.mkdir(session_folder)
+	
+	# Create the session file
+	session_file = os.path.join(session_folder, "session.txt")
+	with open(session_file, 'w') as file:
+		file.write(username)
 
 #-------------------------------------------------------------------------------
 
 def main():
-
-	# Variables
 	env = os.environ
 	session_id = get_session_id(env)
 	username = None
 	password = None
 
-	# Read input from standard input
 	for line in sys.stdin:
-		key_value_pairs = line.strip().split('&')	# Strip newline characters and split the line into key-value pairs
-
-		# Iterate through key-value pairs to extract username and password
+		key_value_pairs = line.strip().split('&')
 		for pair in key_value_pairs:
 			key, value = pair.split('=')
 			if key == 'username':
 				username = value
 			elif key == 'password':
 				password = value
-
-		# Process extracted username and password
 		if username and password:
 			break
 
-	# Check if we have both username and password
 	if not username and not password:
-		# print("Error: Username or password not found in input")
 		return
-
+	
+	user_folder = os.path.join("database", username)
 	user_exists = check_if_user_exists(username, password)
 
 	if user_exists:
-		# print("User [", username, "] already exists...")
-		generate_response_user_exists()
+		credentials_match = check_credentials(user_folder, password)
+		if credentials_match:
+			create_session(session_id, username)
+			generate_response_profile(user_folder, username)
+		else:
+			generate_response_wrong_password()
 	else:
-		# print("Creating new user [", username, "]...")
-		create_account(username, password)
-		generate_response_account_created()
-	
-
-#-------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    main()
+		generate_response_nonexisting_user()
+		
