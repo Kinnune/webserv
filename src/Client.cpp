@@ -51,7 +51,7 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 	_failFlag = 0;
 	_config = config;
 	_statusCode = 0;
-	_autoIndex = autoIndexState::NONE;
+	//_autoIndex = autoIndexState::NONE;
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = INADDR_ANY;
 	_address.sin_port = htons(port);

@@ -18,7 +18,7 @@ Host::Host()
 	_portString = "";
 	_root = "";
 	_dirList = false;
-	_autoIndex = autoIndexState::OFF;
+	_autoIndex = false;
 }
 
 Host::~Host()
@@ -55,11 +55,11 @@ Host &Host::operator=(Host const &other)
 int Host::getId() const { return _id; }
 int Host::getPortInt() const { return _portInt; }
 bool Host::getDirList() { return _dirList; }
+bool Host::getAutoIndex() const { return _autoIndex; }
 std::string Host::getServerName() const { return _serverName; }
 std::string Host::getHost() const { return _host; }
 std::string Host::getPortString() const { return _portString; }
 std::string Host::getRoot() const { return _root; }
-autoIndexState Host::getAutoIndex() const { return _autoIndex; }
 std::vector<std::string> &Host::getMethods() { return _methods; }
 std::vector<std::string> &Host::getIndexPages() { return _indexPages; }
 std::map<std::string, std::string> &Host::getErrorPages() { return _errorPages; }
@@ -96,7 +96,7 @@ void Host::setServerName(std::string serverName) { _serverName = serverName; }
 void Host::setHost(std::string host) { _host = host; }
 void Host::setPortString(std::string portString) { _portString = portString; }
 void Host::setRoot(std::string root) { _root = root; }
-void Host::setAutoIndex(autoIndexState autoIndex) { _autoIndex = autoIndex; }
+void Host::setAutoIndex(bool autoIndex) { _autoIndex = autoIndex; }
 void Host::setMethods(std::vector<std::string> methods) { _methods = methods; }
 void Host::setIndexPages(std::vector<std::string> index_pages) { _indexPages = index_pages; }
 void Host::setErrorPages(std::map<std::string, std::string> errorPages) { _errorPages = errorPages; }
@@ -194,7 +194,7 @@ bool Host::isRedirection(std::string &path)
 
 bool Host::isAutoindexOn()
 {
-	return _autoIndex == autoIndexState::ON;
+	return _autoIndex == true;
 }
 
 //------------------------------------------------------------------------------
@@ -286,7 +286,7 @@ void Host::handleLocation(Location &loc, std::string &path, int &statusCode)
 			}
 			else
 			{
-				if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
+				if (loc.getAutoIndex() == true || _autoIndex == true)
 				{
 					statusCode = 200;
 					_dirList = true;
@@ -317,7 +317,7 @@ void Host::handleLocation(Location &loc, std::string &path, int &statusCode)
 			}
 			else
 			{
-				if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
+				if (loc.getAutoIndex() == true || _autoIndex == true)
 				{
 					statusCode = 200;
 					_dirList = true;
@@ -330,7 +330,7 @@ void Host::handleLocation(Location &loc, std::string &path, int &statusCode)
 		}
 		else
 		{
-			if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
+			if (loc.getAutoIndex() == true || _autoIndex == true)
 			{
 				statusCode = 200;
 				_dirList = true;
@@ -347,7 +347,7 @@ void Host::handleLocation(Location &loc, std::string &path, int &statusCode)
 	}
 	else
 	{
-		if (loc.getAutoIndex() == autoIndexState::ON || _autoIndex == autoIndexState::ON)
+		if (loc.getAutoIndex() == true || _autoIndex == true)
 		{
 			if (stringEndsWithString(path, "index.html") || stringEndsWithString(path, "index.htm") || stringEndsWithString(path, "index.php"))
 			{
@@ -400,7 +400,7 @@ void Host::handleNoLocation(std::string &path, int &statusCode)
 			}
 			else
 			{
-				if (_autoIndex == autoIndexState::ON)
+				if (_autoIndex == true)
 				{
 					statusCode = 200;
 					_dirList = true;
@@ -413,7 +413,7 @@ void Host::handleNoLocation(std::string &path, int &statusCode)
 		}
 		else
 		{
-			if (_autoIndex == autoIndexState::ON)
+			if (_autoIndex == true)
 			{
 				statusCode = 200;
 				_dirList = true;
@@ -430,7 +430,7 @@ void Host::handleNoLocation(std::string &path, int &statusCode)
 	}
 	else
 	{
-		if (_autoIndex == autoIndexState::ON)
+		if (_autoIndex == true)
 		{
 			if (stringEndsWithString(path, "index.html") || stringEndsWithString(path, "index.htm") || stringEndsWithString(path, "index.php"))
 			{
@@ -452,12 +452,9 @@ void Host::handleNoLocation(std::string &path, int &statusCode)
 
 //------------------------------------------------------------------------------
 
-void Host::updateAutoIndex(autoIndexState state)
+void Host::updateAutoIndex(bool state)
 {
-	if (state != autoIndexState::NONE)
-	{
 		_autoIndex = state;
-	}
 }
 
 //------------------------------------------------------------------------------

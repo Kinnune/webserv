@@ -2,7 +2,6 @@
 #define LOCATION_HPP
 #include <vector>
 #include <string>
-#include "utilityHeader.hpp"
 
 
 class Location
@@ -16,7 +15,7 @@ class Location
 		std::string					cgiPath;
 		std::string					interpreter;
 		std::string					redirection;
-		autoIndexState				autoIndex;
+		bool						autoIndex;
 		std::vector<std::string>	methods;
 		std::vector<std::string>	index_pages;
 		std::vector<std::string>	cgiExtensions;
@@ -31,13 +30,13 @@ class Location
 		// Getters
 		int getRedirectionCode() const;
 		int getMaxBody() const;
+		bool getAutoIndex() const;
 		std::string getLocation() const;
 		std::string getRoot() const;
 		std::string getAlias() const;
 		std::string getCgiPath() const;
 		std::string getInterpreter() const;
 		std::string getRedirection() const;
-		autoIndexState getAutoIndex() const;
 		std::vector<std::string> getMethods() const;
 		std::vector<std::string> getIndexPages() const;
 		std::vector<std::string> getCgiExtensions() const;
@@ -51,7 +50,7 @@ class Location
 		void setCgiPath(std::string cgiPath);
 		void setInterpreter(std::string interpreter);
 		void setRedirection(std::string redirection);
-		void setAutoIndex(autoIndexState autoIndex);
+		void setAutoIndex(bool autoIndex);
 		void setMethods(std::vector<std::string> methods);
 		void setIndexPages(std::vector<std::string> index_pages);
 		void setCgiExtensions(std::vector<std::string> cgiExtensions);

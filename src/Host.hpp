@@ -4,7 +4,6 @@
 #include <vector>
 #include <map>
 #include "Location.hpp"
-#include "utilityHeader.hpp"
 
 // enum class autoIndexState { NONE, ON, OFF };
 
@@ -14,23 +13,23 @@ class Host
 		int							_id;
 		int 						_portInt;
 		int							_statusCode;
+		bool						_autoIndex;
+		bool						_dirList;
 		std::string 				_serverName;
 		std::string 				_host;
 		std::string					_portString;
 		std::string					_root;
-		autoIndexState				_autoIndex;
 		std::vector<std::string>	_methods;
 		std::vector<std::string>	_indexPages;
 		std::map<std::string, std::string>	_errorPages;
 		std::vector<Location>		_locations;
-		bool						_dirList;
 
 		// Private methods
 		bool isDirectory(std::string const &path);
 		bool locationExists(std::string const &path, std::string const &location);
 		void handleLocation(Location &loc, std::string &path, int &statusCode);
 		void handleNoLocation(std::string &path, int &statusCode);
-		void updateAutoIndex(autoIndexState state);
+		void updateAutoIndex(bool state);
 		void lookForIndexFile(std::string &path);
 
 	
@@ -44,17 +43,17 @@ class Host
 		// Getters
 		int getId() const;
 		int getPortInt() const;
+		bool getAutoIndex() const;
+		bool getDirList(void);
 		std::string getServerName() const;
 		std::string getHost() const;
 		std::string getPortString() const;
 		std::string getRoot() const;
 		std::string getInterpreter(std::string &path, const std::string &extension);
-		autoIndexState getAutoIndex() const;
 		std::vector<std::string> &getMethods();
 		std::vector<std::string> &getIndexPages();
 		std::map<std::string, std::string> &getErrorPages();
 		std::vector<Location> &getLocations();
-		bool getDirList(void);
 
 		// Setters
 		void setId(int id);
@@ -63,7 +62,7 @@ class Host
 		void setHost(std::string host);
 		void setPortString(std::string portString);
 		void setRoot(std::string root);
-		void setAutoIndex(autoIndexState autoIndex);
+		void setAutoIndex(bool autoIndex);
 		void setMethods(std::vector<std::string> methods);
 		void setIndexPages(std::vector<std::string> index_pages);
 		void setErrorPages(std::map<std::string, std::string> errorPages);

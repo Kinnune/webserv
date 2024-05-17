@@ -11,7 +11,6 @@
 #define FAILURE 0
 #define SUCCESS 1
 
-
 //------------------------------------------------------------------------------
 //		DEBUG
 //------------------------------------------------------------------------------
@@ -351,9 +350,9 @@ int ConfigurationFile::storeLocationValues(Location& loc, std::string& line)
 	else if (key == "AUTOINDEX")
 	{
 		if (value == "on")
-			loc.setAutoIndex(autoIndexState::ON);
+			loc.setAutoIndex(true);
 		else if (value == "off")
-			loc.setAutoIndex(autoIndexState::OFF);
+			loc.setAutoIndex(false);
 		else
 			return (err("Invalid value for autoindex: " + value));
 	}
@@ -472,9 +471,9 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 	else if (key == "AUTOINDEX")
 	{
 		if (value == "on")
-			host.setAutoIndex(autoIndexState::ON);
+			host.setAutoIndex(true);
 		else if (value == "off")
-			host.setAutoIndex(autoIndexState::OFF);
+			host.setAutoIndex(false);
 		else
 			std::cerr << RED << "Invalid value for autoindex: " << value << RESET << std::endl;
 	}

@@ -28,9 +28,9 @@ class Client
 {
 	private:
 		int _statusCode;
-		autoIndexState _autoIndex;
 		int _fd;
 		int _port;
+		bool _autoIndex;
 		struct sockaddr_in _address;
 		Buffer _buffer;
 		Request _request;
