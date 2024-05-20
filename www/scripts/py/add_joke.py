@@ -22,7 +22,7 @@ def generate_response_profile(user_folder, username):
 	print('\t<meta charset="UTF-8">')
 	print('\t<meta http-equiv="X-UA-Compatible" content="IE=edge">')
 	print('\t<meta name="viewport" content="width=device-width, initial-scale=1.0">')
-	# print('\t<link rel="stylesheet" href="profile.css">')
+	print('\t<link rel="stylesheet" href="/jokebook/profile.css">')
 	print('\t<title>Document</title>')
 	print('</head>')
 	print('<body>')
@@ -32,7 +32,7 @@ def generate_response_profile(user_folder, username):
 	print('\t\t\t<div class="name">Username</div>')
 	print('\t\t</div>')
 	print('\t\t<div class="line"></div>')
-	print('\t\t<form id="addJokeForm" method="post" action="py/add_joke.py">')
+	print('\t\t<form id="addJokeForm" method="post" action="/py/add_joke.py">')
 	print('\t\t\t<div class="addJoke">')
 	print('\t\t\t\t<input type="text" id="newJoke" name="newJoke" required>')
 	print('\t\t\t\t<button class="button" type="submit">Add Joke</button>')
@@ -104,7 +104,6 @@ def add_joke(jokes_file, joke):
 #-------------------------------------------------------------------------------
 
 def main():
-	print("This is ADD JOKE script")
 	env = os.environ
 	session_id = get_session_id(env)
 	joke = None

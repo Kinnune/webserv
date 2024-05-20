@@ -51,8 +51,6 @@ Response::Response(Request &request, std::string sessionID)
 	{
 		_headers["Set-Cookie"] = "session_id=" + sessionID;
 	}
-	if (DEBUG)
-		std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
 };
 
 Response::~Response() {}
@@ -175,63 +173,6 @@ void Response::killChild()
 	}
 }
 
-int Response::completeResponse()
-{
-	/*
-		Added check for content type that isn't urlencoded.
-		If it isn't, return 501 (Not Implemented).
-		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
-	*/
-	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
-	{
-		setStatus(501);
-		generateErrorPage();
-		return (1);
-	}
-
-	if (supportedCGI())
-	{
-		if (_runCGI)
-		{
-			std::cout << "Running CGI" << std::endl;
-			std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
-			doCGI();
-			std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
-		}
-		if (!_waitCGI)
-		{
-			setStatus(200);
-			_version = "HTTP/1.1";
-			setContentLengthHeader(_body.size());
-			_headers["Content-Type"] = "text/html";
-		}
-		else
-		{
-			childReady();
-			return (0);
-		}
-	}
-	else if (_request.getMethod() == "GET")
-	{
-		std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
-		handleGetMethod();
-		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
-	}
-	else if (_request.getMethod() == "POST")
-	{
-		std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
-		handlePostMethod();
-		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
-	}
-	else if (_request.getMethod() == "DELETE")
-	{
-		std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
-		// handleDeleteMethod();
-		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
-	}
-	return (1);
-}
-
 //------------------------------------------------------------------------------
 
 void removeFirstCharIfMatches(std::string& str, char matchChar)
@@ -261,6 +202,33 @@ std::string Response::toString()
 	return (responseStream.str());
 }
 
+//------------------------------------------------------------------------------
+
+std::string Response::listDirectory(std::string path)
+{
+	std::string directoryListResponse;
+	DIR* directory = opendir(path.c_str());
+	struct dirent* entry;
+
+	if (directory != nullptr)
+	{
+        directoryListResponse.append("<table border=\"1\">");
+        directoryListResponse.append("<tr><th>File Name</th></tr>");
+
+		while ((entry = readdir(directory)) != nullptr)
+		{
+            directoryListResponse.append("<tr><td><a href=\""+ std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+		}
+
+        directoryListResponse.append("</table>");
+		closedir(directory);
+	}
+	else
+	{
+		std::cerr << "Unable to open directory: " << path << std::endl;
+	}
+	return (directoryListResponse);
+}
 
 //------------------------------------------------------------------------------
 //	CGI STUFF
@@ -411,6 +379,7 @@ bool Response::childReady()
 		}
 		close(_pipeParent[0]); // Close read end of pipe from child
 		_waitCGI = false;
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 		return (true);
 	}
 	return (false);
@@ -476,6 +445,11 @@ int Response::doCGI()
 
 		std::string program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget()));
 		std::string argument = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
+
+		// DEBUG
+		std::cerr << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+		std::cerr << "Updated path: " << color(argument, GREEN) << std::endl;
+
 		if (getFileExtension(_request.getTarget()) == ".out")
 		{
 			program = argument;
@@ -509,6 +483,65 @@ int Response::doCGI()
 
 //------------------------------------------------------------------------------
 //	HANDLE METHODS
+//------------------------------------------------------------------------------
+
+int Response::completeResponse()
+{
+	/*
+		Added check for content type that isn't urlencoded.
+		If it isn't, return 501 (Not Implemented).
+		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
+	*/
+
+	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
+	{
+		setStatus(501);
+		generateErrorPage();
+		return (1);
+	}
+
+	if (supportedCGI())
+	{
+		if (_runCGI)
+		{
+			std::cout << "Running CGI" << std::endl;
+			std::cout << color("----RESPONSE-CGI----------------------------------------", CYAN) << std::endl;
+			doCGI();
+		}
+		if (!_waitCGI)
+		{
+			setStatus(200);
+			_version = "HTTP/1.1";
+			setContentLengthHeader(_body.size());
+			_headers["Content-Type"] = "text/html";
+		}
+		else
+		{
+			childReady();
+			return (0);
+		}
+	}
+	else if (_request.getMethod() == "GET")
+	{
+		std::cout << color("----RESPONSE-GET----------------------------------------", CYAN) << std::endl;
+		handleGetMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+	}
+	else if (_request.getMethod() == "POST")
+	{
+		std::cout << color("----RESPONSE-POST---------------------------------------", CYAN) << std::endl;
+		handlePostMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+	}
+	else if (_request.getMethod() == "DELETE")
+	{
+		std::cout << color("----RESPONSE-DELETE-------------------------------------", CYAN) << std::endl;
+		// handleDeleteMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+	}
+	return (1);
+}
+
 //------------------------------------------------------------------------------
 
 void Response::handleGetMethod()
@@ -616,30 +649,4 @@ void Response::handlePostMethod()
 void Response::handleDeleteMethod()
 {
 	//**TODO
-}
-
-std::string Response::listDirectory(std::string path)
-{
-	std::string directoryListResponse;
-	DIR* directory = opendir(path.c_str());
-	struct dirent* entry;
-
-	if (directory != nullptr)
-	{
-        directoryListResponse.append("<table border=\"1\">");
-        directoryListResponse.append("<tr><th>File Name</th></tr>");
-
-		while ((entry = readdir(directory)) != nullptr)
-		{
-            directoryListResponse.append("<tr><td><a href=\""+ std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
-		}
-
-        directoryListResponse.append("</table>");
-		closedir(directory);
-	}
-	else
-	{
-		std::cerr << "Unable to open directory: " << path << std::endl;
-	}
-	return (directoryListResponse);
 }
