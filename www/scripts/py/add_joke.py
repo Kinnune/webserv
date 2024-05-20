@@ -39,11 +39,12 @@ def get_username_from_session_id(session_id):
 #-------------------------------------------------------------------------------
 
 def main:
+	print("This is ADD JOKE script")
 	env = os.environ
 	session_id = get_session_id(env)
 	joke = None
 
-	# Get the joke from the form data
+	# Get the joke from stdin
 	for line in sys.stdin:
 		key, value = line.split('=')
 		if key == 'joke':
@@ -69,3 +70,7 @@ def main:
 	with open(jokes_file, 'a') as file:
 		file.write(joke + '\n')
 	
+#-------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+	main()

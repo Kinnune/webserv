@@ -11,7 +11,7 @@ def generate_response_user_exists():
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
+	# print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
@@ -45,7 +45,7 @@ def generate_response_account_created():
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"jokebook/login.css\">")
+	# print("\t<link rel=\"stylesheet\" href=\"jokebook/login.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
@@ -116,13 +116,15 @@ def create_account(username, password):
 	
 	# Write username and hashed password to credentials file
 	with open(credentials_file, 'w') as file:
-		file.write("pw=" + hash(password))
-	# print("New user created", username)
+		file.write(hash(password))
+	
+	# Create file named jokes.txt in user folder
+	open(os.path.join(user_folder, "jokes.txt"), 'w').close()
 
 #-------------------------------------------------------------------------------
 
 def main():
-
+	print("This is CREATE ACCOUNT script")
 	# Variables
 	env = os.environ
 	session_id = get_session_id(env)

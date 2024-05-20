@@ -1,6 +1,7 @@
 import os		# environ
 import sys		# stdin
 import hashlib	# sha256
+import shutil	# rmtree
 
 #-------------------------------------------------------------------------------
 
@@ -15,6 +16,41 @@ def generate_response_profile(user_folder, username):
 		jokes = file.read().strip().split('\n')
 	
 	# Generate response
+	print('<!DOCTYPE html>')
+	print('<html lang="en">')
+	print('<head>')
+	print('\t<meta charset="UTF-8">')
+	print('\t<meta http-equiv="X-UA-Compatible" content="IE=edge">')
+	print('\t<meta name="viewport" content="width=device-width, initial-scale=1.0">')
+	print('\t<link rel="stylesheet" href="profile.css">')
+	print('\t<title>Document</title>')
+	print('</head>')
+	print('<body>')
+	print('\t<div class="container">')
+	print('\t\t<div class="profile_box">')
+	print('\t\t\t<div class="image_box"></div>')
+	print('\t\t\t<div class="name">Username</div>')
+	print('\t\t</div>')
+	print('\t\t<div class="line"></div>')
+	print('\t\t<form id="addJokeForm" method="post" action="py/add_joke.py">')
+	print('\t\t\t<div class="addJoke">')
+	print('\t\t\t\t<input type="text" id="newJoke" name="newJoke" required>')
+	print('\t\t\t\t<button class="button" type="submit">Add Joke</button>')
+	print('\t\t\t</div>')
+	print('\t\t</form>')
+	print('\t\t<div class="buttons">')
+	print('\t\t</div>')
+	print('\t\t<div class="jokes">')
+	
+	#Generate jokes
+	for i, joke in enumerate(jokes):
+		print('\t\t\t<div class="line"></div>')
+		print('\t\t\t<div class="joke" id="{}">{}</div>'.format(i, joke))
+	
+	print("\t\t</div>")
+	print("\t</div>")
+	print("</body>")
+	print("</html>")
 	
 
 #-------------------------------------------------------------------------------
@@ -26,7 +62,7 @@ def generate_response_wrong_password():
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
+	# print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
@@ -60,7 +96,7 @@ def generate_response_nonexisting_user():
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
+	# print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
@@ -128,7 +164,7 @@ def check_credentials(user_folder, password):
 		# Read hashed password from credentials file
         with open(credentials_file, 'r') as file:
             stored_hashed_password = file.read().strip()
-		
+
 		# Compare hashed passwords
         if stored_hashed_password == hashed_password:
             # print("Login successful for user '{username}'")
@@ -140,16 +176,21 @@ def check_credentials(user_folder, password):
 #-------------------------------------------------------------------------------
 
 def create_session(session_id, username):
-	# Get the session folder path
-	session_folder = os.path.join("sessions", session_id)
+
+	# Create the session folder, if it doesn't exist
+	sessions_folder = "database/sessions"
+	if not os.path.isdir(sessions_folder):
+		os.mkdir(sessions_folder)
 	
-	# If session folder exists, remove it
+
+	# If session folder exists, delete it
+	session_folder = os.path.join(sessions_folder, session_id)
 	if os.path.isdir(session_folder):
 		shutil.rmtree(session_folder)
 	
 	# Create the session folder
 	os.mkdir(session_folder)
-	
+
 	# Create the session file
 	session_file = os.path.join(session_folder, "session.txt")
 	with open(session_file, 'w') as file:
@@ -189,4 +230,9 @@ def main():
 			generate_response_wrong_password()
 	else:
 		generate_response_nonexisting_user()
-		
+
+
+#-------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    main()

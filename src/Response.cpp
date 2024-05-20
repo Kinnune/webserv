@@ -379,6 +379,7 @@ bool Response::childReady()
 		{
 			// Read data from pipe from child
 			bytesRead = read(_pipeParent[0], buffer, sizeof(buffer));
+			std::cout << "Bytes read: " << bytesRead << std::endl;
 			// if (bytesRead > 0)
 			// { // If data was read successfully
 			// 	std::cout.write(buffer, bytesRead); // Write data to standard output (client response)
@@ -387,11 +388,19 @@ bool Response::childReady()
 			{ // End of file reached (child process exited)
 				break; // Exit loop
 			}
-			else if (errno != EAGAIN && errno != EWOULDBLOCK)
-			{ // Error other than non-blocking
-				std::cerr << "Read error";
-				//** setStatus(500)
-				break ;
+			// else if (errno != EAGAIN && errno != EWOULDBLOCK)
+			// { // Error other than non-blocking
+			// 	std::cerr << "Read error";
+			// 	//** setStatus(500)
+			// 	// break ;
+			// }
+			if (errno != EAGAIN)
+			{
+				std::cerr << "errno != EAGAIN" << std::endl;
+			}
+			if (errno != EWOULDBLOCK)
+			{
+				std::cerr << "errno != EWOULDBLOCK" << std::endl;
 			}
 			std::string bufferStr(buffer, bytesRead);
 			std::vector<unsigned char>tmpVector(bufferStr.begin(), bufferStr.end());
