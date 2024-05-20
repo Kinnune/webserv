@@ -22,7 +22,7 @@ def generate_response_profile(user_folder, username):
 	print('\t<meta charset="UTF-8">')
 	print('\t<meta http-equiv="X-UA-Compatible" content="IE=edge">')
 	print('\t<meta name="viewport" content="width=device-width, initial-scale=1.0">')
-	print('\t<link rel="stylesheet" href="profile.css">')
+	# print('\t<link rel="stylesheet" href="profile.css">')
 	print('\t<title>Document</title>')
 	print('</head>')
 	print('<body>')
