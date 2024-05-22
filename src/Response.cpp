@@ -199,8 +199,8 @@ void printBits(short num)
 
 void Response::writePipe()
 {
-	static unsigned int writeOffset = 0;
-	unsigned int tmpOffset;
+	static int writeOffset = 0;
+	int tmpOffset;
 	Server &server = Server::getInstance();
 
 	if (!(server.getEventsByFd(_pipeChild[1]) & POLLOUT))
@@ -216,7 +216,7 @@ void Response::writePipe()
 	{
 		//**WRITE ERROR
 	}
-	if (writeOffset - tmpOffset == 0)
+	if (writeOffset - tmpOffset <= 0)
 	{
 		writeOffset = 0;
 		_writePipe = false;
@@ -266,64 +266,6 @@ void Response::readPipe()
 	close(_pipeParent[1]);
 }
 
-int Response::completeResponse()
-{
-	/*
-		Added check for content type that isn't urlencoded.
-		If it isn't, return 501 (Not Implemented).
-		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
-	*/
-	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
-	{
-		setStatus(501);
-		generateErrorPage();
-		return (1);
-	}
-
-	if (supportedCGI())
-	{
-		if (_runCGI)
-		{
-			std::cout << "Running CGI" << std::endl;
-			doCGI();
-			return (0);
-		}
-		if (!_waitCGI)
-		{
-			setStatus(200);
-			_version = "HTTP/1.1";
-			setContentLengthHeader(_body.size());
-			_headers["Content-Type"] = "text/html";
-		}
-		else if (_writePipe)
-		{
-			writePipe();
-			return (0);
-		}
-		else if (!childReady())
-		{
-			return (0);
-		}
-		else if (_readPipe)
-		{
-			readPipe();
-			return (0);
-		}
-	}
-	else if (_request.getMethod() == "GET")
-	{
-		handleGetMethod();
-	}
-	else if (_request.getMethod() == "POST")
-	{
-		handlePostMethod();
-	}
-	else if (_request.getMethod() == "DELETE")
-	{
-		// handleDeleteMethod();
-	}
-	return (1);
-}
 
 //------------------------------------------------------------------------------
 
@@ -602,7 +544,6 @@ int Response::doCGI()
 //------------------------------------------------------------------------------
 //	HANDLE METHODS
 //------------------------------------------------------------------------------
-
 int Response::completeResponse()
 {
 	/*
@@ -610,7 +551,6 @@ int Response::completeResponse()
 		If it isn't, return 501 (Not Implemented).
 		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
 	*/
-
 	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
 	{
 		setStatus(501);
@@ -623,43 +563,48 @@ int Response::completeResponse()
 		if (_runCGI)
 		{
 			std::cout << "Running CGI" << std::endl;
-			std::cout << color("----RESPONSE-CGI----------------------------------------", CYAN) << std::endl;
 			doCGI();
+			return (0);
 		}
 		if (!_waitCGI)
 		{
+			std::cout << "CGI ready" << std::endl;
 			setStatus(200);
 			_version = "HTTP/1.1";
 			setContentLengthHeader(_body.size());
 			_headers["Content-Type"] = "text/html";
 		}
-		else
+		else if (_writePipe)
 		{
-			childReady();
+			std::cout << "Writing pipe" << std::endl;
+			writePipe();
+			return (0);
+		}
+		else if (!childReady())
+		{
+			return (0);
+		}
+		else if (_readPipe)
+		{
+			std::cout << "Reading pipe" << std::endl;
+			readPipe();
 			return (0);
 		}
 	}
 	else if (_request.getMethod() == "GET")
 	{
-		std::cout << color("----RESPONSE-GET----------------------------------------", CYAN) << std::endl;
 		handleGetMethod();
-		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 	}
 	else if (_request.getMethod() == "POST")
 	{
-		std::cout << color("----RESPONSE-POST---------------------------------------", CYAN) << std::endl;
 		handlePostMethod();
-		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 	}
 	else if (_request.getMethod() == "DELETE")
 	{
-		std::cout << color("----RESPONSE-DELETE-------------------------------------", CYAN) << std::endl;
 		// handleDeleteMethod();
-		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 	}
 	return (1);
 }
-
 //------------------------------------------------------------------------------
 
 void Response::handleGetMethod()
