@@ -122,10 +122,12 @@ bool Client::respond()
 	if (_response.completeResponse())
 	{
 		responseStr = _response.toString();
+		// should also check if wrote less than length
 		if (write(_fd, responseStr.c_str(), responseStr.length()) == -1)
 		{
 			_failFlag = 1;
 		}
+		Server::getInstance().setDidIO(_fd);
 		_response = Response();
 		return (true);
 	}
@@ -219,21 +221,21 @@ void Client::handleEvent(short events)
 			if (respond())
 			{
 				_request.clear();
-				_buffer.clear();
+				return ;
 			}
 		}
 	}
 	if (events & POLLIN)
 	{
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
+		Server::getInstance().setDidIO(_fd);
 		if (readCount < 0)
 		{
 			_failFlag = 1;
+			return ;
 		}
 		buffer[readCount] = '\0';
 		_buffer.addToBuffer(&buffer[0], readCount);
-		// std::cout << buffer << std::endl;
-		// std::cout << _buffer.getData() << std::endl;
 	}
 	if (!_request.getIsComplete() && _buffer.requestEnded())
 	{

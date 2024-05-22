@@ -216,7 +216,7 @@ bool stringEndsWithString(std::string const &fullString, std::string const &endi
 //	UPDATE RESOURCE PATH
 //------------------------------------------------------------------------------
 
-std::string Host::updateResourcePath(std::string &path, int &statusCode)
+std::string Host::updateResourcePath(std::string path, int &statusCode)
 {
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{

@@ -79,7 +79,7 @@ class Host
 		bool isAllowedMethod(std::string &path, std::string method);
 		bool isRedirection(std::string &path);
 		bool isAutoindexOn();
-		std::string updateResourcePath(std::string &path, int &statusCode);
+		std::string updateResourcePath(std::string path, int &statusCode);
 };
 
 #endif

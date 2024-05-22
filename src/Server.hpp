@@ -23,17 +23,26 @@ class Client;
 class Server
 {
 	public:
-		Server();
-		~Server();
+		static Server& getInstance();
 		void initialize(std::string configFile);
 		int readConfig();
+		short getEventsByFd(int fd);
 		void setPorts();
 		void startListen();
 		void newClient(int i);
+		struct pollfd &newFd(int fd);
+		void removeFd(int fd);
 		void removeClient(int fd);
 		void loop();
+		void setDidIO(int flag);
+		int	 getDidIO();
+		void rotateClients(int clientFd);
 		unsigned int getNfds();
 	private:
+		Server();
+		~Server();
+		Server(const Server &other);
+		Server &operator=(const Server &other);
 		ConfigurationFile _config;
 		std::map<int, Client> _clients;
 		static const int _maxClients = 1024;
@@ -42,6 +51,8 @@ class Server
 		struct pollfd _pollFds[_maxClients];
 		nfds_t _nServers;
 		nfds_t _nClients;
+		nfds_t _nOtherFd;
+		int _didIO;
 };
 
 #endif
