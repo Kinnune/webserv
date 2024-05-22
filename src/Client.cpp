@@ -216,10 +216,18 @@ void Client::handleEvent(short events)
 			std::cerr << color("----REQUEST---------------------------------------------", PURPLE) << std::endl;
 			_request.printRequest();
 			std::cerr << color("--------------------------------------------------------", PURPLE) << std::endl;
+			int maxBodySize = _request.getMaxBodySizeAllowed();
+			if (_request.getContentLenght() > maxBodySize)
+			{
+				_response = Response(_request, _sessionID);
+				_response.setStatus(413);
+				_request.clear();
+				// _buffer.clear();
+			}
 			if (respond())
 			{
 				_request.clear();
-				_buffer.clear();
+				// _buffer.clear();
 			}
 		}
 	}

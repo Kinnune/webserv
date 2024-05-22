@@ -9,6 +9,7 @@
 Request::Request()
 	: _completed(false),
 	_isValid(false),
+	_isChunked(false),
 	_contentLength(-1)
 {
 }
@@ -40,6 +41,7 @@ Request &Request::operator=(Request const &other)
 
 void Request::clear()
 {
+	_isChunked = false;
 	_completed = false;	
 	_isValid = false;
 	_contentLength = -1;
@@ -52,7 +54,8 @@ void Request::clear()
 
 Request::Request(std::vector<unsigned char> content)
 	: _completed(false),
-	_isValid(false)
+	_isValid(false),
+	_isChunked(false)
 {
 	if (parseContent(content) == -1)
 	{
@@ -102,6 +105,35 @@ std::unordered_map<std::string, std::string> &Request::getHeaders()
 	return (_headers);
 }
 
+int Request::getMaxBodySizeAllowed()
+{
+	int maxBodySize = _host.getMaxBody();
+	std::string path = _target;
+	size_t firstSlash = _target.find("/");
+	if (firstSlash != std::string::npos)
+	{
+		size_t secondSlash = _target.find("/", firstSlash + 1);
+		if (secondSlash != std::string::npos)
+		{
+			path = _target.substr(firstSlash, secondSlash - firstSlash);
+		}
+	}
+	std::vector<Location> locations = _host.getLocations();
+	for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); it++)
+	{
+		std::string location = it->getLocation();
+		if (location == path)
+		{
+			if (it->getMaxBody() != -1)
+			{
+				maxBodySize = it->getMaxBody();
+			}
+			break ;
+		}
+	}
+	return (maxBodySize);
+}
+
 
 //------------------------------------------------------------------------------
 //  MEMBER FUNCTIONS
@@ -112,6 +144,7 @@ bool Request::tryToComplete(Buffer &buffer)
 	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
 	{
 		_body.insert(_body.end(), buffer.getData().begin(), buffer.getData().begin() + _contentLength);
+		buffer.getData().erase(buffer.getData().begin(), buffer.getData().begin() + _contentLength);
 		_completed = true;
 		return (true);
 	}

@@ -51,6 +51,7 @@ class Request
 
 		// Setters
 		void setTarget(std::string target) { _target = target; };
+		int getMaxBodySizeAllowed();
 
 	private:
 		Host _host;

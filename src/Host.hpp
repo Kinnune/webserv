@@ -13,6 +13,7 @@ class Host
 	private:
 		int							_id;
 		int 						_portInt;
+		int							_maxBody;
 		int							_statusCode;
 		std::string 				_serverName;
 		std::string 				_host;
@@ -44,6 +45,7 @@ class Host
 		// Getters
 		int getId() const;
 		int getPortInt() const;
+		int getMaxBody() const;
 		std::string getServerName() const;
 		std::string getHost() const;
 		std::string getPortString() const;
@@ -59,6 +61,7 @@ class Host
 		// Setters
 		void setId(int id);
 		void setPortInt(int portInt);
+		void setMaxBody(int maxBody);
 		void setServerName(std::string serverName);
 		void setHost(std::string host);
 		void setPortString(std::string portString);
