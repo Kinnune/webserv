@@ -1,6 +1,7 @@
 #include "Response.hpp"
 #include "Colors.hpp"
-
+#include "Server.hpp"
+// #include "utilityHeader.hpp"
 
 //------------------------------------------------------------------------------
 //	CONSTRUCTORS & DESTRUCTORS
@@ -26,6 +27,8 @@ Response::Response()
 		_body(std::vector<unsigned char>()),
 		_runCGI(false),
 		_waitCGI(false),
+		_readPipe(false),
+		_writePipe(false),
 		_pid(0),
 		_request(Request())
 {
@@ -37,7 +40,6 @@ Response::Response(Request &request, std::string sessionID)
 {
 	_pid = 0;
 	_runCGI = supportedCGI();
-	_waitCGI = false;
 	_statusCodeInt = 0;
 	_statusCode = "";
 	_statusMessage = "";
@@ -46,13 +48,13 @@ Response::Response(Request &request, std::string sessionID)
 	_host = request.getHost();
 	_body.resize(0);
 	_waitCGI = false;
+	_readPipe = false;
+	_writePipe = false;
 	_runCGI = supportedCGI();
 	if (_headers.find("Cookie") == _headers.end())
 	{
 		_headers["Set-Cookie"] = "session_id=" + sessionID;
 	}
-	if (DEBUG)
-		std::cout << "----------RESPONSE----------\n" << *this << "----------------------------\n";
 };
 
 Response::~Response() {}
@@ -167,12 +169,101 @@ void Response::generateErrorPage()
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
 
+
 void Response::killChild()
 {
+	if (_readPipe)
+	{
+		Server::getInstance().removeFd(_pipeParent[0]);
+	}
+	if (_writePipe)
+	{
+		Server::getInstance().removeFd(_pipeChild[1]);
+	}
 	if (_waitCGI && _pid > 0)
 	{
 		kill(_pid, SIGKILL);
 	}
+}
+
+void printBits(short num)
+{
+	int i = sizeof(short) * 8;
+	i--;
+	for (; i >= 0; i--)
+	{
+		std::cout << ((num >> i) & 1);
+	}
+	std::cout << std::endl;
+}
+
+void Response::writePipe()
+{
+	static unsigned int writeOffset = 0;
+	unsigned int tmpOffset;
+	Server &server = Server::getInstance();
+
+	if (!(server.getEventsByFd(_pipeChild[1]) & POLLOUT))
+	{
+		return ;
+	}
+	std::vector<unsigned char> bodyData = _request.getBody();
+	std::string requestData(bodyData.begin() + writeOffset, bodyData.end());
+	tmpOffset = writeOffset;
+	tmpOffset +=  write(_pipeChild[1], requestData.c_str(), requestData.size());
+	server.setDidIO(_pipeChild[1]);
+	if (tmpOffset < writeOffset)
+	{
+		//**WRITE ERROR
+	}
+	if (writeOffset - tmpOffset == 0)
+	{
+		writeOffset = 0;
+		_writePipe = false;
+ 		server.removeFd(_pipeChild[1]);
+	}
+}
+
+void Response::readPipe()
+{
+	char buffer[1024];
+	ssize_t bytesRead;
+	Server &server = Server::getInstance();
+
+	if (server.getEventsByFd(_pipeParent[0]) & POLLIN)
+	{
+		bytesRead = read(_pipeParent[0], buffer, sizeof(buffer));
+		server.setDidIO(_pipeParent[0]);
+	}
+	else
+	{
+		return ;
+	}
+	if (bytesRead > 0)
+	{ // If data was read successfully
+		// std::cout.write(buffer, bytesRead); // Write data to standard output (client response)
+	}
+	else if (bytesRead == 0)
+	{ // End of file reached (child process exited)
+		_waitCGI = false;
+		_readPipe = false;
+		server.removeFd(_pipeParent[0]);
+		return ;
+	}
+	else if (bytesRead < 0)
+	{ // Error other than non-blocking
+		std::cerr << "Read error";
+		//** setStatus(500)
+		return ;
+	}
+	std::string bufferStr(buffer, bytesRead);
+	std::vector<unsigned char>tmpVector(bufferStr.begin(), bufferStr.end());
+	for (unsigned char byte : tmpVector)
+	{
+		_body.push_back(byte);
+	}
+	close(_pipeChild[0]);
+	close(_pipeParent[1]);
 }
 
 int Response::completeResponse()
@@ -195,6 +286,7 @@ int Response::completeResponse()
 		{
 			std::cout << "Running CGI" << std::endl;
 			doCGI();
+			return (0);
 		}
 		if (!_waitCGI)
 		{
@@ -203,9 +295,18 @@ int Response::completeResponse()
 			setContentLengthHeader(_body.size());
 			_headers["Content-Type"] = "text/html";
 		}
-		else
+		else if (_writePipe)
 		{
-			childReady();
+			writePipe();
+			return (0);
+		}
+		else if (!childReady())
+		{
+			return (0);
+		}
+		else if (_readPipe)
+		{
+			readPipe();
 			return (0);
 		}
 	}
@@ -348,52 +449,14 @@ bool Response::childReady()
 {
 	int status;
 	pid_t result;
-	char buffer[1024];
-	ssize_t bytesRead;
 
 	result = waitpid(_pid, &status, WNOHANG);
-	// If an error occurred while waiting, print an error message
-	if (result == -1)
-	{
-		//** setStatus(500)
-		std::cerr << "Waitpid error";
-		return (true);
-	}
 	if (result == 0)
 	{
-		// If the child process is still running, optionally add a delay
-		// to avoid busy-waiting. Here, usleep is used to sleep for 10 milliseconds.
 		return (false);
 	}
 	else
 	{
-		while (true)
-		{
-			// Read data from pipe from child
-			bytesRead = read(_pipeParent[0], buffer, sizeof(buffer));
-			if (bytesRead > 0)
-			{ // If data was read successfully
-				std::cout.write(buffer, bytesRead); // Write data to standard output (client response)
-			}
-			else if (bytesRead == 0)
-			{ // End of file reached (child process exited)
-				break; // Exit loop
-			}
-			else if (errno != EAGAIN && errno != EWOULDBLOCK)
-			{ // Error other than non-blocking
-				std::cerr << "Read error";
-				//** setStatus(500)
-				break ;
-			}
-			std::string bufferStr(buffer, bytesRead);
-			std::vector<unsigned char>tmpVector(bufferStr.begin(), bufferStr.end());
-			for (unsigned char byte : tmpVector)
-			{
-				_body.push_back(byte);
-			}
-		}
-		close(_pipeParent[0]); // Close read end of pipe from child
-		_waitCGI = false;
 		return (true);
 	}
 	return (false);
@@ -423,18 +486,38 @@ void Response::setCGIEnvironmentVariables(char **envp)
 
     // Set the last element of the array to nullptr as required by execve
     envp[index] = nullptr;
-
-	std::cout << color("Environment variables set", PURPLE) << std::endl;
-	for (int i = 0; i < index; i++)
-	{
-		std::cout << color(envp[i], YELLOW) << std::endl;
-	}
 }
 
 //------------------------------------------------------------------------------
-#include <stdlib.h>
 int Response::doCGI()
 {
+
+	int statusCodeInt = _statusCodeInt;
+	std::string program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget()));
+	std::string path = _host.updateResourcePath(_request.getTarget(), statusCodeInt);
+	std::cout << "Requested path: " << _request.getTarget() << std::endl;
+	std::cout << "Updated path: " << path << std::endl;
+	_statusCodeInt = statusCodeInt;
+	if (!_host.isFile(path))
+	{
+		std::cerr << "Is NOT a file" << std::endl;
+		setStatus(404);
+		generateErrorPage();
+		return (1);
+	}
+	std::cerr << "IS a file" << std::endl;
+	
+	Server &server = Server::getInstance();
+	// std::cout << "path: " << path << " " << access(path.c_str(), F_OK) << std::endl;
+	// std::cout << "status: " << _statusCodeInt << std::endl;
+	// if (access(_host.updateResourcePath(_request.getTarget(), _statusCodeInt).c_str(), F_OK) == -1)
+	// {
+	// 	std::cout << "No access" << std::endl;
+	// 	setStatus(404);
+	// 	generateErrorPage();
+	// 	_runCGI = false;
+	// 	return (0);
+	// }
 	if (pipe(_pipeChild) == -1 || pipe(_pipeParent) == -1)
 	{
 		std::cerr << "Pipe creation failed";
@@ -457,8 +540,8 @@ int Response::doCGI()
 		dup2(_pipeChild[0], STDIN_FILENO);
 		dup2(_pipeParent[1], STDOUT_FILENO);
 
-		std::string program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget()));
-		std::string argument = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
+		// std::string argument = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
+		std::string argument = path; 
 		if (getFileExtension(_request.getTarget()) == ".out")
 		{
 			program = argument;
@@ -466,29 +549,29 @@ int Response::doCGI()
 		const char *args[] = {program.c_str(), argument.c_str(), nullptr};
 		char **env = (char **)malloc(sizeof(char*) * (MAX_ENV_VARS + 1));
 		setCGIEnvironmentVariables(env);
+		std::cerr << "Exec: " << program << std::endl;;
 		execve(program.c_str(), const_cast<char* const*>(args), const_cast<char* const*>(env));
-		std::cerr << "Exec failed";
+
+		exit(EXIT_FAILURE);
 		setStatus(500);
 		generateErrorPage();
 		return (1);
 	}
 	else
 	{ // Parent process
-		close(_pipeChild[0]);
-		close(_pipeParent[1]);
-		fcntl(_pipeChild[1], F_SETFL, O_NONBLOCK);
-		fcntl(_pipeParent[0], F_SETFL, O_NONBLOCK);
-		std::vector<unsigned char> bodyData = _request.getBody();
-		std::string requestData(bodyData.begin(), bodyData.end());
-		std::cout << "Request data: " << color(requestData, CYAN) << std::endl;	// How do we use the request body in a CGI script?
-		write(_pipeChild[1], requestData.c_str(), requestData.size());
-		close(_pipeChild[1]);
+		fcntl(_pipeChild[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+		fcntl(_pipeParent[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC);
+		server.newFd(_pipeChild[1]);
+		server.newFd(_pipeParent[0]);
+		_writePipe = true;
+		_readPipe = true;
+		_statusCode = "200";
+		_statusCodeInt = 200;
 	}
 	_runCGI = false;
 	_waitCGI = true;
 	return (0);
 }
-
 
 //------------------------------------------------------------------------------
 //	HANDLE METHODS
@@ -498,7 +581,7 @@ void Response::handleGetMethod()
 {
 	// update path and status code
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
-	
+
 	// Check if the requested method is allowed
 	if (_host.isAllowedMethod(_request.getTarget(), "GET") == false)
 		_statusCodeInt = 405;

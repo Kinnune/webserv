@@ -9,6 +9,7 @@
 Request::Request()
 	: _completed(false),
 	_isValid(false),
+	_isChunked(false),
 	_contentLength(-1)
 {
 }
@@ -42,6 +43,7 @@ void Request::clear()
 {
 	_completed = false;	
 	_isValid = false;
+	_isChunked = false;
 	_contentLength = -1;
 	_headers.clear();
 	_body.clear();
@@ -52,7 +54,8 @@ void Request::clear()
 
 Request::Request(std::vector<unsigned char> content)
 	: _completed(false),
-	_isValid(false)
+	_isValid(false),
+	_isChunked(false)
 {
 	if (parseContent(content) == -1)
 	{
@@ -62,7 +65,8 @@ Request::Request(std::vector<unsigned char> content)
 
 Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 	: _completed(false),
-	_isValid(false)
+	_isValid(false),
+	_isChunked(false)
 {
 	if (parseContent(content) == -1)
 	{
@@ -113,6 +117,7 @@ bool Request::tryToComplete(Buffer &buffer)
 	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
 	{
 		_body.insert(_body.end(), buffer.getData().begin(), buffer.getData().begin() + _contentLength);
+		buffer.getData().erase(buffer.getData().begin(), buffer.getData().begin() + _contentLength);
 		_completed = true;
 		return (true);
 	}

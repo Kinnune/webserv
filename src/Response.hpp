@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#include <stdlib.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -19,10 +20,8 @@
 #include "ConfigurationFile.hpp"
 #include "Colors.hpp"
 
-class Response;
 class ConfigurationFile;
 
-std::ostream &operator<<(std::ostream &o, Response response);
 
 
 class Response
@@ -47,6 +46,8 @@ class Response
 		void setCGIEnvironmentVariables(char **envp);
 		void killChild();
 		std::string listDirectory(std::string path);
+		void writePipe();
+		void readPipe();
 
 		// Method handlers
 		void handleGetMethod();
@@ -65,6 +66,8 @@ class Response
 	private:
 		bool _runCGI;
 		bool _waitCGI;
+		bool _readPipe;
+		bool _writePipe;
 		int _pipeChild[2];
 		int _pipeParent[2];
 		pid_t _pid;
