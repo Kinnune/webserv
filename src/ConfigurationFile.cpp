@@ -110,7 +110,7 @@ Host *ConfigurationFile::getHost(std::string hostHeader)
 	size_t pos;
 	
 	// Derive name and port from hostHeader
-	std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
+	// std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
 	pos = hostHeader.find(":");
 	if (pos != std::string::npos)
 	{
@@ -118,8 +118,8 @@ Host *ConfigurationFile::getHost(std::string hostHeader)
 		port = hostHeader.substr(pos + 1);
 	}
 
-	std::cout << "Name: " << color(name, GREEN) << std::endl;
-	std::cout << "Port: " << color(port, GREEN) << std::endl;
+	// std::cout << "Name: " << color(name, GREEN) << std::endl;
+	// std::cout << "Port: " << color(port, GREEN) << std::endl;
 
 	// Find host with correct name and port
 	for (std::vector<Host>::iterator host = _hosts.begin(); host != _hosts.end(); host++)

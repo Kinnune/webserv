@@ -82,7 +82,6 @@ Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 void Request::printRequest()
 {
 	std::unordered_map<std::string, std::string>::iterator it;
-
 	std::cout << _method << " " << _target << " " << _version << "\n";
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{

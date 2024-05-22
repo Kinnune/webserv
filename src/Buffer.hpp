@@ -123,6 +123,7 @@ class Buffer
 		unsigned char *getBegin() { return(&_data[0]); }
 		std::vector<unsigned char>::iterator getEnd() { return(_data.end()); }
 		std::vector<unsigned char> &getData() { return (_data); };
+		void clear() { _data.clear(); }
 	
 	private:
 		std::string _endLiteral;

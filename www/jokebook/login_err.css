@@ -1,0 +1,86 @@
+body
+{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: tomato;
+	font-family: Arial, sans-serif;
+	margin: 0;
+}
+
+.container
+{
+	display: flex;
+	flex-direction: column;
+	background-color: #d1d1d1;
+	width: 100%;
+	height: 100vh;
+	align-items: center;
+	justify-content: center;
+}
+
+.error_message
+{
+	color: tomato;
+	font-size: 1.5em;
+}
+
+.login-container
+{
+	display: flex;
+	flex-direction: column;
+	background-color: #d1d1d1;
+	padding: 40px;
+	border:rgb(45, 45, 45) solid 1px;
+	border-radius: 15px;
+	text-align: center;
+	color: #333;
+}
+
+#loginForm
+{
+	background-color: #d1d1d1;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 20px;
+}
+
+.title
+{
+	font-family: 'Roboto', sans-serif;
+	color: tomato;
+	font-size: 8em;
+	font-weight: bold;
+}
+
+input
+{
+	width: 50%;
+	padding: 10px;
+	border-radius: 5px;
+	border:rgb(45, 45, 45) solid 1px;
+}
+
+button
+{
+	background-color: tomato;
+	color: white;
+	border: none;
+	width: 50%;
+	padding: 10px;
+	border-radius: 5px;
+	position: relative;
+	left: 25%;
+	cursor: pointer;
+}
+
+input:hover
+{
+	border: tomato solid 1px;
+}
+
+button:hover
+{
+	background-color: #ff7f50;
+}

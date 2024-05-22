@@ -354,6 +354,33 @@ std::string Response::toString()
 	return (responseStream.str());
 }
 
+//------------------------------------------------------------------------------
+
+std::string Response::listDirectory(std::string path)
+{
+	std::string directoryListResponse;
+	DIR* directory = opendir(path.c_str());
+	struct dirent* entry;
+
+	if (directory != nullptr)
+	{
+        directoryListResponse.append("<table border=\"1\">");
+        directoryListResponse.append("<tr><th>File Name</th></tr>");
+
+		while ((entry = readdir(directory)) != nullptr)
+		{
+            directoryListResponse.append("<tr><td><a href=\""+ std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+		}
+
+        directoryListResponse.append("</table>");
+		closedir(directory);
+	}
+	else
+	{
+		std::cerr << "Unable to open directory: " << path << std::endl;
+	}
+	return (directoryListResponse);
+}
 
 //------------------------------------------------------------------------------
 //	CGI STUFF
@@ -540,7 +567,6 @@ int Response::doCGI()
 		dup2(_pipeChild[0], STDIN_FILENO);
 		dup2(_pipeParent[1], STDOUT_FILENO);
 
-		// std::string argument = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
 		std::string argument = path; 
 		if (getFileExtension(_request.getTarget()) == ".out")
 		{
@@ -575,6 +601,65 @@ int Response::doCGI()
 
 //------------------------------------------------------------------------------
 //	HANDLE METHODS
+//------------------------------------------------------------------------------
+
+int Response::completeResponse()
+{
+	/*
+		Added check for content type that isn't urlencoded.
+		If it isn't, return 501 (Not Implemented).
+		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
+	*/
+
+	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
+	{
+		setStatus(501);
+		generateErrorPage();
+		return (1);
+	}
+
+	if (supportedCGI())
+	{
+		if (_runCGI)
+		{
+			std::cout << "Running CGI" << std::endl;
+			std::cout << color("----RESPONSE-CGI----------------------------------------", CYAN) << std::endl;
+			doCGI();
+		}
+		if (!_waitCGI)
+		{
+			setStatus(200);
+			_version = "HTTP/1.1";
+			setContentLengthHeader(_body.size());
+			_headers["Content-Type"] = "text/html";
+		}
+		else
+		{
+			childReady();
+			return (0);
+		}
+	}
+	else if (_request.getMethod() == "GET")
+	{
+		std::cout << color("----RESPONSE-GET----------------------------------------", CYAN) << std::endl;
+		handleGetMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+	}
+	else if (_request.getMethod() == "POST")
+	{
+		std::cout << color("----RESPONSE-POST---------------------------------------", CYAN) << std::endl;
+		handlePostMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+	}
+	else if (_request.getMethod() == "DELETE")
+	{
+		std::cout << color("----RESPONSE-DELETE-------------------------------------", CYAN) << std::endl;
+		// handleDeleteMethod();
+		std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
+	}
+	return (1);
+}
+
 //------------------------------------------------------------------------------
 
 void Response::handleGetMethod()
@@ -651,14 +736,12 @@ void Response::handleGetMethod()
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = detectContentType(filePath);
-	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 }
 
 //------------------------------------------------------------------------------
 
 void Response::handlePostMethod()
 {
-	std::cout << color("----RESPONSE--------------------------------------------", CYAN) << std::endl;
 	std::cout << "Method: " << color("POST", GREEN) << std::endl;
 
 	// Update resource path
@@ -673,8 +756,6 @@ void Response::handlePostMethod()
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = "text/html";
-
-	std::cout << color("--------------------------------------------------------", CYAN) << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -682,30 +763,4 @@ void Response::handlePostMethod()
 void Response::handleDeleteMethod()
 {
 	//**TODO
-}
-
-std::string Response::listDirectory(std::string path)
-{
-	std::string directoryListResponse;
-	DIR* directory = opendir(path.c_str());
-	struct dirent* entry;
-
-	if (directory != nullptr)
-	{
-        directoryListResponse.append("<table border=\"1\">");
-        directoryListResponse.append("<tr><th>File Name</th></tr>");
-
-		while ((entry = readdir(directory)) != nullptr)
-		{
-            directoryListResponse.append("<tr><td><a href=\""+ std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
-		}
-
-        directoryListResponse.append("</table>");
-		closedir(directory);
-	}
-	else
-	{
-		std::cerr << "Unable to open directory: " << path << std::endl;
-	}
-	return (directoryListResponse);
 }

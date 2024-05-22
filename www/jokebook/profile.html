@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="profile.css">
+	<title>Document</title>
+</head>
+<body>
+	<div class="container">
+		<div class="profile_box">
+			<div class="image_box"></div>
+			<div class="name">Username</div>
+		</div>
+		<div class="line"></div>
+		<form id="addJokeForm" method="post" action="py/add_joke.py">
+			<div class="addJoke">
+				<!-- <label for="joke">Add Joke:</label> -->
+				<input type="text" id="newJoke" name="newJoke" required>
+				<button class="button" type="submit">Add Joke</button>
+			</div>
+		</form>
+		<div class="buttons">
+		</div>
+		<div class="line"></div>
+		<div class="jokes">
+			<div class="joke" id="1">Why did the old man fall down the well? He couldn’t see that well.</div>
+			<div class="line"></div>
+			<div class="joke" id="2">Dad, when he puts the car in reverse: "Ah, this takes me back."</div>
+			<div class="line"></div>
+			<div class="joke" id="3">The other day I bought a thesaurus, but when I got home and opened it, all the pages were blank. I have no word to describe how angry I am.</div>
+		</div>
+	</div>	
+</body>
+</html>
