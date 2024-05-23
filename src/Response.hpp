@@ -68,6 +68,7 @@ class Response
 		bool _waitCGI;
 		bool _readPipe;
 		bool _writePipe;
+		bool _completed;
 		int _pipeChild[2];
 		int _pipeParent[2];
 		pid_t _pid;

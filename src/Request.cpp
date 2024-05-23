@@ -10,7 +10,8 @@ Request::Request()
 	: _completed(false),
 	_isValid(false),
 	_isChunked(false),
-	_contentLength(-1)
+	_contentLength(-1),
+	_errorCode(0)
 {
 }
 
@@ -36,6 +37,7 @@ Request &Request::operator=(Request const &other)
 	_body = other._body;
 	_isChunked = other._isChunked;
 	_host = other._host;
+	_errorCode = other._errorCode;
 	return (*this);
 }
 
@@ -50,12 +52,14 @@ void Request::clear()
 	_method.clear();
 	_target.clear();
 	_version.clear();
+	_errorCode = 0;
 }
 
 Request::Request(std::vector<unsigned char> content)
 	: _completed(false),
 	_isValid(false),
-	_isChunked(false)
+	_isChunked(false),
+	_errorCode(0)
 {
 	if (parseContent(content) == -1)
 	{
@@ -66,7 +70,8 @@ Request::Request(std::vector<unsigned char> content)
 Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 	: _completed(false),
 	_isValid(false),
-	_isChunked(false)
+	_isChunked(false),
+	_errorCode(0)
 {
 	if (parseContent(content) == -1)
 	{
@@ -113,6 +118,10 @@ std::unordered_map<std::string, std::string> &Request::getHeaders()
 
 bool Request::tryToComplete(Buffer &buffer)
 {
+	if (_contentLength > _host.getMaxBody())
+	{
+		_errorCode = 413;
+	}
 	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
 	{
 		_body.insert(_body.end(), buffer.getData().begin(), buffer.getData().begin() + _contentLength);
