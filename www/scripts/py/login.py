@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os		# environ
 import sys		# stdin
 import hashlib	# sha256
@@ -26,6 +27,19 @@ def generate_response_profile(user_folder, username):
 	print('\t<title>Document</title>')
 	print('</head>')
 	print('<body>')
+
+	# Menu bar
+	print('\t<div class="menuBar">')
+	print('\t\t<form id="uploadForm" method="post" action="/py/upload_file.py" enctype="multipart/form-data">')
+    print('\t\t\t<input type="file" name="file" id="file">')
+    print('\t\t\t<button class="button" type="submit">Upload</button>')
+    print('\t\t</form>')
+	print('\t\t<a href="/jokebook/login.html">')
+	print('\t\t\t<button class="button logOutButton">Log Out</button>')
+	print('\t\t</a>')
+	print('\t</div>')
+
+	# Container
 	print('\t<div class="container">')
 	print('\t\t<div class="profile_box">')
 	print('\t\t\t<div class="image_box"></div>')
@@ -50,7 +64,6 @@ def generate_response_profile(user_folder, username):
 	
 	print("\t\t</div>")
 	print("\t</div>")
-	print('<script src="/jokebook/profile.js"></script>')
 	print("</body>")
 	print("</html>")
 	
@@ -64,12 +77,12 @@ def generate_response_wrong_password():
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"/jokebook/login_err.css\">")
+	print("\t<link rel=\"stylesheet\" href=\"/jokebook/login.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
 	print("\t<div class=\"container\">")
-	print("\t\t<div class=\"error_message\">Wrong password! Try again. Or not. It's up to you.</div>")
+	print("\t\t<div class=\"message\">Wrong password! Try again. Or not. It's up to you.</div>")
 	print("\t\t<div class=\"title\">JokeBook</div>")
 	print("\t\t<div class=\"login-container\">")
 	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"/py/login.py\">")
@@ -98,12 +111,12 @@ def generate_response_nonexisting_user():
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"/jokebook/login_err.css\">")
+	print("\t<link rel=\"stylesheet\" href=\"/jokebook/login.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
 	print("\t<div class=\"container\">")
-	print("\t\t<div class=\"error_message\">User doesn't exist! You either have the wrong name or meant to create a new account.</div>")
+	print("\t\t<div class=\"message\">User doesn't exist! You either have the wrong name or meant to create a new account.</div>")
 	print("\t\t<div class=\"title\">JokeBook</div>")
 	print("\t\t<div class=\"login-container\">")
 	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"/py/login.py\">")
