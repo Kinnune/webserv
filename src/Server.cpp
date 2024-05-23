@@ -94,6 +94,7 @@ int Server::getDidIO() { return(_didIO); }
 
 void Server::newClient(int i)
 {
+	// std::cout << "New Client: " << i << std::endl;
 	Client newClient(_pollFds[i].fd, _ports.at(i), _config);
 	_clients.insert(std::make_pair(newClient.getFd(), newClient));
 	_pollFds[getNfds()].fd = newClient.getFd();

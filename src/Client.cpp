@@ -72,13 +72,12 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 {
-	o << "{";
 	for (std::vector<unsigned char>::iterator it = data.begin(); it < data.end(); it++)
 	{
-		o << *it;
-		// o << "'" << (int)(*it) << "'" << *it;
+		// o << *it;
+		// o << (int)*it;
+		o << "'" << (int)(*it) << "'" << *it;
 	}
-	o << "}";
 	return(o);
 }
 
@@ -235,36 +234,46 @@ void Client::handleEvent(short events)
 			return ;
 		}
 		buffer[readCount] = '\0';
+		// std::cout << buffer << std::endl;
 		_buffer.addToBuffer(&buffer[0], readCount);
 	}
-	if (!_request.getIsComplete() && _buffer.requestEnded())
+	if (!_request.getIsComplete() && _buffer.requestEnded() && !_request.getIsChunked())
 	{
-		try
-		{
-			_request = Request(_buffer.spliceRequest(), _config);
-			setSessionID();
-		}
-		catch (std::exception &e)
-		{
-			std::cerr << "EXCEPTION OCCURRED: " << e.what() << std::endl;
-		}
+		// try
+		// {
+		_request = Request(_buffer.spliceRequest(), _config);
+		// _request.printRequest();
+		std::cout << color("MADE NEW REQUEST", RED) << std::endl;
+		setSessionID();
+		// }
+		// catch (std::exception &e)
+		// {
+		// 	std::cerr << "EXCEPTION OCCURRED: " << e.what() << std::endl;
+		// }
 		if (!_request.getIsValid())
 		{
+			std::cout << "invalide" << std::endl;
 			//  respond something
 			//  close connection
 		}
 	}
 	else if (_request.getIsChunked() && !_request.getIsComplete())
 	{
+		std::vector<unsigned char> tmp= _buffer.getData();
 		ssize_t chunkSize;
 		chunkSize = _buffer.readChunkLength();
+		// std::cout << chunkSize << std::endl;
 		if (chunkSize == 0)
 		{
+			std::cout << "read end of transmission chunk" << std::endl;
 			_request.setIsComplete(true);
-			_request.setContentLenght(_request.getContentLenght() + 1);
+			_request.setIsChunked(false);
+			_request.setContentLenght(0);
 		}
 		else if (chunkSize > 0)
 		{
+			std::cout << color(chunkSize, PURPLE) << std::endl;
+			std::cout << "going to extract chunk" << std::endl;
 			std::vector<unsigned char>chunk = _buffer.extractChunk(chunkSize);
 			for (unsigned char c : chunk)
 			{
@@ -274,3 +283,7 @@ void Client::handleEvent(short events)
 		}
  	}
 }
+
+/*
+int maxBody = _request.getMaxBody();
+*/

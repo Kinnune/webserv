@@ -148,9 +148,10 @@ int Request::getMaxBodySizeAllowed()
 
 bool Request::tryToComplete(Buffer &buffer)
 {
-	if (_contentLength > _host.getMaxBody())
+	if (_contentLength > getMaxBodySizeAllowed())
 	{
 		_errorCode = 413;
+		return (true);
 	}
 	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
 	{
@@ -195,10 +196,10 @@ int Request::headerLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	value = std::string(line.begin() + index, line.end());
-	if (value.back() == '\n')
+	while (value.back() == '\n' || value.back() == '\r')
+	{
 		value.pop_back();
-	if (value.back() == '\r')
-		value.pop_back();
+	}
 	_headers[key] = value;
 	return (0);
 }
@@ -287,6 +288,7 @@ bool Request::detectContentLenght()
 		_completed = false;
 	}
 	_contentLength = len;
+	std::cout << "len as: " << _contentLength << std::endl;
 	return (true);
 }
 

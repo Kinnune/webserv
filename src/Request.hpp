@@ -16,7 +16,7 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 // -1 is magic number for chunked requests
 #define CHUNKED_REQUEST -1
 
-#define DEBUG 0
+#define DEBUG 1
 
 class Request
 {
@@ -52,6 +52,7 @@ class Request
 
 		// Setters
 		void setTarget(std::string target) { _target = target; };
+		void setIsChunked(bool chunked) { _isChunked = chunked; }
 		int getMaxBodySizeAllowed();
 
 	private:
