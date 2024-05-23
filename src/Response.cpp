@@ -67,13 +67,13 @@ Response::Response(Request &request, std::string sessionID)
 	_version.pop_back();
 	std::cout << "'" << color(_version, RED) << "'" << std::endl;
 	std::cout << "'" << color(std::to_string(_version.size()), RED) << "'" << std::endl;
-	if (_version != "HTTP/1.1" || _version != "HTTP/1.0")
-	{
-		_version = "HTTP/1.1";
-		setStatus(505);
-		generateErrorPage();
-		_completed = true;
-	}
+	// if (_version != "HTTP/1.1" || _version != "HTTP/1.0")
+	// {
+	// 	_version = "HTTP/1.1";
+	// 	setStatus(505);
+	// 	generateErrorPage();
+	// 	_completed = true;
+	// }
 };
 
 Response::~Response() {}
