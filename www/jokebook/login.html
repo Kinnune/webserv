@@ -13,8 +13,8 @@
 	<div class="container">
 		<div class="title">JokeBook</div>
 		<div class="login-container">
-		<div class="error_message"></div>
-		<form id="loginForm" method="post" action="py/login.py">
+			<div class="error_message"></div>
+			<form id="loginForm" method="post" action="/py/login.py">
 				<div class="name">
 					<label for="username">Username:</label>
 					<input type="text" id="username" name="username" required>
@@ -24,7 +24,7 @@
 					<input type="password" id="password" name="password" required>
 				</div>
 				<button type="submit">Login</button>
-				<button type="submit" formaction="py/create_account.py">Create Account</button>
+				<button type="submit" formaction="/py/create_account.py">Create Account</button>
 			</form>
 		</div>
 	</div>

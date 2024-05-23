@@ -1,8 +1,13 @@
-from __future__ import print_function
 import os		# environ
 import sys		# stdin
 import hashlib	# sha256
 import shutil	# rmtree
+
+#-------------------------------------------------------------------------------
+
+def log_debug(message):
+	with open("database/DEBUG.txt", 'a') as file:
+		file.write(message + '\n')
 
 #-------------------------------------------------------------------------------
 
@@ -31,9 +36,9 @@ def generate_response_profile(user_folder, username):
 	# Menu bar
 	print('\t<div class="menuBar">')
 	print('\t\t<form id="uploadForm" method="post" action="/py/upload_file.py" enctype="multipart/form-data">')
-    print('\t\t\t<input type="file" name="file" id="file">')
-    print('\t\t\t<button class="button" type="submit">Upload</button>')
-    print('\t\t</form>')
+	print('\t\t\t<input type="file" name="file" id="file">')
+	print('\t\t\t<button class="button" type="submit">Upload</button>')
+	print('\t\t</form>')
 	print('\t\t<a href="/jokebook/login.html">')
 	print('\t\t\t<button class="button logOutButton">Log Out</button>')
 	print('\t\t</a>')
@@ -105,36 +110,36 @@ def generate_response_wrong_password():
 #-------------------------------------------------------------------------------
 
 def generate_response_nonexisting_user():
-	print("<!DOCTYPE html>")
-	print("<html lang=\"en\">")
-	print("<head>")
-	print("\t<meta charset=\"UTF-8\">")
-	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
-	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"/jokebook/login.css\">")
-	print("\t<title>JokeBook</title>")
-	print("</head>")
-	print("<body>")
-	print("\t<div class=\"container\">")
-	print("\t\t<div class=\"message\">User doesn't exist! You either have the wrong name or meant to create a new account.</div>")
-	print("\t\t<div class=\"title\">JokeBook</div>")
-	print("\t\t<div class=\"login-container\">")
-	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"/py/login.py\">")
-	print("\t\t\t\t<div class=\"name\">")
-	print("\t\t\t\t\t<label for=\"username\">Username:</label>")
-	print("\t\t\t\t\t<input type=\"text\" id=\"username\" name=\"username\" required>")
-	print("\t\t\t\t</div>")
-	print("\t\t\t\t<div class=\"password\">")
-	print("\t\t\t\t\t<label for=\"password\">Password:</label>")
-	print("\t\t\t\t\t<input type=\"password\" id=\"password\" name=\"password\" required>")
-	print("\t\t\t\t</div>")
-	print("\t\t\t\t<button type=\"submit\">Login</button>")
-	print("\t\t\t\t<button type=\"submit\" formaction=\"/py/create_account.py\">Create Account</button>")
-	print("\t\t\t</form>")
-	print("\t\t</div>")
-	print("\t</div>")
-	print("</body>")
-	print("</html>")
+    print("<!DOCTYPE html>")
+    print("<html lang=\"en\">")
+    print("<head>")
+    print("\t<meta charset=\"UTF-8\">")
+    print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
+    print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+    print("\t<link rel=\"stylesheet\" href=\"/jokebook/login.css\">")
+    print("\t<title>JokeBook</title>")
+    print("</head>")
+    print("<body>")
+    print("\t<div class=\"container\">")
+    print("\t\t<div class=\"message\">User doesn't exist! You either have the wrong name or meant to create a new account.</div>")
+    print("\t\t<div class=\"title\">JokeBook</div>")
+    print("\t\t<div class=\"login-container\">")
+    print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"/py/login.py\">")
+    print("\t\t\t\t<div class=\"name\">")
+    print("\t\t\t\t\t<label for=\"username\">Username:</label>")
+    print("\t\t\t\t\t<input type=\"text\" id=\"username\" name=\"username\" required>")
+    print("\t\t\t\t</div>")
+    print("\t\t\t\t<div class=\"password\">")
+    print("\t\t\t\t\t<label for=\"password\">Password:</label>")
+    print("\t\t\t\t\t<input type=\"password\" id=\"password\" name=\"password\" required>")
+    print("\t\t\t\t</div>")
+    print("\t\t\t\t<button type=\"submit\">Login</button>")
+    print("\t\t\t\t<button type=\"submit\" formaction=\"/py/create_account.py\">Create Account</button>")
+    print("\t\t\t</form>")
+    print("\t\t</div>")
+    print("\t</div>")
+    print("</body>")
+    print("</html>")
 
 #-------------------------------------------------------------------------------
 
@@ -214,10 +219,14 @@ def create_session(session_id, username):
 #-------------------------------------------------------------------------------
 
 def main():
+	log_debug("LOGIN: This is login.py")
+	
+	# Variables
 	env = os.environ
 	session_id = get_session_id(env)
 	username = None
 	password = None
+	log_debug("LOGIN: Session ID: " + str(session_id))
 
 	for line in sys.stdin:
 		key_value_pairs = line.strip().split('&')
@@ -233,6 +242,8 @@ def main():
 	if not username and not password:
 		return
 	
+	log_debug("LOGIN: Username: " + username)
+
 	user_folder = os.path.join("database", username)
 	user_exists = check_if_user_exists(username, password)
 
