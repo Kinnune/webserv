@@ -218,6 +218,8 @@ void Response::writePipe()
 	}
 	if (writeOffset - tmpOffset <= 0)
 	{
+		close(_pipeChild[0]);
+		close(_pipeParent[1]);
 		writeOffset = 0;
 		_writePipe = false;
  		server.removeFd(_pipeChild[1]);
@@ -227,18 +229,19 @@ void Response::writePipe()
 void Response::readPipe()
 {
 	char buffer[1024];
-	ssize_t bytesRead;
+	ssize_t bytesRead = -1;
 	Server &server = Server::getInstance();
 
-	if (server.getEventsByFd(_pipeParent[0]) & POLLIN)
-	{
+	std::cout << "Server events: " << server.getEventsByFd(_pipeParent[0]) << std::endl;
+	// if (server.getEventsByFd(_pipeParent[0]) & POLLIN)
+	// {
 		bytesRead = read(_pipeParent[0], buffer, sizeof(buffer));
 		server.setDidIO(_pipeParent[0]);
-	}
-	else
-	{
-		return ;
-	}
+	// }
+	// else
+	// {
+	// 	// return ;
+	// }
 	if (bytesRead > 0)
 	{ // If data was read successfully
 		// std::cout.write(buffer, bytesRead); // Write data to standard output (client response)
@@ -247,6 +250,8 @@ void Response::readPipe()
 	{ // End of file reached (child process exited)
 		_waitCGI = false;
 		_readPipe = false;
+		close(_pipeChild[1]);
+		close(_pipeParent[0]);
 		server.removeFd(_pipeParent[0]);
 		return ;
 	}
@@ -257,13 +262,14 @@ void Response::readPipe()
 		return ;
 	}
 	std::string bufferStr(buffer, bytesRead);
+	// std::cout << color(bufferStr, YELLOW) << std::endl;
+	// exit(0);
 	std::vector<unsigned char>tmpVector(bufferStr.begin(), bufferStr.end());
 	for (unsigned char byte : tmpVector)
 	{
 		_body.push_back(byte);
 	}
-	close(_pipeChild[0]);
-	close(_pipeParent[1]);
+
 }
 
 
