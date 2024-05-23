@@ -29,7 +29,7 @@ def generate_response_profile(user_folder, username):
 	print('\t<div class="container">')
 	print('\t\t<div class="profile_box">')
 	print('\t\t\t<div class="image_box"></div>')
-	print('\t\t\t<div class="name">Username</div>')
+	print('\t\t\t<div class="name">{}</div>'.format(username))
 	print('\t\t</div>')
 	print('\t\t<div class="line"></div>')
 	print('\t\t<form id="addJokeForm" method="post" action="/py/add_joke.py">')
@@ -38,17 +38,19 @@ def generate_response_profile(user_folder, username):
 	print('\t\t\t\t<button class="button" type="submit">Add Joke</button>')
 	print('\t\t\t</div>')
 	print('\t\t</form>')
-	print('\t\t<div class="buttons">')
-	print('\t\t</div>')
 	print('\t\t<div class="jokes">')
 	
 	#Generate jokes
 	for i, joke in enumerate(jokes):
 		print('\t\t\t<div class="line"></div>')
-		print('\t\t\t<div class="joke" id="{}">{}</div>'.format(i, joke))
+		print('\t\t\t<div class="jokebox">')
+		print('\t\t\t\t<div class="joke" id="{}">{}</div>'.format(i, joke))
+		print('\t\t\t\t<button class="deleteJokeButton" onclick="deleteJoke({})">X</button>'.format(i))
+		print('\t\t\t</div>')
 	
 	print("\t\t</div>")
 	print("\t</div>")
+	print('<script src="/jokebook/profile.js"></script>')
 	print("</body>")
 	print("</html>")
 	

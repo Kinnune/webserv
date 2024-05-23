@@ -49,6 +49,7 @@ void ConfigurationFile::printConfigInfo()
 		std::vector<std::string> indexPages = host->getIndexPages();
 		std::cout << "INDEX:\t\t"; printMultipleValues(indexPages);
 		std::cout << "AUTOINDEX:\t" << color((int)host->getAutoIndex(), GREEN) << std::endl;
+		std::cout << "MAX_BODY:\t" << color(host->getMaxBody(), GREEN) << std::endl;
 		std::map<std::string, std::string> errorPages = host->getErrorPages();
 		printErrorpages(errorPages);
 		std::cout << "LOC-n:\t\t" << color(host->getLocations().size(), GREEN) << std::endl;
@@ -478,6 +479,8 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 		else
 			std::cerr << RED << "Invalid value for autoindex: " << value << RESET << std::endl;
 	}
+	else if (key == "MAX_BODY")
+		host.setMaxBody(std::stoi(value));
 	else if (key == "ERROR_PAGES")
 	{
 		if (!parseErrorPages(host, value))

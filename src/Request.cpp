@@ -43,6 +43,7 @@ Request &Request::operator=(Request const &other)
 
 void Request::clear()
 {
+	_isChunked = false;
 	_completed = false;	
 	_isValid = false;
 	_isChunked = false;
@@ -109,6 +110,35 @@ std::string const &Request::getMethod() const
 std::unordered_map<std::string, std::string> &Request::getHeaders()
 {
 	return (_headers);
+}
+
+int Request::getMaxBodySizeAllowed()
+{
+	int maxBodySize = _host.getMaxBody();
+	std::string path = _target;
+	size_t firstSlash = _target.find("/");
+	if (firstSlash != std::string::npos)
+	{
+		size_t secondSlash = _target.find("/", firstSlash + 1);
+		if (secondSlash != std::string::npos)
+		{
+			path = _target.substr(firstSlash, secondSlash - firstSlash);
+		}
+	}
+	std::vector<Location> locations = _host.getLocations();
+	for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); it++)
+	{
+		std::string location = it->getLocation();
+		if (location == path)
+		{
+			if (it->getMaxBody() != -1)
+			{
+				maxBodySize = it->getMaxBody();
+			}
+			break ;
+		}
+	}
+	return (maxBodySize);
 }
 
 

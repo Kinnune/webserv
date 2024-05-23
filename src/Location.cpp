@@ -8,7 +8,7 @@
 Location::Location()
 {
 	this->redirectionCode = 0;
-	this->maxBody = 0;
+	this->maxBody = -1;
 	this->location = "";
 	this->root = "";
 	this->alias = "";

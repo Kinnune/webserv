@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include "Colors.hpp"
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 // {
@@ -19,7 +20,7 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 class Buffer
 {
 	public:
-		Buffer() : _endLiteral("\r\n\r\n") {};
+		Buffer() : _endLiteral("\r\n\r\n"), _data(0) {};
 		unsigned char *requestEnded()
 		{
 			std::vector<unsigned char>::iterator it;
@@ -59,12 +60,13 @@ class Buffer
 			_data = std::vector<unsigned char>(_data.begin() + requestSize, _data.end());
 			return (request);
 		}
+
 		ssize_t readChunkLength()
 		{
 			// Find the position of the CRLF sequence indicating the end of the chunk size
 			unsigned long endOfLinePos = std::string::npos;
 			std::string lineEndLiteral("\r\n");
-			for (unsigned long i = 0; i < _data.size() - lineEndLiteral.size() + 1; ++i)
+			for (unsigned long i = 0; i < _data.size() - (lineEndLiteral.size() + 1); ++i)
 			{
 			    bool found = true;
 			    for (unsigned long j = 0; j < lineEndLiteral.size(); ++j)
@@ -81,6 +83,7 @@ class Buffer
 			        break;
 			    }
 			}
+
 
 			// If the CRLF sequence is not found, there is not enough data in the buffer
 			if (endOfLinePos == std::string::npos)
@@ -108,6 +111,7 @@ class Buffer
 			//std::cout << "Remaining data after reading len = " << _data << "\nwith chunkSize: " << chunkSize << std::endl;
 			return (chunkSize);
 		}
+
 	    std::vector<unsigned char> extractChunk(size_t chunkSize)
 		{
 	        if (_data.size() < chunkSize)
@@ -119,6 +123,7 @@ class Buffer
 			//std::cout << "Remaining data after extracting chunk = " << _data << "\nwith chunkSize: " << chunkSize << std::endl;
 	        return (chunk);
 	    }
+
 		size_t getSize() { return(_data.size()); };
 		unsigned char *getBegin() { return(&_data[0]); }
 		std::vector<unsigned char>::iterator getEnd() { return(_data.end()); }

@@ -114,7 +114,34 @@ body
 	height: 2px;
 }
 
+.jokebox
+{
+	width: 100%;
+	display: flex;
+	justify-content: space-between;
+}
+
 .joke
 {
 	font-size: 15px;
+	width: 95%;
+}
+
+.deleteJokeButton
+{
+	background-color: tomato;
+	width: 20px;
+	height: 20px;
+	color: white;
+	font-size: 6px;
+	border: 2px solid tomato;
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+.deleteJoke:hover
+{
+	background-color: white;
+	color: tomato;
+	border: 2px solid tomato;
 }
