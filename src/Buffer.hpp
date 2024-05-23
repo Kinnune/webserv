@@ -60,24 +60,14 @@ class Buffer
 			_data = std::vector<unsigned char>(_data.begin() + requestSize, _data.end());
 			return (request);
 		}
-
 		ssize_t readChunkLength()
 		{
-			// Find the position of the CRLF sequence indicating the end of the chunk size
-			unsigned long endOfLinePos = std::string::npos;
+
+			size_t endOfLinePos = std::string::npos;
 			std::string lineEndLiteral("\r\n");
-			for (unsigned long i = 0; i < _data.size() - (lineEndLiteral.size() + 1); ++i)
+			for (size_t i = 0; i < _data.size() - 1; ++i)
 			{
-			    bool found = true;
-			    for (unsigned long j = 0; j < lineEndLiteral.size(); ++j)
-				{
-			        if (_data[i + j] != lineEndLiteral[j])
-					{
-			            found = false;
-			            break;
-			        }
-			    }
-			    if (found)
+			    if (_data[i] == '\r' && _data[i + 1] == '\n')
 				{
 			        endOfLinePos = i;
 			        break;
@@ -114,13 +104,12 @@ class Buffer
 
 	    std::vector<unsigned char> extractChunk(size_t chunkSize)
 		{
-	        if (_data.size() < chunkSize)
+	        if (_data.size() < chunkSize + 2)
 			{
 				return (std::vector<unsigned char>());
 	        }
 	        std::vector<unsigned char> chunk(_data.begin(), _data.begin() + chunkSize);
-	        _data.erase(_data.begin(), _data.begin() + chunkSize);
-			//std::cout << "Remaining data after extracting chunk = " << _data << "\nwith chunkSize: " << chunkSize << std::endl;
+	        _data.erase(_data.begin(), _data.begin() + chunkSize + 2);
 	        return (chunk);
 	    }
 
