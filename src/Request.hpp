@@ -36,6 +36,7 @@ class Request
 		bool tryToComplete(Buffer &buffer);
 
 		// Getters
+		int getErrorCode() { return (_errorCode); };
 		bool getIsValid() { return (_isValid); };
 		bool getIsChunked() { return (_isChunked); };
 		std::string getVersion() { return (_version); };
@@ -64,6 +65,7 @@ class Request
 		bool _isChunked;
 		//  will set _contentLength to -1 if chunked content
 		ssize_t _contentLength;
+		int _errorCode;
 };
 
 std::vector<unsigned char> getLine(std::vector<unsigned char> &data, size_t index);
