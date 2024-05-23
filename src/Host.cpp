@@ -12,6 +12,7 @@ Host::Host()
 {
 	_id = 0;
 	_portInt = 0;
+	_maxBody = -1;
 	_statusCode = 0;
 	_serverName = "";
 	_host = "";
@@ -34,6 +35,7 @@ Host &Host::operator=(Host const &other)
 {
 	_id = other._id;
 	_portInt = other._portInt;
+	_maxBody = other._maxBody;
 	_serverName = other._serverName;
 	_host = other._host;
 	_portString = other._portString;
@@ -54,6 +56,7 @@ Host &Host::operator=(Host const &other)
 
 int Host::getId() const { return _id; }
 int Host::getPortInt() const { return _portInt; }
+int Host::getMaxBody() const { return _maxBody; }
 bool Host::getDirList() { return _dirList; }
 std::string Host::getServerName() const { return _serverName; }
 std::string Host::getHost() const { return _host; }
@@ -92,6 +95,7 @@ std::string Host::getInterpreter(std::string &path, const std::string &extension
 
 void Host::setId(int id) { _id = id; }
 void Host::setPortInt(int portInt) { _portInt = portInt; }
+void Host::setMaxBody(int maxBody) { _maxBody = maxBody; }
 void Host::setServerName(std::string serverName) { _serverName = serverName; }
 void Host::setHost(std::string host) { _host = host; }
 void Host::setPortString(std::string portString) { _portString = portString; }
