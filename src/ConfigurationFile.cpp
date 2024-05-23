@@ -112,6 +112,7 @@ Host *ConfigurationFile::getHost(std::string hostHeader)
 	
 	// Derive name and port from hostHeader
 	// std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
+	std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
 	pos = hostHeader.find(":");
 	if (pos != std::string::npos)
 	{
