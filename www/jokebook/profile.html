@@ -9,15 +9,7 @@
 </head>
 <body>
 <div class="menuBar">
-	<!-- <form id="upload" action="post">
-		<input type="file" id="file" name="file" accept="image/*" style="display: none;">
-		<button class="button" type="button" onclick="document.getElementById('file').click()">Upload</button>
-	</form>
-	<form id="remove" action="delete">
-		<button class="button" type="button" onclick="document.getElementById('file').value = ''">Remove</button>
-	</form> -->
-	<!-- <form action="/jokebook/uploads" method="post" enctype="multipart/form-data"> -->
-	<form id="uploadForm" method="post" action="/py/upload_file.py">
+	<form id="uploadForm" method="post" action="/py/upload_file.py" enctype="multipart/form-data">
         <input type="file" name="file" id="file">
         <button class="button" type="submit">Upload</button>
     </form>
