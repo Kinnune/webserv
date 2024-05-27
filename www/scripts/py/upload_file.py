@@ -29,19 +29,19 @@ def generate_html(message):
 
 def get_session_id(env):
 
-    # Get the value of the HTTP_COOKIE from the environment variables
-    http_cookie = env.get('HTTP_COOKIE', '')
+	# Get the value of the HTTP_COOKIE from the environment variables
+	http_cookie = env.get('HTTP_COOKIE', '')
 
-    # Parse the session ID from the HTTP_COOKIE value
-    session_id = None
-    cookie_pairs = http_cookie.split(';')
-    for pair in cookie_pairs:
-        key_value = pair.strip().split('=')
-        if len(key_value) == 2 and key_value[0] == 'session_id':
-            session_id = key_value[1]
-            break
-    
-    return session_id
+	# Parse the session ID from the HTTP_COOKIE value
+	session_id = None
+	cookie_pairs = http_cookie.split(';')
+	for pair in cookie_pairs:
+		key_value = pair.strip().split('=')
+		if len(key_value) == 2 and key_value[0] == 'session_id':
+			session_id = key_value[1]
+			break
+	
+	return session_id
 
 #-------------------------------------------------------------------------------
 
@@ -61,18 +61,18 @@ def get_username(session_id):
 #-------------------------------------------------------------------------------
 
 def save_uploaded_file(file_item):
-    
+	
 	# Check if the file was uploaded
-    if file_item.filename:
-        
+	if file_item.filename:
+		
 		# Sanitize the filename
-        filename = os.path.basename(file_item.filename)
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        
-        # Save the file
-        with open(filepath, 'wb') as f:
-            f.write(file_item.file.read())    
-        return filename
+		filename = os.path.basename(file_item.filename)
+		filepath = os.path.join(UPLOAD_DIR, filename)
+		
+		# Save the file
+		with open(filepath, 'wb') as f:
+			f.write(file_item.file.read())	
+		return filename
 	
 	return None
 
@@ -94,35 +94,35 @@ def main():
 	if not username:
 		generate_html("Username not found.")
 		return
-	
+
 	# Get the user directory
 	user_dir = os.path.join("database", username)
 	if not os.path.isdir(user_dir):
 		generate_html("User directory does not exist.")
 		return
-	
+
 	# Get the upload directory
 	upload_dir = os.path.join(user_dir, "uploads")
 	
 	# Create the upload directory if it doesn't exist
 	if not os.path.isdir(upload_dir):
 		os.mkdir(upload_dir)
-    
+
 	# Create an instance of FieldStorage
-    form = cgi.FieldStorage()
+	form = cgi.FieldStorage()
 
 	# Get the uploaded file
-    file_item = form['file']
-    
+	file_item = form['file']
+	
 	# Save the uploaded file
-    if 'file' in form:
-        filename = save_uploaded_file(file_item)
-        if filename:
-            generate_html(filename)
-        else:
-            generate_html("File upload failed.")
-    else:
-        generate_html("No file uploaded.")
+	if 'file' in form:
+		filename = save_uploaded_file(file_item)
+		if filename:
+			generate_html(filename)
+		else:
+			generate_html("File upload failed.")
+	else:
+		generate_html("No file uploaded.")
 
 #-------------------------------------------------------------------------------
 

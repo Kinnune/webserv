@@ -10,7 +10,8 @@ Request::Request()
 	: _completed(false),
 	_isValid(false),
 	_isChunked(false),
-	_contentLength(-1)
+	_contentLength(-1),
+	_errorCode(0)
 {
 }
 
@@ -36,6 +37,7 @@ Request &Request::operator=(Request const &other)
 	_body = other._body;
 	_isChunked = other._isChunked;
 	_host = other._host;
+	_errorCode = other._errorCode;
 	return (*this);
 }
 
@@ -51,12 +53,14 @@ void Request::clear()
 	_method.clear();
 	_target.clear();
 	_version.clear();
+	_errorCode = 0;
 }
 
 Request::Request(std::vector<unsigned char> content)
 	: _completed(false),
 	_isValid(false),
-	_isChunked(false)
+	_isChunked(false),
+	_errorCode(0)
 {
 	if (parseContent(content) == -1)
 	{
@@ -67,7 +71,8 @@ Request::Request(std::vector<unsigned char> content)
 Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 	: _completed(false),
 	_isValid(false),
-	_isChunked(false)
+	_isChunked(false),
+	_errorCode(0)
 {
 	if (parseContent(content) == -1)
 	{
@@ -83,12 +88,15 @@ Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 void Request::printRequest()
 {
 	std::unordered_map<std::string, std::string>::iterator it;
+	std::cout << color("----------------------------------", YELLOW);
 	std::cout << _method << " " << _target << " " << _version << "\n";
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
 		std::cout << it->first << ": " <<  it->second << "\n";
 	}
-	// std::cout << _body << std::endl;
+	std::cout << _body << std::endl;
+	std::cout << std::boolalpha << "_completed: " << _completed << " _isValid: " << _isValid << " _isChunked: " << _isChunked << " _contentLength: " << _contentLength << " _errorCode: " << _errorCode << "\n";
+	std::cout << color("----------------------------------", YELLOW);
 	// std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
 }
 
@@ -143,6 +151,11 @@ int Request::getMaxBodySizeAllowed()
 
 bool Request::tryToComplete(Buffer &buffer)
 {
+	if (_contentLength > getMaxBodySizeAllowed())
+	{
+		_errorCode = 413;
+		return (true);
+	}
 	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
 	{
 		_body.insert(_body.end(), buffer.getData().begin(), buffer.getData().begin() + _contentLength);
@@ -186,10 +199,10 @@ int Request::headerLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	value = std::string(line.begin() + index, line.end());
-	if (value.back() == '\n')
+	while (value.back() == '\n' || value.back() == '\r')
+	{
 		value.pop_back();
-	if (value.back() == '\r')
-		value.pop_back();
+	}
 	_headers[key] = value;
 	return (0);
 }
@@ -278,6 +291,7 @@ bool Request::detectContentLenght()
 		_completed = false;
 	}
 	_contentLength = len;
+	std::cout << "len as: " << _contentLength << std::endl;
 	return (true);
 }
 

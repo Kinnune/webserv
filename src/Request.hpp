@@ -13,10 +13,7 @@
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 
 
-// -1 is magic number for chunked requests
-#define CHUNKED_REQUEST -1
-
-#define DEBUG 0
+#define DEBUG 1
 
 class Request
 {
@@ -36,6 +33,7 @@ class Request
 		bool tryToComplete(Buffer &buffer);
 
 		// Getters
+		int getErrorCode() { return (_errorCode); };
 		bool getIsValid() { return (_isValid); };
 		bool getIsChunked() { return (_isChunked); };
 		std::string getVersion() { return (_version); };
@@ -51,6 +49,7 @@ class Request
 
 		// Setters
 		void setTarget(std::string target) { _target = target; };
+		void setIsChunked(bool chunked) { _isChunked = chunked; }
 		int getMaxBodySizeAllowed();
 
 	private:
@@ -63,8 +62,8 @@ class Request
 		bool _completed;
 		bool _isValid;
 		bool _isChunked;
-		//  will set _contentLength to -1 if chunked content
 		ssize_t _contentLength;
+		int _errorCode;
 };
 
 std::vector<unsigned char> getLine(std::vector<unsigned char> &data, size_t index);

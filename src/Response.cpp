@@ -29,6 +29,7 @@ Response::Response()
 		_waitCGI(false),
 		_readPipe(false),
 		_writePipe(false),
+		_completed(false),
 		_pid(0),
 		_request(Request())
 {
@@ -50,10 +51,25 @@ Response::Response(Request &request, std::string sessionID)
 	_waitCGI = false;
 	_readPipe = false;
 	_writePipe = false;
+	_completed = false;
 	_runCGI = supportedCGI();
 	if (_headers.find("Cookie") == _headers.end())
 	{
 		_headers["Set-Cookie"] = "session_id=" + sessionID;
+	}
+	if (request.getErrorCode())
+	{
+		std::cerr << "error code: " << request.getErrorCode() << std::endl;
+		setStatus(request.getErrorCode());
+		generateErrorPage();
+		_completed = true;
+	}
+	if (_version != "HTTP/1.1" && _version != "HTTP/1.0")
+	{
+		_version = "HTTP/1.1";
+		setStatus(505);
+		generateErrorPage();
+		_completed = true;
 	}
 };
 
@@ -117,11 +133,17 @@ void Response::setStatus(int status)
 		case 405:
 			_statusMessage = "Method Not Allowed";
 			break ;
+		case 413:
+			_statusMessage = "Content Too Large";
+			break ;
 		case 500:
 			_statusMessage = "Internal Server Error";
 			break ;
 		case 501:
 			_statusMessage = "Not Implemented";
+			break ;
+		case 505:
+			_statusMessage = "HTTP Version Not Supported";
 			break ;
 		default:
 			_statusMessage = "Internal Server Error";
@@ -558,12 +580,16 @@ int Response::completeResponse()
 		If it isn't, return 501 (Not Implemented).
 		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
 	*/
-	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
+	if (_completed)
 	{
-		setStatus(501);
-		generateErrorPage();
 		return (1);
-	}
+	}	
+	// if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
+	// {
+	// 	setStatus(501);
+	// 	generateErrorPage();
+	// 	return (1);
+	// }
 
 	if (supportedCGI())
 	{
