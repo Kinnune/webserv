@@ -584,12 +584,12 @@ int Response::completeResponse()
 	{
 		return (1);
 	}	
-	if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
-	{
-		setStatus(501);
-		generateErrorPage();
-		return (1);
-	}
+	// if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
+	// {
+	// 	setStatus(501);
+	// 	generateErrorPage();
+	// 	return (1);
+	// }
 
 	if (supportedCGI())
 	{

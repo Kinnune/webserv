@@ -217,6 +217,7 @@ void Client::handleEvent(short events)
 			// std::cout << color("----REQUEST---------------------------------------------", PURPLE) << std::endl;
 			// _request.printRequest();
 			// std::cout << color("--------------------------------------------------------", PURPLE) << std::endl;
+			// _request.printRequest();
 			if (respond())
 			{
 				_request.clear();
@@ -237,12 +238,9 @@ void Client::handleEvent(short events)
 		// std::cout << buffer << std::endl;
 		_buffer.addToBuffer(&buffer[0], readCount);
 	}
-	if (!_request.getIsComplete() && _buffer.requestEnded() && !_request.getIsChunked())
+	if (!_request.getIsComplete() && _request.getContentLenght() < 0 && _buffer.requestEnded() && !_request.getIsChunked())
 	{
-		// try
-		// {
 		_request = Request(_buffer.spliceRequest(), _config);
-		// _request.printRequest();
 		std::cout << color("MADE NEW REQUEST", RED) << std::endl;
 		setSessionID();
 		// }

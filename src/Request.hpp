@@ -13,9 +13,6 @@
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data);
 
 
-// -1 is magic number for chunked requests
-#define CHUNKED_REQUEST -1
-
 #define DEBUG 1
 
 class Request
@@ -65,7 +62,6 @@ class Request
 		bool _completed;
 		bool _isValid;
 		bool _isChunked;
-		//  will set _contentLength to -1 if chunked content
 		ssize_t _contentLength;
 		int _errorCode;
 };

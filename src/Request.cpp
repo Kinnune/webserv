@@ -88,12 +88,15 @@ Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 void Request::printRequest()
 {
 	std::unordered_map<std::string, std::string>::iterator it;
+	std::cout << color("----------------------------------", YELLOW);
 	std::cout << _method << " " << _target << " " << _version << "\n";
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
 		std::cout << it->first << ": " <<  it->second << "\n";
 	}
-	// std::cout << _body << std::endl;
+	std::cout << _body << std::endl;
+	std::cout << std::boolalpha << "_completed: " << _completed << " _isValid: " << _isValid << " _isChunked: " << _isChunked << " _contentLength: " << _contentLength << " _errorCode: " << _errorCode << "\n";
+	std::cout << color("----------------------------------", YELLOW);
 	// std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
 }
 
