@@ -18,7 +18,7 @@ def generate_html(message):
 	print('\t<div class="container">')
 	print('\t\t<div class="title">JokeBook</div>')
 	print('\t\t<div class="message">{}</div>'.format(message))
-	print('\t\t<a href="/jokebook/profile.html">')
+	print('\t\t<a href="/py/profile.py">')
 	print('\t\t\t<button class="button">Back to Profile</button>')
 	print('\t\t</a>')
 	print('\t</div>')
@@ -60,14 +60,14 @@ def get_username(session_id):
 
 #-------------------------------------------------------------------------------
 
-def save_uploaded_file(file_item):
+def save_uploaded_file(file_item, upload_dir):
 	
 	# Check if the file was uploaded
 	if file_item.filename:
 		
 		# Sanitize the filename
 		filename = os.path.basename(file_item.filename)
-		filepath = os.path.join(UPLOAD_DIR, filename)
+		filepath = os.path.join(upload_dir, filename)
 		
 		# Save the file
 		with open(filepath, 'wb') as f:
@@ -77,6 +77,10 @@ def save_uploaded_file(file_item):
 	return None
 
 #-------------------------------------------------------------------------------
+
+def log_debug(message):
+	with open("database/DEBUG.txt", 'a') as file:
+		file.write(message + '\n')
 
 def main():
 
@@ -88,6 +92,8 @@ def main():
 	if not session_id:
 		generate_html("Session ID not found.")
 		return
+	
+	log_debug("Session ID: " + session_id)
 
 	# Get username
 	username = get_username(session_id)
@@ -111,12 +117,10 @@ def main():
 	# Create an instance of FieldStorage
 	form = cgi.FieldStorage()
 
-	# Get the uploaded file
-	file_item = form['file']
-	
 	# Save the uploaded file
 	if 'file' in form:
-		filename = save_uploaded_file(file_item)
+		file_item = form['file']
+		filename = save_uploaded_file(file_item, upload_dir)
 		if filename:
 			generate_html(filename)
 		else:
