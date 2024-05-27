@@ -8,6 +8,15 @@
 	<title>Profile</title>
 </head>
 <body>
+<div class="menuBar">
+	<form id="uploadForm" method="post" action="/py/upload_file.py" enctype="multipart/form-data">
+        <input type="file" name="file" id="file">
+        <button class="button" type="submit">Upload</button>
+    </form>
+	<a href="/jokebook/login.html">
+		<button class="button logOutButton">Log Out</button>
+	</a>
+</div>
 <div class="container">
 	<div class="profile_box">
 		<div class="image_box"></div>
@@ -38,6 +47,6 @@
 		</div>
 	</div>
 </div>  
-<script src="/jokebook/profile.js"></script>
+<script src="/jokebook/profile.js"></script> 
 </body>
 </html>

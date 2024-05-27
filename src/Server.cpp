@@ -87,10 +87,9 @@ void Server::startListen()
 	}
 }
 
-void Server::setDidIO(int flag) { _didIO = flag; std::cout << std::to_string(flag) + ": did IO" << std::endl;}
+void Server::setDidIO(int flag) { _didIO = flag;}
 
 int Server::getDidIO() { return(_didIO); }
-
 
 void Server::newClient(int i)
 {

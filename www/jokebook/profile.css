@@ -2,9 +2,36 @@ body
 {
 	background-color: #d1d1d1;
 	font-family: Arial, sans-serif;
-	margin: 20px;
+	margin: 0px;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
+	align-items: center;
+	gap: 20px;
+}
+
+.menuBar
+{
+	position: relative;
+	background-color: white;
+	width: 100%;
+	height: 50px;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	gap: 20px;
+}
+
+#file
+{
+	border: 2px solid tomato;
+	/* background-color: blue; */
+}
+
+.logOutButton
+{
+	/* position: relative; */
+	right: 10px;
 }
 
 .container

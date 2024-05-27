@@ -26,10 +26,17 @@ def generate_response_profile(user_folder, username):
 	print('\t<title>Document</title>')
 	print('</head>')
 	print('<body>')
+	
+	print('<div class="menuBar">')
+	print('\t<a href="/jokebook/login.html">')
+	print('\t\t<button class="button logOutButton">Log Out</button>')
+	print('\t</a>')
+	print('</div>')
+
 	print('\t<div class="container">')
 	print('\t\t<div class="profile_box">')
 	print('\t\t\t<div class="image_box"></div>')
-	print('\t\t\t<div class="name">Username</div>')
+	print('\t\t\t<div class="name">{}</div>'.format(username))
 	print('\t\t</div>')
 	print('\t\t<div class="line"></div>')
 	print('\t\t<form id="addJokeForm" method="post" action="/py/add_joke.py">')
@@ -50,14 +57,14 @@ def generate_response_profile(user_folder, username):
 	
 	print("\t\t</div>")
 	print("\t</div>")
-	print('<script src="/jokebook/profile.js"></script>')
 	print("</body>")
 	print("</html>")
 
 #-------------------------------------------------------------------------------
 
 def get_session_id(env):
-    # Get the value of the HTTP_COOKIE from the environment variables
+    
+	# Get the value of the HTTP_COOKIE from the environment variables
     http_cookie = env.get('HTTP_COOKIE', '')
 
     # Parse the session ID from the HTTP_COOKIE value
@@ -74,12 +81,10 @@ def get_session_id(env):
 #-------------------------------------------------------------------------------
 
 def get_username_from_session_id(session_id):
+	
 	# Get the session folder path
 	session_folder = os.path.join("database/sessions", session_id)
-	# print("Session ID: ", session_id)
-	# print("\n")
-	# print("Session Folder: ", session_folder)
-	# print("\n")
+	
 	# Check if session folder exists
 	if not os.path.isdir(session_folder):
 		print("Error: Session folder does not exist")
@@ -109,13 +114,6 @@ def main():
 	env = os.environ
 	session_id = get_session_id(env)
 	joke = None
-
-	# # Get the joke from stdin
-	# for line in sys.stdin:
-	# 	key, value = line.split('=')
-	# 	if key == 'newJoke':
-	# 		joke = value
-	# 		break
 
 	for line in sys.stdin:
 		key_value_pairs = line.strip().split('&')
