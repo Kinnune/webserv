@@ -102,7 +102,21 @@ def get_session_id(env):
 
 #-------------------------------------------------------------------------------
 
-def main:
+def get_username(session_id):
+	
+	# Get the username associated with the session ID
+	username = None
+	if session_id:
+		session_file = os.path.join("database", "sessions", session_id, "session.txt")
+		if os.path.isfile(session_file):
+			with open(session_file, 'r') as file:
+				username = file.read().strip()
+	
+	return username
+
+#-------------------------------------------------------------------------------
+
+def main():
 
 	env = os.environ
 
@@ -125,7 +139,7 @@ def main:
 		return
 	
 	# Generate response
-	generate_response_profile(user_folder, username)
+	generate_profile(user_folder, username)
 
 #-------------------------------------------------------------------------------
 
