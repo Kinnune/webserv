@@ -1,6 +1,8 @@
 import cgi
 import os
 import cgitb
+import sys
+import fileinput
 
 #-------------------------------------------------------------------------------
 
@@ -18,12 +20,13 @@ def generate_html(message):
 	print('\t<div class="container">')
 	print('\t\t<div class="title">JokeBook</div>')
 	print('\t\t<div class="message">{}</div>'.format(message))
-	print('\t\t<a href="/jokebook/profile.html">')
+	print('\t\t<a href="/py/profile.py">')
 	print('\t\t\t<button class="button">Back to Profile</button>')
 	print('\t\t</a>')
 	print('\t</div>')
 	print('</body>')
 	print('</html>')
+
 
 #-------------------------------------------------------------------------------
 
@@ -43,6 +46,7 @@ def get_session_id(env):
 	
 	return session_id
 
+
 #-------------------------------------------------------------------------------
 
 def get_username(session_id):
@@ -58,23 +62,61 @@ def get_username(session_id):
 	
 	return username
 
+
 #-------------------------------------------------------------------------------
 
-def save_uploaded_file(file_item):
+def save_uploaded_file(upload_dir, filename):
+
+	# Sanitize the filename
+	filename = os.path.basename(file_item.filename)
+	filepath = os.path.join(upload_dir, filename)
 	
-	# Check if the file was uploaded
-	if file_item.filename:
-		
-		# Sanitize the filename
-		filename = os.path.basename(file_item.filename)
-		filepath = os.path.join(UPLOAD_DIR, filename)
-		
-		# Save the file
-		with open(filepath, 'wb') as f:
-			f.write(file_item.file.read())	
-		return filename
+	# for line in fileinput.input():
+	# Save the file
+	with open(filepath, 'wb') as f:
+		f.write(file_item.file.read())	
+	return filename
 	
 	return None
+
+
+#-------------------------------------------------------------------------------
+
+def log_debug(message):
+	with open("database/DEBUG.txt", 'a') as file:
+		file.write(message + '\n')
+
+
+#-------------------------------------------------------------------------------
+
+def write_env_to_file(file_path):
+	# Open the file in write mode
+	with open(file_path, 'w') as file:
+		# Iterate over each key-value pair in os.environ
+		for key, value in os.environ.items():
+			# Write the key and value to the file
+			file.write("{}: {}\n".format(key, value))
+
+
+#-------------------------------------------------------------------------------
+
+def print_body():
+	for line in fileinput.input():
+		print(line)
+		print('<br>')
+
+
+#-------------------------------------------------------------------------------
+
+def save_uploaded_file(upload_dir, filename, body):
+
+	filepath = os.path.join(upload_dir, filename)
+
+	with open(filepath, 'wb') as f:
+		for line in body:
+			# f.write(line.encode())
+			f.write(line)
+
 
 #-------------------------------------------------------------------------------
 
@@ -82,6 +124,9 @@ def main():
 
 	# Variables
 	env = os.environ
+
+	# Write the environment variables to a file
+	write_env_to_file("database/ENVIRONMENT.txt")
 
 	# Get session ID
 	session_id = get_session_id(env)
@@ -107,22 +152,52 @@ def main():
 	# Create the upload directory if it doesn't exist
 	if not os.path.isdir(upload_dir):
 		os.mkdir(upload_dir)
-
-	# Create an instance of FieldStorage
-	form = cgi.FieldStorage()
-
-	# Get the uploaded file
-	file_item = form['file']
 	
+	# print_body()
+
+	body = []
+	filename = None
+	boundary = None
+
+	for line in fileinput.input():
+		body.append(line)
+		# print(line + '<br>')
+
+	# Get the boundary
+	for line in body:
+		if "--" in line:
+			boundary = line
+			break
+	
+	# Get the filename
+	for line in body:
+		if "Content-Disposition" in line:
+			filename = line.split('filename="')[1].split('"')[0]
+			break
+
+	content = []
+	empty_line_found = False
+
+	for line in body:
+		stripped_line = line.strip()
+		if empty_line_found:
+			if boundary.strip() in stripped_line:
+				break
+			content.append(line)
+		elif stripped_line == "":
+			empty_line_found = True
+
+	# for line in content:
+	# 	print(line + '<br>')
+
+	# print("Boundary: " + boundary + '<br>')
+	# print("Filename: " + filename + '<br>')
+
 	# Save the uploaded file
-	if 'file' in form:
-		filename = save_uploaded_file(file_item)
-		if filename:
-			generate_html(filename)
-		else:
-			generate_html("File upload failed.")
-	else:
-		generate_html("No file uploaded.")
+	save_uploaded_file(upload_dir, filename, content)
+
+	# Generate the HTML
+	generate_html("File uploaded successfully.")
 
 #-------------------------------------------------------------------------------
 

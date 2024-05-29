@@ -214,10 +214,7 @@ void Client::handleEvent(short events)
 	{
 		if (_request.getIsComplete() || _request.tryToComplete(_buffer))
 		{
-			// std::cout << color("----REQUEST---------------------------------------------", PURPLE) << std::endl;
-			// _request.printRequest();
-			// std::cout << color("--------------------------------------------------------", PURPLE) << std::endl;
-			// _request.printRequest();
+			_request.printRequest();
 			if (respond())
 			{
 				_request.clear();

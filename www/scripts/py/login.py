@@ -241,6 +241,9 @@ def main():
 
 	if not username and not password:
 		return
+
+	if (os.environ['CONTENT_LENGTH']):
+		log_debug("LOGIN: Content length: " + os.environ['CONTENT_LENGTH'])
 	
 	log_debug("LOGIN: Username: " + username)
 

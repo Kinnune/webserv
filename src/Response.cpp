@@ -478,9 +478,7 @@ void Response::setCGIEnvironmentVariables(char **envp)
         std::transform(envVarName.begin(), envVarName.end(), envVarName.begin(), ::toupper); // Convert to uppercase
         envp[index++] = strdup((envVarName + "=" + envVarValue).c_str());
     }
-    std::string contentLength = std::to_string(_body.size());
-    envp[index++] = strdup(("CONTENT_LENGTH=" + contentLength).c_str());
-
+    envp[index++] = strdup(("CONTENT_LENGTH=" + _headers["Content-Length"]).c_str());
     // Set the last element of the array to nullptr as required by execve
     envp[index] = nullptr;
 }
@@ -522,6 +520,7 @@ int Response::doCGI()
 		generateErrorPage();
 		return (1);
 	}
+	std::cerr << "Content-Length: " << _headers["Content-Length"] << std::endl;
 	_pid = fork();
 	if (_pid == -1)
 	{
@@ -634,7 +633,7 @@ int Response::completeResponse()
 	}
 	else if (_request.getMethod() == "DELETE")
 	{
-		// handleDeleteMethod();
+		handleDeleteMethod();
 	}
 	return (1);
 }
@@ -740,5 +739,39 @@ void Response::handlePostMethod()
 
 void Response::handleDeleteMethod()
 {
-	//**TODO
+	std::cout << "Method: " << color("DELETE", GREEN) << std::endl;
+
+	std::cout << "Host: " << color(_host.getHost(), YELLOW) << std::endl;
+	std::cout << "Server name: " << color(_host.getServerName(), YELLOW) << std::endl;
+	std::cout << "Port: " << color((_host.getPortInt()), YELLOW) << std::endl;
+
+	// Update resource path
+	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
+	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+
+	// Check if the config parser returned an error
+	if (_statusCodeInt != 200)
+	{
+		generateErrorPage();
+	}
+
+	// Try to delete the file
+	if (remove(filePath.c_str()) != 0)
+	{
+		std::cerr << "Failed to delete file: " << filePath << std::endl;
+		
+		// Build response
+		setStatus(500);
+		generateErrorPage();
+		return ;
+	}
+
+	std::cout << color(filePath, RED) << " successfully deleted!" << std::endl;
+
+	// Build response
+	setStatus(200);
+	_version = "HTTP/1.1";
+	setContentLengthHeader(_body.size());
+	_headers["Content-Type"] = "text/html";
 }
