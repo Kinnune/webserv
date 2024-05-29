@@ -478,9 +478,7 @@ void Response::setCGIEnvironmentVariables(char **envp)
         std::transform(envVarName.begin(), envVarName.end(), envVarName.begin(), ::toupper); // Convert to uppercase
         envp[index++] = strdup((envVarName + "=" + envVarValue).c_str());
     }
-    std::string contentLength = std::to_string(_body.size());
-    envp[index++] = strdup(("CONTENT_LENGTH=" + contentLength).c_str());
-
+    envp[index++] = strdup(("CONTENT_LENGTH=" + _headers["Content-Length"]).c_str());
     // Set the last element of the array to nullptr as required by execve
     envp[index] = nullptr;
 }
@@ -522,6 +520,7 @@ int Response::doCGI()
 		generateErrorPage();
 		return (1);
 	}
+	std::cerr << "Content-Length: " << _headers["Content-Length"] << std::endl;
 	_pid = fork();
 	if (_pid == -1)
 	{

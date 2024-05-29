@@ -85,19 +85,23 @@ Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 //  PRINT FUNCTIONS
 //------------------------------------------------------------------------------
 
+#include <fstream>
+
 void Request::printRequest()
 {
+	std::ofstream debugFile;
+	debugFile.open("DEBUG_REQUEST.txt", std::ios::app);
+
+	debugFile << color("----REQUEST---------------------------------------------", PURPLE) << std::endl;
 	std::unordered_map<std::string, std::string>::iterator it;
-	std::cout << color("----------------------------------", YELLOW);
-	std::cout << _method << " " << _target << " " << _version << "\n";
+	debugFile << _method << " " << _target << " " << _version << "\n";
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
-		std::cout << it->first << ": " <<  it->second << "\n";
+		debugFile << it->first << ": " <<  it->second << "\n";
 	}
-	std::cout << _body << std::endl;
-	std::cout << std::boolalpha << "_completed: " << _completed << " _isValid: " << _isValid << " _isChunked: " << _isChunked << " _contentLength: " << _contentLength << " _errorCode: " << _errorCode << "\n";
-	std::cout << color("----------------------------------", YELLOW);
-	// std::cout << std::boolalpha << "COMPLETED = " << _completed << " CONTENT LENGTH = " << _contentLength << std::endl;
+	debugFile << color("----REQUEST_BODY----------------------------------------", PURPLE) << std::endl;
+	debugFile << _body << std::endl;
+	debugFile << color("--------------------------------------------------------", PURPLE) << std::endl;
 }
 
 
