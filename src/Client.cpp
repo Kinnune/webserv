@@ -74,8 +74,7 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 {
 	for (std::vector<unsigned char>::iterator it = data.begin(); it < data.end(); it++)
 	{
-		// o << *it;
-		// o << (int)*it;
+
 		o << "'" << (int)(*it) << "'" << *it;
 	}
 	return(o);
@@ -86,16 +85,45 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 //	GETTERS & SETTERS
 //------------------------------------------------------------------------------
 
-int Client::getFd() const { return (_fd); }
-int Client::getPort() const { return (_port); }
-short Client::getFailFlag() { return (_failFlag); }
-// Host &Client::getHost() { return (_host); }
+int Client::getFd() const
+{
+	return (_fd);
+}
 
-void Client::setFd(int fd) { _fd = fd; }
-void Client::setPort(int port) { _port = port; }
-void Client::setFailFlag(short flag) { _failFlag = _failFlag | flag; }
-// void Client::setHost(Host &host) { _host = host; }
+int Client::getPort() const
+{
+	return (_port);
+}
 
+short Client::getFailFlag()
+{
+	return (_failFlag);
+}
+
+Response &Client::getResponse()
+{
+	return (_response);
+}
+
+std::string Client::getSessionId()
+{
+	return (_sessionID);
+}
+
+void Client::setFd(int fd)
+{
+	_fd = fd;
+}
+
+void Client::setPort(int port)
+{
+	_port = port;
+}
+
+void Client::setFailFlag(short flag)
+{
+	_failFlag = _failFlag | flag;
+}
 
 //------------------------------------------------------------------------------
 //	MEMBER FUNCTIONS
@@ -121,7 +149,6 @@ bool Client::respond()
 	if (_response.completeResponse())
 	{
 		responseStr = _response.toString();
-		// should also check if wrote less than length
 		if (write(_fd, responseStr.c_str(), responseStr.length()) == -1)
 		{
 			_failFlag = 1;
@@ -139,7 +166,6 @@ bool Client::checkTimeout(time_t currentTime)
 {
 	static const time_t maxTimeout = 42;
 
-	// std::cout << std::boolalpha << (currentTime - _timeout > maxTimeout) << "_timeout: " << _timeout << " currentTime: " << currentTime << std::endl;
 	return (currentTime - _timeout > maxTimeout);
 }
 
@@ -205,7 +231,6 @@ void Client::setSessionID()
 
 void Client::handleEvent(short events)
 {
-	//* we might want to malloc this buffer
 	static const int MAX_BUFFER_SIZE = 4095;
 	char buffer[MAX_BUFFER_SIZE + 1];
 	ssize_t readCount = 0;
@@ -214,7 +239,6 @@ void Client::handleEvent(short events)
 	{
 		if (_request.getIsComplete() || _request.tryToComplete(_buffer))
 		{
-			_request.printRequest();
 			if (respond())
 			{
 				_request.clear();
@@ -232,53 +256,36 @@ void Client::handleEvent(short events)
 			return ;
 		}
 		buffer[readCount] = '\0';
-		// std::cout << buffer << std::endl;
 		_buffer.addToBuffer(&buffer[0], readCount);
 	}
-	if (!_request.getIsComplete() && _request.getContentLenght() < 0 && _buffer.requestEnded() && !_request.getIsChunked())
+	if (!_request.getIsComplete() && _request.getContentLength() < 0 && _buffer.requestEnded() && !_request.getIsChunked())
 	{
 		_request = Request(_buffer.spliceRequest(), _config);
-		std::cout << color("MADE NEW REQUEST", RED) << std::endl;
 		setSessionID();
-		// }
-		// catch (std::exception &e)
-		// {
-		// 	std::cerr << "EXCEPTION OCCURRED: " << e.what() << std::endl;
-		// }
 		if (!_request.getIsValid())
 		{
-			std::cout << "invalide" << std::endl;
-			//  respond something
-			//  close connection
+			_request.setErrorCode(500);
+			_request.setIsComplete(true);
 		}
 	}
 	else if (_request.getIsChunked() && !_request.getIsComplete())
 	{
-		std::vector<unsigned char> tmp= _buffer.getData();
 		ssize_t chunkSize;
 		chunkSize = _buffer.readChunkLength();
-		// std::cout << chunkSize << std::endl;
 		if (chunkSize == 0)
 		{
-			std::cout << "read end of transmission chunk" << std::endl;
 			_request.setIsComplete(true);
 			_request.setIsChunked(false);
-			_request.setContentLenght(0);
+			_request.setContentLength(0);
 		}
 		else if (chunkSize > 0)
 		{
-			std::cout << color(chunkSize, PURPLE) << std::endl;
-			std::cout << "going to extract chunk" << std::endl;
 			std::vector<unsigned char>chunk = _buffer.extractChunk(chunkSize);
 			for (unsigned char c : chunk)
 			{
 				_request.getBody().push_back(c);
 			}
-			_request.setContentLenght(_request.getContentLenght() + chunkSize);
+			_request.setContentLength(_request.getContentLength() + chunkSize);
 		}
  	}
 }
-
-/*
-int maxBody = _request.getMaxBody();
-*/

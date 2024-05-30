@@ -1,5 +1,5 @@
-#include "Location.hpp"
 
+#include "Location.hpp"
 
 //------------------------------------------------------------------------------
 //	CONSTRUCTORS / DESTRUCTORS
@@ -44,7 +44,6 @@ Location &Location::operator=(Location const &other)
 	return *this;
 }
 
-
 //------------------------------------------------------------------------------
 //	GETTERS
 //------------------------------------------------------------------------------
@@ -61,7 +60,6 @@ autoIndexState Location::getAutoIndex() const { return this->autoIndex; }
 std::vector<std::string> Location::getIndexPages() const { return this->index_pages; }
 std::vector<std::string> Location::getMethods() const { return this->methods; }
 std::vector<std::string> Location::getCgiExtensions() const { return this->cgiExtensions; }
-
 
 //------------------------------------------------------------------------------
 //	SETTERS

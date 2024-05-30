@@ -28,11 +28,8 @@ bool isWS(unsigned char c)
 {
 	static unsigned char const space = 32;
 	static unsigned char const horizontalTab = 9;
-	//why did we get this vertical tab in the request??
 	static unsigned char const verticalTab = 13;
 	
-
-	// return (c == space | c == horizontalTab);
 	return (c == space | c == horizontalTab | c == verticalTab);
 }
 

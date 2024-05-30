@@ -7,17 +7,6 @@
 //	CONSTRUCTORS & DESTRUCTORS
 //------------------------------------------------------------------------------
 
-std::string getFileExtension(const std::string &filePath)
-{
-	size_t dotPosition = filePath.find_last_of('.');
-
-	if (dotPosition != std::string::npos)
-	{
-		return (filePath.substr(dotPosition));
-	}
-	return "";
-}
-
 Response::Response()
 	: _statusCodeInt(0),
 		_version(""),
@@ -45,9 +34,9 @@ Response::Response(Request &request, std::string sessionID)
 	_statusCode = "";
 	_statusMessage = "";
 	_version = _request.getVersion();			
-	_headers = request.getHeaders();
-	_host = request.getHost();
-	_body.resize(0);
+	_headers = _request.getHeaders();
+	_host = _request.getHost();
+	_body = _request.getBody();
 	_waitCGI = false;
 	_readPipe = false;
 	_writePipe = false;
@@ -95,6 +84,25 @@ std::ostream &operator<<(std::ostream &o, Response response)
 //------------------------------------------------------------------------------
 //	GETTERS & SETTERS
 //------------------------------------------------------------------------------
+bool Response::hasRequest()
+{
+	return (_request.getIsComplete());
+}
+
+Request &Response::getRequest()
+{
+	return (_request);
+}
+
+bool Response::getWaitCGI()
+{
+	return (_waitCGI);
+}
+
+bool Response::getRunCGI()
+{
+	return (_runCGI);
+}
 
 void Response::setContentLengthHeader(size_t length)
 {
@@ -191,6 +199,16 @@ void Response::generateErrorPage()
 //	MEMBER FUNCTIONS
 //------------------------------------------------------------------------------
 
+std::string getFileExtension(const std::string &filePath)
+{
+	size_t dotPosition = filePath.find_last_of('.');
+
+	if (dotPosition != std::string::npos)
+	{
+		return (filePath.substr(dotPosition));
+	}
+	return "";
+}
 
 void Response::killChild()
 {
@@ -206,17 +224,6 @@ void Response::killChild()
 	{
 		kill(_pid, SIGKILL);
 	}
-}
-
-void printBits(short num)
-{
-	int i = sizeof(short) * 8;
-	i--;
-	for (; i >= 0; i--)
-	{
-		std::cout << ((num >> i) & 1);
-	}
-	std::cout << std::endl;
 }
 
 void Response::writePipe()
@@ -236,7 +243,13 @@ void Response::writePipe()
 	server.setDidIO(_pipeChild[1]);
 	if (tmpOffset < writeOffset)
 	{
-		//**WRITE ERROR
+		killChild();
+		close(_pipeChild[0]);
+		close(_pipeParent[1]);
+ 		server.removeFd(_pipeChild[1]);
+		setStatus(500);
+		generateErrorPage();
+		_writePipe = false;
 	}
 	if (writeOffset - tmpOffset <= 0)
 	{
@@ -254,22 +267,11 @@ void Response::readPipe()
 	ssize_t bytesRead = -1;
 	Server &server = Server::getInstance();
 
-	// std::cout << "Server events: " << server.getEventsByFd(_pipeParent[0]) << std::endl;
-	// if (server.getEventsByFd(_pipeParent[0]) & POLLIN)
-	// {
-		bytesRead = read(_pipeParent[0], buffer, sizeof(buffer));
-		server.setDidIO(_pipeParent[0]);
-	// }
-	// else
-	// {
-	// 	// return ;
-	// }
-	if (bytesRead > 0)
-	{ // If data was read successfully
-		// std::cout.write(buffer, bytesRead); // Write data to standard output (client response)
-	}
-	else if (bytesRead == 0)
-	{ // End of file reached (child process exited)
+	bytesRead = read(_pipeParent[0], buffer, sizeof(buffer));
+	server.setDidIO(_pipeParent[0]);
+
+	if (bytesRead == 0)
+	{
 		_waitCGI = false;
 		_readPipe = false;
 		close(_pipeChild[1]);
@@ -278,14 +280,18 @@ void Response::readPipe()
 		return ;
 	}
 	else if (bytesRead < 0)
-	{ // Error other than non-blocking
-		std::cerr << "Read error";
-		//** setStatus(500)
+	{
+		std::cerr << "Pipe read error";
+		_waitCGI = false;
+		_readPipe = false;
+		close(_pipeChild[1]);
+		close(_pipeParent[0]);
+		server.removeFd(_pipeParent[0]);
+		setStatus(500);
+		generateErrorPage();
 		return ;
 	}
 	std::string bufferStr(buffer, bytesRead);
-	// std::cout << color(bufferStr, YELLOW) << std::endl;
-	// exit(0);
 	std::vector<unsigned char>tmpVector(bufferStr.begin(), bufferStr.end());
 	for (unsigned char byte : tmpVector)
 	{
@@ -364,8 +370,6 @@ std::string Response::detectContentType(const std::string &filePath)
 	{
 		fileExtension = fileExtension.substr(1);
 	}
-	// std::cout << "file extension recognized as: " << fileExtension << std::endl;
-	//**Incase of javascript or python files we will run the script and provide its output as html
 	if (supportedCGI())
 	{
 		return "text/html";
@@ -474,12 +478,11 @@ void Response::setCGIEnvironmentVariables(char **envp)
 	{
         std::string envVarName = "HTTP_" + header.first;
         std::string envVarValue = header.second;
-        std::replace(envVarName.begin(), envVarName.end(), '-', '_'); // Replace '-' with '_'
-        std::transform(envVarName.begin(), envVarName.end(), envVarName.begin(), ::toupper); // Convert to uppercase
+        std::replace(envVarName.begin(), envVarName.end(), '-', '_');
+        std::transform(envVarName.begin(), envVarName.end(), envVarName.begin(), ::toupper);
         envp[index++] = strdup((envVarName + "=" + envVarValue).c_str());
     }
     envp[index++] = strdup(("CONTENT_LENGTH=" + _headers["Content-Length"]).c_str());
-    // Set the last element of the array to nullptr as required by execve
     envp[index] = nullptr;
 }
 
@@ -490,8 +493,6 @@ int Response::doCGI()
 	int statusCodeInt = _statusCodeInt;
 	std::string program = _host.getInterpreter(_request.getTarget(), getFileExtension(_request.getTarget()));
 	std::string path = _host.updateResourcePath(_request.getTarget(), statusCodeInt);
-	std::cout << "Requested path: " << _request.getTarget() << std::endl;
-	std::cout << "Updated path: " << path << std::endl;
 	_statusCodeInt = statusCodeInt;
 	if (!_host.isFile(path))
 	{
@@ -499,20 +500,8 @@ int Response::doCGI()
 		setStatus(404);
 		generateErrorPage();
 		return (1);
-	}
-	std::cerr << "IS a file" << std::endl;
-	
+	}	
 	Server &server = Server::getInstance();
-	// std::cout << "path: " << path << " " << access(path.c_str(), F_OK) << std::endl;
-	// std::cout << "status: " << _statusCodeInt << std::endl;
-	// if (access(_host.updateResourcePath(_request.getTarget(), _statusCodeInt).c_str(), F_OK) == -1)
-	// {
-	// 	std::cout << "No access" << std::endl;
-	// 	setStatus(404);
-	// 	generateErrorPage();
-	// 	_runCGI = false;
-	// 	return (0);
-	// }
 	if (pipe(_pipeChild) == -1 || pipe(_pipeParent) == -1)
 	{
 		std::cerr << "Pipe creation failed";
@@ -520,7 +509,6 @@ int Response::doCGI()
 		generateErrorPage();
 		return (1);
 	}
-	std::cerr << "Content-Length: " << _headers["Content-Length"] << std::endl;
 	_pid = fork();
 	if (_pid == -1)
 	{
@@ -530,7 +518,8 @@ int Response::doCGI()
 		return (1);
 	}
 	else if (_pid == 0)
-	{ // Child process
+	{
+		// Child process
 		close(_pipeChild[1]);
 		close(_pipeParent[0]);
 		dup2(_pipeChild[0], STDIN_FILENO);
@@ -541,11 +530,9 @@ int Response::doCGI()
 		{
 			program = argument;
 		}
-		std::cerr << RED <<  "Program: " << program << RESET << std::endl;
 		const char *args[] = {program.c_str(), argument.c_str(), nullptr};
 		char **env = (char **)malloc(sizeof(char*) * (MAX_ENV_VARS + 1));
 		setCGIEnvironmentVariables(env);
-		std::cerr << "Exec: " << program << std::endl;;
 		execve(program.c_str(), const_cast<char* const*>(args), const_cast<char* const*>(env));
 
 		exit(EXIT_FAILURE);
@@ -554,7 +541,8 @@ int Response::doCGI()
 		return (1);
 	}
 	else
-	{ // Parent process
+	{
+		// Parent process
 		fcntl(_pipeChild[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 		fcntl(_pipeParent[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 		server.newFd(_pipeChild[1]);
@@ -574,33 +562,19 @@ int Response::doCGI()
 //------------------------------------------------------------------------------
 int Response::completeResponse()
 {
-	/*
-		Added check for content type that isn't urlencoded.
-		If it isn't, return 501 (Not Implemented).
-		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
-	*/
 	if (_completed)
 	{
 		return (1);
 	}	
-	// if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
-	// {
-	// 	setStatus(501);
-	// 	generateErrorPage();
-	// 	return (1);
-	// }
-
 	if (supportedCGI())
 	{
 		if (_runCGI)
 		{
-			// std::cout << "Running CGI" << std::endl;
 			doCGI();
 			return (0);
 		}
 		if (!_waitCGI)
 		{
-			// std::cout << "CGI ready" << std::endl;
 			setStatus(200);
 			_version = "HTTP/1.1";
 			setContentLengthHeader(_body.size());
@@ -608,7 +582,6 @@ int Response::completeResponse()
 		}
 		else if (_writePipe)
 		{
-			// std::cout << "Writing pipe" << std::endl;
 			writePipe();
 			return (0);
 		}
@@ -618,7 +591,6 @@ int Response::completeResponse()
 		}
 		else if (_readPipe)
 		{
-			// std::cout << "Reading pipe" << std::endl;
 			readPipe();
 			return (0);
 		}
@@ -641,10 +613,8 @@ int Response::completeResponse()
 
 void Response::handleGetMethod()
 {
-	// update path and status code
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
 
-	// Check if the requested method is allowed
 	if (_host.isAllowedMethod(_request.getTarget(), "GET") == false)
 		_statusCodeInt = 405;
 
@@ -684,7 +654,6 @@ void Response::handleGetMethod()
 	
 	removeFirstCharIfMatches(filePath, '/');
 	
-	//**SEPARATE THIS INTO FILE READING FUNCTION
 	std::ifstream file(filePath, std::ios::binary);
 	if (!file)
 	{
@@ -695,21 +664,11 @@ void Response::handleGetMethod()
 	}
 	_body = std::vector<unsigned char>(std::istreambuf_iterator<char>(file), {});
 	file.close();
-	// if (!file)
-	// {
-	// 	// 500 internal server error
-	// 	std::cerr << "Failed to read file." << std::endl;
-	// 	return ;
-	// }
-
 	if (_statusCodeInt != 200)
 	{
 		generateErrorPage();
 		return ;
 	}
-
-
-	// something wrong with version, shows up as "  TP/1.1"
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
 	_headers["Content-Type"] = detectContentType(filePath);
@@ -719,12 +678,12 @@ void Response::handleGetMethod()
 
 void Response::handlePostMethod()
 {
-	std::cout << "Method: " << color("POST", GREEN) << std::endl;
+	// std::cout << "Method: " << color("POST", GREEN) << std::endl;
 
 	// Update resource path
-	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+	// std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
-	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	// std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 
 	// Handle body
 
@@ -739,16 +698,16 @@ void Response::handlePostMethod()
 
 void Response::handleDeleteMethod()
 {
-	std::cout << "Method: " << color("DELETE", GREEN) << std::endl;
+	// std::cout << "Method: " << color("DELETE", GREEN) << std::endl;
 
-	std::cout << "Host: " << color(_host.getHost(), YELLOW) << std::endl;
-	std::cout << "Server name: " << color(_host.getServerName(), YELLOW) << std::endl;
-	std::cout << "Port: " << color((_host.getPortInt()), YELLOW) << std::endl;
+	// std::cout << "Host: " << color(_host.getHost(), YELLOW) << std::endl;
+	// std::cout << "Server name: " << color(_host.getServerName(), YELLOW) << std::endl;
+	// std::cout << "Port: " << color((_host.getPortInt()), YELLOW) << std::endl;
 
 	// Update resource path
-	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
+	// std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
-	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	// std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 
 	// Check if the config parser returned an error
 	if (_statusCodeInt != 200)
@@ -767,7 +726,7 @@ void Response::handleDeleteMethod()
 		return ;
 	}
 
-	std::cout << color(filePath, RED) << " successfully deleted!" << std::endl;
+	// std::cout << color(filePath, RED) << " successfully deleted!" << std::endl;
 
 	// Build response
 	setStatus(200);
