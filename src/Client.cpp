@@ -149,6 +149,7 @@ bool Client::respond()
 	if (_response.completeResponse())
 	{
 		responseStr = _response.toString();
+		// std::cout << color(responseStr, YELLOW);
 		if (write(_fd, responseStr.c_str(), responseStr.length()) == -1)
 		{
 			_failFlag = 1;
@@ -256,6 +257,7 @@ void Client::handleEvent(short events)
 			return ;
 		}
 		buffer[readCount] = '\0';
+		// std::cout << buffer;
 		_buffer.addToBuffer(&buffer[0], readCount);
 	}
 	if (!_request.getIsComplete() && _request.getContentLength() < 0 && _buffer.requestEnded() && !_request.getIsChunked())
@@ -264,7 +266,10 @@ void Client::handleEvent(short events)
 		setSessionID();
 		if (!_request.getIsValid())
 		{
-			_request.setErrorCode(500);
+			if (!_request.getErrorCode())
+			{
+				_request.setErrorCode(500);
+			}
 			_request.setIsComplete(true);
 		}
 	}
