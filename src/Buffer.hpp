@@ -2,7 +2,7 @@
 #ifndef BUFFER_HPP
 #define BUFFER_HPP
 
-#include <string.h>	//J added for strncmp() (might want to change strncmp() to compare() or something)
+#include <string.h>
 #include <vector>
 #include <sstream>
 #include <iostream>
@@ -26,14 +26,11 @@ class Buffer
 			std::vector<unsigned char>::iterator it;
 			unsigned char *position;
 
-			// std::find_if(_data.begin(), _data.end(), std::vector<unsigned char>(_endLiteral.begin(), _endLiteral.end()));
-
 			if (_data.size() < _endLiteral.length())
 				return (NULL);
 			for (it = _data.begin(); it != _data.end() - (_endLiteral.length() - 1); it++)
 			{
 				position = &(*it);
-				// std::cout << "SEGF" << _data.end() - it << " " << _endLiteral.length()<< std::vector<unsigned char>(it, _data.end()) << std::endl;
 				if (strncmp((char *)position, _endLiteral.c_str(), _endLiteral.length()) == 0)	//J removed std::, because strncmp() is a C function
 				{
 					return (&(*(it + _endLiteral.length())));
@@ -74,7 +71,6 @@ class Buffer
 			    }
 			}
 
-
 			// If the CRLF sequence is not found, there is not enough data in the buffer
 			if (endOfLinePos == std::string::npos)
 			{
@@ -83,6 +79,7 @@ class Buffer
 
 			// Extract the chunk length as a hexadecimal string
 			std::string chunkSizeStr(_data.begin(), _data.begin() + endOfLinePos);
+			
 			// Convert the hexadecimal string to an integer
 			size_t chunkSize;
 			std::stringstream strStream(chunkSizeStr);
@@ -98,7 +95,6 @@ class Buffer
 			{
 				_data.erase(_data.begin(), _data.begin() + endOfLinePos + lineEndLiteral.length());
 	        }
-			//std::cout << "Remaining data after reading len = " << _data << "\nwith chunkSize: " << chunkSize << std::endl;
 			return (chunkSize);
 		}
 

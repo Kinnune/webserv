@@ -228,13 +228,6 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_method = std::string(line.begin() + index, line.begin() + wordSize);
-	if (DEBUG)
-		std::cout << "method made as: (" << _method << ")" << std::endl;
-	// if (_method is not valid)
-	// {
-	// 	//  we need to respond: 501 Not Implemented
-	// 	return (-1);
-	// }
 	index  = skipToWS(line, index);
 	index = skipWS(line, index);
 	wordSize = skipToWS(line, index);

@@ -574,21 +574,10 @@ int Response::doCGI()
 //------------------------------------------------------------------------------
 int Response::completeResponse()
 {
-	/*
-		Added check for content type that isn't urlencoded.
-		If it isn't, return 501 (Not Implemented).
-		Don't know yet how to get multiform data, but we're not handling it at the moment. Therefore the check.
-	*/
 	if (_completed)
 	{
 		return (1);
 	}	
-	// if (_headers.find("Content-Type") != _headers.end() && _headers["Content-Type"] != "application/x-www-form-urlencoded")
-	// {
-	// 	setStatus(501);
-	// 	generateErrorPage();
-	// 	return (1);
-	// }
 
 	if (supportedCGI())
 	{
@@ -708,7 +697,6 @@ void Response::handleGetMethod()
 		return ;
 	}
 
-
 	// something wrong with version, shows up as "  TP/1.1"
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
@@ -719,14 +707,18 @@ void Response::handleGetMethod()
 
 void Response::handlePostMethod()
 {
-	std::cout << "Method: " << color("POST", GREEN) << std::endl;
-
-	// Update resource path
-	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
-	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 
-	// Handle body
+	// Check if the requested method is allowed
+	if (_host.isAllowedMethod(_request.getTarget(), "POST") == false)
+		_statusCodeInt = 405;
+
+	// Check if the config parser returned an error
+	if (_statusCodeInt != 200)
+	{
+		generateErrorPage();
+		return ;
+	}
 
 	// Build response
 	setStatus(200);
@@ -739,21 +731,17 @@ void Response::handlePostMethod()
 
 void Response::handleDeleteMethod()
 {
-	std::cout << "Method: " << color("DELETE", GREEN) << std::endl;
-
-	std::cout << "Host: " << color(_host.getHost(), YELLOW) << std::endl;
-	std::cout << "Server name: " << color(_host.getServerName(), YELLOW) << std::endl;
-	std::cout << "Port: " << color((_host.getPortInt()), YELLOW) << std::endl;
-
-	// Update resource path
-	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
-	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+
+	// Check if the requested method is allowed
+	if (_host.isAllowedMethod(_request.getTarget(), "DELETE") == false)
+		_statusCodeInt = 405;
 
 	// Check if the config parser returned an error
 	if (_statusCodeInt != 200)
 	{
 		generateErrorPage();
+		return ;
 	}
 
 	// Try to delete the file
