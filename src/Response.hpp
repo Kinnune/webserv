@@ -48,6 +48,7 @@ class Response
 		std::string listDirectory(std::string path);
 		void writePipe();
 		void readPipe();
+		std::vector<unsigned char> &getBody() { return (_body); }
 
 		// Method handlers
 		void handleGetMethod();

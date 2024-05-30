@@ -45,14 +45,17 @@ Response::Response(Request &request, std::string sessionID)
 	_statusCode = "";
 	_statusMessage = "";
 	_version = _request.getVersion();			
-	_headers = request.getHeaders();
-	_host = request.getHost();
-	_body.resize(0);
+	_headers = _request.getHeaders();
+	_host = _request.getHost();
+	// _body.resize(0);
+	_body = _request.getBody();
+	std::cout << _request.getBody();
 	_waitCGI = false;
 	_readPipe = false;
 	_writePipe = false;
 	_completed = false;
 	_runCGI = supportedCGI();
+	std::cout << RED << _headers["Content-Length"] << RESET << std::endl;
 	if (_headers.find("Cookie") == _headers.end())
 	{
 		_headers["Set-Cookie"] = "session_id=" + sessionID;
@@ -601,7 +604,7 @@ int Response::completeResponse()
 		}
 		if (!_waitCGI)
 		{
-			// std::cout << "CGI ready" << std::endl;
+			std::cout << "CGI ready" << std::endl;
 			setStatus(200);
 			_version = "HTTP/1.1";
 			setContentLengthHeader(_body.size());
@@ -718,6 +721,34 @@ void Response::handleGetMethod()
 
 //------------------------------------------------------------------------------
 
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <regex>
+
+
+struct FileData {
+    std::string filename;
+    std::vector<unsigned char> content;
+};
+
+std::vector<FileData> parseMultipartData(const std::vector<unsigned char>& data, const std::string& boundary);
+void saveFiles(const std::vector<FileData>& files, const std::string& directory);
+
+
+std::string extractBoundary(const std::string& contentType) {
+    std::regex boundaryRegex("boundary=(.*)");
+    std::smatch boundaryMatch;
+    if (std::regex_search(contentType, boundaryMatch, boundaryRegex)) {
+        return boundaryMatch[1];
+    } else {
+        throw std::runtime_error("No boundary found in CONTENT_TYPE");
+    }
+}
+
+
 void Response::handlePostMethod()
 {
 	std::cout << "Method: " << color("POST", GREEN) << std::endl;
@@ -726,7 +757,9 @@ void Response::handlePostMethod()
 	std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
 	std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	std::string boundary;
 
+	saveFiles(parseMultipartData(_body, extractBoundary(_headers["Content-Type"])), "." + _request.getTarget());
 	// Handle body
 
 	// Build response
@@ -740,5 +773,81 @@ void Response::handlePostMethod()
 
 void Response::handleDeleteMethod()
 {
+	std::cout << "target to detele: " << _request.getTarget().c_str() << std::endl;
+	// if (!remove(("." + _request.getTarget()).c_str()))
+	// {
+	// 	setStatus(200);
+	// 	_version = "HTTP/1.1";
+
+	// }
+	// else
+	// {
+	// 	setStatus(500);
+	// }
 	//**TODO
+	setStatus(200);
+}
+
+// Helper function to convert vector<unsigned char> to string
+std::string vectorToString(const std::vector<unsigned char>& data) {
+    return std::string(data.begin(), data.end());
+}
+
+// Function to parse multipart form-data
+std::vector<FileData> parseMultipartData(const std::vector<unsigned char>& data, const std::string& boundary) {
+    std::vector<FileData> files;
+    std::string delimiter =  "--" + boundary;
+    std::string dataStr = vectorToString(data);
+
+    size_t start = 0, end;
+
+    while ((end = dataStr.find(delimiter, start)) != std::string::npos) {
+        std::string part = dataStr.substr(start, end - start);
+        start = end + delimiter.length();
+
+        // Skip the initial boundary line
+        if (part.empty() || part == "\r\n" || part == "--") {
+            continue;
+        }
+
+        // Split headers and body
+        size_t headerEnd = part.find("\r\n\r\n");
+        if (headerEnd == std::string::npos) {
+            continue;
+        }
+
+        std::string headers = part.substr(0, headerEnd);
+        std::string body = part.substr(headerEnd + 4);  // Skip "\r\n\r\n"
+
+        // Parse headers
+        std::istringstream headerStream(headers);
+        std::string line;
+        std::string filename;
+        while (std::getline(headerStream, line)) {
+            std::regex re("Content-Disposition:.*filename=\"([^\"]+)\"");
+            std::smatch match;
+            if (std::regex_search(line, match, re)) {
+                filename = match[1];
+                break;
+            }
+        }
+
+        // Trim any trailing CRLF from body
+        body.erase(body.find_last_not_of("\r\n") + 1);
+
+        if (!filename.empty()) {
+            files.push_back({filename, std::vector<unsigned char>(body.begin(), body.end())});
+        }
+    }
+
+    return files;
+}
+
+// Function to save files
+void saveFiles(const std::vector<FileData>& files, const std::string& directory) {
+    for (const auto& file : files) {
+        std::ofstream outFile(directory + "/" + file.filename, std::ios::binary);
+        outFile.write(reinterpret_cast<const char*>(file.content.data()), file.content.size());
+        std::cout << "File " << file.filename << " uploaded successfully.\n";
+    }
 }
