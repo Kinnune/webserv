@@ -61,6 +61,8 @@ def generate_response_profile(user_folder, username):
 	
 	#Generate jokes
 	for i, joke in enumerate(jokes):
+		if joke == "":
+			continue
 		print('\t\t\t<div class="line"></div>')
 		print('\t\t\t<div class="jokebox">')
 		print('\t\t\t\t<div class="joke" id="{}">{}</div>'.format(i, joke))
