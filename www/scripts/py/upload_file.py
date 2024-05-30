@@ -186,12 +186,9 @@ def main():
 			content.append(line)
 		elif stripped_line == "":
 			empty_line_found = True
-
-	# for line in content:
-	# 	print(line + '<br>')
-
-	# print("Boundary: " + boundary + '<br>')
-	# print("Filename: " + filename + '<br>')
+	
+	# remove the trailing newline from the last line of content
+	content[-1] = content[-1].strip()
 
 	# Save the uploaded file
 	save_uploaded_file(upload_dir, filename, content)
