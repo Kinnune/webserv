@@ -1,6 +1,5 @@
 
 #include "Server.hpp"
-#include "utilityHeader.hpp"
 
 
 int main(int ac, char **av)

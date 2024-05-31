@@ -1,0 +1,14 @@
+CACNT: This is create_account.py
+LOGIN: This is login.py
+LOGIN: Session ID: 1716192370211-0
+LOGIN: Content length: 23
+LOGIN: Username: ds
+LOGIN: This is login.py
+LOGIN: Session ID: 1716192370211-0
+LOGIN: Content length: 25
+LOGIN: Username: dsd
+CACNT: This is create_account.py
+LOGIN: This is login.py
+LOGIN: Session ID: 1716192370211-0
+LOGIN: Content length: 25
+LOGIN: Username: dsd
