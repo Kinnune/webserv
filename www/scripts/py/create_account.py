@@ -4,6 +4,12 @@ import hashlib	# sha256
 
 #-------------------------------------------------------------------------------
 
+def log_debug(message):
+	with open("database/DEBUG.txt", 'a') as file:
+		file.write(message + '\n')
+
+#-------------------------------------------------------------------------------
+
 def generate_response_user_exists():
 	print("<!DOCTYPE html>")
 	print("<html lang=\"en\">")
@@ -11,15 +17,15 @@ def generate_response_user_exists():
 	print("\t<meta charset=\"UTF-8\">")
 	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
 	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"jokebook/login_err.css\">")
+	print("\t<link rel=\"stylesheet\" href=\"/jokebook/login.css\">")
 	print("\t<title>JokeBook</title>")
 	print("</head>")
 	print("<body>")
 	print("\t<div class=\"container\">")
-	print("\t\t<div class=\"error_message\">User already exists! Try another user or logging in instead.</div>")
+	print("\t\t<div class=\"message\">User already exists! Try another user or logging in instead.</div>")
 	print("\t\t<div class=\"title\">JokeBook</div>")
 	print("\t\t<div class=\"login-container\">")
-	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"py/login.py\">")
+	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"/py/login.py\">")
 	print("\t\t\t\t<div class=\"name\">")
 	print("\t\t\t\t\t<label for=\"username\">Username:</label>")
 	print("\t\t\t\t\t<input type=\"text\" id=\"username\" name=\"username\" required>")
@@ -29,7 +35,7 @@ def generate_response_user_exists():
 	print("\t\t\t\t\t<input type=\"password\" id=\"password\" name=\"password\" required>")
 	print("\t\t\t\t</div>")
 	print("\t\t\t\t<button type=\"submit\">Login</button>")
-	print("\t\t\t\t<button type=\"submit\" formaction=\"py/create_account.py\">Create Account</button>")
+	print("\t\t\t\t<button type=\"submit\" formaction=\"/py/create_account.py\">Create Account</button>")
 	print("\t\t\t</form>")
 	print("\t\t</div>")
 	print("\t</div>")
@@ -39,35 +45,36 @@ def generate_response_user_exists():
 #-------------------------------------------------------------------------------
 
 def generate_response_account_created():
-	print("<!DOCTYPE html>")
-	print("<html lang=\"en\">")
-	print("<head>")
-	print("\t<meta charset=\"UTF-8\">")
-	print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
-	print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-	print("\t<link rel=\"stylesheet\" href=\"jokebook/login.css\">")
-	print("\t<title>JokeBook</title>")
-	print("</head>")
-	print("<body>")
-	print("\t<div class=\"container\">")
-	print("\t\t<div class=\"title\">JokeBook</div>")
-	print("\t\t<div class=\"login-container\">")
-	print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"py/login.py\">")
-	print("\t\t\t\t<div class=\"name\">")
-	print("\t\t\t\t\t<label for=\"username\">Username:</label>")
-	print("\t\t\t\t\t<input type=\"text\" id=\"username\" name=\"username\" required>")
-	print("\t\t\t\t</div>")
-	print("\t\t\t\t<div class=\"password\">")
-	print("\t\t\t\t\t<label for=\"password\">Password:</label>")
-	print("\t\t\t\t\t<input type=\"password\" id=\"password\" name=\"password\" required>")
-	print("\t\t\t\t</div>")
-	print("\t\t\t\t<button type=\"submit\">Login</button>")
-	print("\t\t\t\t<button type=\"submit\" formaction=\"py/create_account.py\">Create Account</button>")
-	print("\t\t\t</form>")
-	print("\t\t</div>")
-	print("\t</div>")
-	print("</body>")
-	print("</html>")
+    print("<!DOCTYPE html>")
+    print("<html lang=\"en\">")
+    print("<head>")
+    print("\t<meta charset=\"UTF-8\">")
+    print("\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">")
+    print("\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+    print("\t<link rel=\"stylesheet\" href=\"/jokebook/login.css\">")
+    print("\t<title>JokeBook</title>")
+    print("</head>")
+    print("<body>")
+    print("\t<div class=\"container\">")
+    print("\t\t<div class=\"message\">User successfully created!</div>")
+    print("\t\t<div class=\"title\">JokeBook</div>")
+    print("\t\t<div class=\"login-container\">")
+    print("\t\t\t<form id=\"loginForm\" method=\"post\" action=\"/py/login.py\">")
+    print("\t\t\t\t<div class=\"name\">")
+    print("\t\t\t\t\t<label for=\"username\">Username:</label>")
+    print("\t\t\t\t\t<input type=\"text\" id=\"username\" name=\"username\" required>")
+    print("\t\t\t\t</div>")
+    print("\t\t\t\t<div class=\"password\">")
+    print("\t\t\t\t\t<label for=\"password\">Password:</label>")
+    print("\t\t\t\t\t<input type=\"password\" id=\"password\" name=\"password\" required>")
+    print("\t\t\t\t</div>")
+    print("\t\t\t\t<button type=\"submit\">Login</button>")
+    print("\t\t\t\t<button type=\"submit\" formaction=\"/py/create_account.py\">Create Account</button>")
+    print("\t\t\t</form>")
+    print("\t\t</div>")
+    print("\t</div>")
+    print("</body>")
+    print("</html>")
 
 #-------------------------------------------------------------------------------
 
@@ -116,13 +123,16 @@ def create_account(username, password):
 	
 	# Write username and hashed password to credentials file
 	with open(credentials_file, 'w') as file:
-		file.write("pw=" + hash(password))
-	# print("New user created", username)
+		file.write(hash(password))
+	
+	# Create file named jokes.txt in user folder
+	open(os.path.join(user_folder, "jokes.txt"), 'w').close()
 
 #-------------------------------------------------------------------------------
 
 def main():
-
+	log_debug("CACNT: This is create_account.py")
+	
 	# Variables
 	env = os.environ
 	session_id = get_session_id(env)
@@ -147,7 +157,6 @@ def main():
 
 	# Check if we have both username and password
 	if not username and not password:
-		# print("Error: Username or password not found in input")
 		return
 
 	user_exists = check_if_user_exists(username, password)

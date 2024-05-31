@@ -4,12 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
-#define METHODS 0
-#define CGI 1
-#define ERROR_PAGES 2
-#define INDEX 3
-#define FAILURE 0
-#define SUCCESS 1
 
 //------------------------------------------------------------------------------
 //		DEBUG
@@ -48,6 +42,7 @@ void ConfigurationFile::printConfigInfo()
 		std::vector<std::string> indexPages = host->getIndexPages();
 		std::cout << "INDEX:\t\t"; printMultipleValues(indexPages);
 		std::cout << "AUTOINDEX:\t" << color((int)host->getAutoIndex(), GREEN) << std::endl;
+		std::cout << "MAX_BODY:\t" << color(host->getMaxBody(), GREEN) << std::endl;
 		std::map<std::string, std::string> errorPages = host->getErrorPages();
 		printErrorpages(errorPages);
 		std::cout << "LOC-n:\t\t" << color(host->getLocations().size(), GREEN) << std::endl;
@@ -78,8 +73,14 @@ void ConfigurationFile::printConfigInfo()
 //------------------------------------------------------------------------------
 
 ConfigurationFile::ConfigurationFile() {}
+
 ConfigurationFile::ConfigurationFile(std::string path) : _path(path), _serverCount(0) {}
-ConfigurationFile::ConfigurationFile(const ConfigurationFile &other) { *this = other; }
+
+ConfigurationFile::ConfigurationFile(const ConfigurationFile &other)
+{
+	*this = other;
+}
+
 ConfigurationFile &ConfigurationFile::operator=(const ConfigurationFile &other)
 {
 	if (this != &other)
@@ -93,6 +94,7 @@ ConfigurationFile &ConfigurationFile::operator=(const ConfigurationFile &other)
 	}
 	return (*this);
 }
+
 ConfigurationFile::~ConfigurationFile() {}
 
 
@@ -109,6 +111,7 @@ Host *ConfigurationFile::getHost(std::string hostHeader)
 	size_t pos;
 	
 	// Derive name and port from hostHeader
+	// std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
 	// std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
 	pos = hostHeader.find(":");
 	if (pos != std::string::npos)
@@ -127,7 +130,7 @@ Host *ConfigurationFile::getHost(std::string hostHeader)
 			return (&(*host));
 	}
 
-	std::cout << RED << "Host not found!" << RESET << std::endl;
+	std::cerr << RED << "Host not found!" << RESET << std::endl;
 
 	// Return nullptr if host not found
 	return (nullptr);
@@ -282,13 +285,13 @@ int ConfigurationFile::parseErrorPages(Host& host, std::string& line)
 {
 	std::string value;
 
-	std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
+	// std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
 
 	if (!getLastValue(line, value))
 		return (FAILURE);
 
-	std::cout << "Value: [" << color(value, GREEN) << "]" << std::endl;
-	std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
+	// std::cout << "Value: [" << color(value, GREEN) << "]" << std::endl;
+	// std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
 
 	std::vector<std::string> errorPages;
 	if (!parseMultipleValues(errorPages, line, ERROR_PAGES))
@@ -414,7 +417,7 @@ int ConfigurationFile::parseLocations(Host& host, std::ifstream& file, std::stri
 			host.addLocation(loc);
 
 			// DEBUG START
-			std::cout << "Location: " << color(host.getLocations().back().getLocation(), YELLOW) << " has " << color(host.getLocations().back().getMethods().size(), GREEN) << " methods." << std::endl;
+			// std::cout << "Location: " << color(host.getLocations().back().getLocation(), YELLOW) << " has " << color(host.getLocations().back().getMethods().size(), GREEN) << " methods." << std::endl;
 			// DEBUG END
 
 			nextInfo(file, line);
@@ -477,6 +480,8 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 		else
 			std::cerr << RED << "Invalid value for autoindex: " << value << RESET << std::endl;
 	}
+	else if (key == "MAX_BODY")
+		host.setMaxBody(std::stoi(value));
 	else if (key == "ERROR_PAGES")
 	{
 		if (!parseErrorPages(host, value))
@@ -501,7 +506,7 @@ int ConfigurationFile::parseHostDefaultValues(Host& host, std::ifstream& file, s
 		}
 		if (line.at(0) == '}')
 		{
-			std::cout << RED << "No locations! Is this an error?" << RESET << std::endl;
+			std::cerr << RED << "No locations! Is this an error?" << RESET << std::endl;
 			break ;
 		}
 		if (!storeHostDefaultValue(host, line))
@@ -538,11 +543,11 @@ int ConfigurationFile::parseHostConfig(std::ifstream& file, std::string& line)
 	_hosts.push_back(host);
 
 	// DEBUG START
-	std::cout << color("Locations parsed!", PURPLE) << std::endl;
-	for (std::vector<Location>::iterator loc = _hosts.back().getLocations().begin(); loc != _hosts.back().getLocations().end(); loc++)
-	{
-		std::cout << "Location: " << color(loc->getLocation(), GREEN) << " has " << color(loc->getMethods().size(), GREEN) << " methods." << std::endl;
-	}
+	// std::cout << color("Locations parsed!", PURPLE) << std::endl;
+	// for (std::vector<Location>::iterator loc = _hosts.back().getLocations().begin(); loc != _hosts.back().getLocations().end(); loc++)
+	// {
+	// 	std::cout << "Location: " << color(loc->getLocation(), GREEN) << " has " << color(loc->getMethods().size(), GREEN) << " methods." << std::endl;
+	// }
 	// DEBUG END
 
 

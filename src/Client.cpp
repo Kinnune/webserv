@@ -72,13 +72,11 @@ Client::Client(int serverFd, int port, ConfigurationFile &config)
 
 std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 {
-	o << "{";
 	for (std::vector<unsigned char>::iterator it = data.begin(); it < data.end(); it++)
 	{
-		o << *it;
-		// o << "'" << (int)(*it) << "'" << *it;
+
+		o << "'" << (int)(*it) << "'" << *it;
 	}
-	o << "}";
 	return(o);
 }
 
@@ -87,16 +85,45 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 //	GETTERS & SETTERS
 //------------------------------------------------------------------------------
 
-int Client::getFd() const { return (_fd); }
-int Client::getPort() const { return (_port); }
-short Client::getFailFlag() { return (_failFlag); }
-// Host &Client::getHost() { return (_host); }
+int Client::getFd() const
+{
+	return (_fd);
+}
 
-void Client::setFd(int fd) { _fd = fd; }
-void Client::setPort(int port) { _port = port; }
-void Client::setFailFlag(short flag) { _failFlag = _failFlag | flag; }
-// void Client::setHost(Host &host) { _host = host; }
+int Client::getPort() const
+{
+	return (_port);
+}
 
+short Client::getFailFlag()
+{
+	return (_failFlag);
+}
+
+Response &Client::getResponse()
+{
+	return (_response);
+}
+
+std::string Client::getSessionId()
+{
+	return (_sessionID);
+}
+
+void Client::setFd(int fd)
+{
+	_fd = fd;
+}
+
+void Client::setPort(int port)
+{
+	_port = port;
+}
+
+void Client::setFailFlag(short flag)
+{
+	_failFlag = _failFlag | flag;
+}
 
 //------------------------------------------------------------------------------
 //	MEMBER FUNCTIONS
@@ -126,6 +153,7 @@ bool Client::respond()
 		{
 			_failFlag = 1;
 		}
+		Server::getInstance().setDidIO(_fd);
 		_response = Response();
 		return (true);
 	}
@@ -138,7 +166,6 @@ bool Client::checkTimeout(time_t currentTime)
 {
 	static const time_t maxTimeout = 42;
 
-	// std::cout << std::boolalpha << (currentTime - _timeout > maxTimeout) << "_timeout: " << _timeout << " currentTime: " << currentTime << std::endl;
 	return (currentTime - _timeout > maxTimeout);
 }
 
@@ -204,7 +231,6 @@ void Client::setSessionID()
 
 void Client::handleEvent(short events)
 {
-	//* we might want to malloc this buffer
 	static const int MAX_BUFFER_SIZE = 4095;
 	char buffer[MAX_BUFFER_SIZE + 1];
 	ssize_t readCount = 0;
@@ -216,36 +242,30 @@ void Client::handleEvent(short events)
 			if (respond())
 			{
 				_request.clear();
+				return ;
 			}
 		}
 	}
 	if (events & POLLIN)
 	{
 		readCount = read(_fd, buffer, MAX_BUFFER_SIZE);
+		Server::getInstance().setDidIO(_fd);
 		if (readCount < 0)
 		{
 			_failFlag = 1;
+			return ;
 		}
 		buffer[readCount] = '\0';
 		_buffer.addToBuffer(&buffer[0], readCount);
-		// std::cout << buffer << std::endl;
-		// std::cout << _buffer.getData() << std::endl;
 	}
-	if (!_request.getIsComplete() && _buffer.requestEnded())
+	if (!_request.getIsComplete() && _request.getContentLength() < 0 && _buffer.requestEnded() && !_request.getIsChunked())
 	{
-		try
-		{
-			_request = Request(_buffer.spliceRequest(), _config);
-			setSessionID();
-		}
-		catch (std::exception &e)
-		{
-			std::cerr << "EXCEPTION OCCURRED: " << e.what() << std::endl;
-		}
+		_request = Request(_buffer.spliceRequest(), _config);
+		setSessionID();
 		if (!_request.getIsValid())
 		{
-			//  respond something
-			//  close connection
+			_request.setErrorCode(500);
+			_request.setIsComplete(true);
 		}
 	}
 	else if (_request.getIsChunked() && !_request.getIsComplete())
@@ -255,7 +275,8 @@ void Client::handleEvent(short events)
 		if (chunkSize == 0)
 		{
 			_request.setIsComplete(true);
-			_request.setContentLenght(_request.getContentLenght() + 1);
+			_request.setIsChunked(false);
+			_request.setContentLength(0);
 		}
 		else if (chunkSize > 0)
 		{
@@ -264,7 +285,7 @@ void Client::handleEvent(short events)
 			{
 				_request.getBody().push_back(c);
 			}
-			_request.setContentLenght(_request.getContentLenght() + chunkSize);
+			_request.setContentLength(_request.getContentLength() + chunkSize);
 		}
  	}
 }

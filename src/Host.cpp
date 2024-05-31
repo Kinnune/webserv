@@ -1,3 +1,4 @@
+
 #include "Host.hpp"
 #include "Colors.hpp"
 #include <iostream>
@@ -12,6 +13,7 @@ Host::Host()
 {
 	_id = 0;
 	_portInt = 0;
+	_maxBody = -1;
 	_statusCode = 0;
 	_serverName = "";
 	_host = "";
@@ -34,6 +36,7 @@ Host &Host::operator=(Host const &other)
 {
 	_id = other._id;
 	_portInt = other._portInt;
+	_maxBody = other._maxBody;
 	_serverName = other._serverName;
 	_host = other._host;
 	_portString = other._portString;
@@ -47,13 +50,13 @@ Host &Host::operator=(Host const &other)
 	return *this;
 }
 
-
 //------------------------------------------------------------------------------
 //	GETTERS
 //------------------------------------------------------------------------------
 
 int Host::getId() const { return _id; }
 int Host::getPortInt() const { return _portInt; }
+int Host::getMaxBody() const { return _maxBody; }
 bool Host::getDirList() { return _dirList; }
 bool Host::getAutoIndex() const { return _autoIndex; }
 std::string Host::getServerName() const { return _serverName; }
@@ -85,13 +88,13 @@ std::string Host::getInterpreter(std::string &path, const std::string &extension
 	return "";
 }
 
-
 //------------------------------------------------------------------------------
 //	SETTERS
 //------------------------------------------------------------------------------
 
 void Host::setId(int id) { _id = id; }
 void Host::setPortInt(int portInt) { _portInt = portInt; }
+void Host::setMaxBody(int maxBody) { _maxBody = maxBody; }
 void Host::setServerName(std::string serverName) { _serverName = serverName; }
 void Host::setHost(std::string host) { _host = host; }
 void Host::setPortString(std::string portString) { _portString = portString; }
@@ -102,14 +105,12 @@ void Host::setIndexPages(std::vector<std::string> index_pages) { _indexPages = i
 void Host::setErrorPages(std::map<std::string, std::string> errorPages) { _errorPages = errorPages; }
 void Host::setLocations(std::vector<Location> locations) { _locations = locations; }
 
-
 //------------------------------------------------------------------------------
 //	ADD
 //------------------------------------------------------------------------------
 
 void Host::addLocation(Location &location) { _locations.push_back(location); }
 void Host::addErrorPage(std::string &errorPage, std::string &path) { _errorPages.insert(std::pair<std::string, std::string>(errorPage, path)); }
-
 
 //------------------------------------------------------------------------------
 //	BOOL FUNCTIONS
@@ -211,12 +212,11 @@ bool stringEndsWithString(std::string const &fullString, std::string const &endi
 	}
 }
 
-
 //------------------------------------------------------------------------------
 //	UPDATE RESOURCE PATH
 //------------------------------------------------------------------------------
 
-std::string Host::updateResourcePath(std::string &path, int &statusCode)
+std::string Host::updateResourcePath(std::string path, int &statusCode)
 {
 	for (std::vector<Location>::iterator loc = _locations.begin(); loc != _locations.end(); loc++)
 	{

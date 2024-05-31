@@ -40,6 +40,9 @@ run: $(NAME)
 	clear
 	./$(NAME) config/webserver.conf
 
+emptydb:
+	@rm -rf database/*
+
 test:
 	$(CPP) -Wall -Werror -Wextra  testmain.cpp Request.cpp request_helpers.cpp -o test
 	@echo --------------------------------------------------------------------------------

@@ -28,8 +28,9 @@ bool isWS(unsigned char c)
 {
 	static unsigned char const space = 32;
 	static unsigned char const horizontalTab = 9;
-
-	return (c == space | c == horizontalTab);
+	static unsigned char const verticalTab = 13;
+	
+	return (c == space | c == horizontalTab | c == verticalTab);
 }
 
 int skipWS(std::vector<unsigned char> &data, ssize_t index)
@@ -51,7 +52,7 @@ int skipToWS(std::vector<unsigned char> &data, ssize_t index)
 	{
 		index++;
 	}
-	return (index < size ? index : -1);
+	return (index < size ? index-- : -1);
 }
 
 bool validIndex(std::vector<unsigned char> &data, ssize_t index)

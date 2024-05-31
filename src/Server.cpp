@@ -4,13 +4,22 @@
 #include <iostream>
 #include <fstream>
 
+Server& Server::getInstance()
+{
+	static Server instance;
+	return instance;
+}
 
-Server::Server() : _nServers(0), _nClients(0)
+Server::Server() : _nServers(0), _nClients(0), _nOtherFd(0), _didIO(0)
 {
 	std::memset(&_pollFds[0], 0, sizeof(_pollFds));
 }
 
 Server::~Server() {}
+
+Server::Server(const Server &other) { (void)other; }
+
+Server &Server::operator=(const Server &other) { (void)other; return(*this); }
 
 void Server::initialize(std::string configFile)
 {
@@ -78,13 +87,51 @@ void Server::startListen()
 	}
 }
 
+void Server::setDidIO(int flag) { _didIO = flag;}
+
+int Server::getDidIO() { return(_didIO); }
+
 void Server::newClient(int i)
 {
+	// std::cout << "New Client: " << i << std::endl;
 	Client newClient(_pollFds[i].fd, _ports.at(i), _config);
 	_clients.insert(std::make_pair(newClient.getFd(), newClient));
 	_pollFds[getNfds()].fd = newClient.getFd();
 	_pollFds[getNfds()].events = (POLLIN | POLLOUT);
+	_pollFds[getNfds()].revents = 0;
 	_nClients++;
+}
+
+struct pollfd &Server::newFd(int fd)
+{
+	unsigned int nFds = getNfds();
+
+	_pollFds[nFds].fd = fd;
+	_pollFds[nFds].events = (POLLIN | POLLOUT);
+	_pollFds[nFds].revents = 0;
+	_nOtherFd++;
+	return (_pollFds[nFds]);
+}
+
+
+void Server::removeFd(int fd)
+{
+	unsigned int i;
+
+	close(fd);
+	for (i = 0; i < getNfds(); i++)
+	{
+		if (_pollFds[i].fd == fd)
+		{
+			break ;
+		}
+	}
+	for (; i < getNfds() - 1; i++)
+	{
+		_pollFds[i] = _pollFds[i + 1];
+	}
+	_nOtherFd--;
+	_pollFds[getNfds()] = (struct pollfd){};
 }
 
 void Server::removeClient(int fd)
@@ -110,6 +157,45 @@ void Server::removeClient(int fd)
 	_nClients--;
 }
 
+short Server::getEventsByFd(int fd)
+{
+	unsigned int i;
+
+	for (i = 0; i < getNfds(); i++)
+	{
+		if (_pollFds[i].fd == fd)
+		{
+			return (_pollFds[i].revents);
+		}
+	}
+	return (-1);
+}
+
+void Server::rotateClients(int clientFd)
+{
+	unsigned int i;
+	pollfd tmpClient;
+
+	tmpClient.fd = -1;
+	for (i = _nServers; i < _nServers + _nClients - 1; i++)
+	{
+		if (_pollFds[i].fd == clientFd)
+		{
+			tmpClient = _pollFds[i];
+		}
+		if (tmpClient.fd != -1)
+		{
+			_pollFds[i] = _pollFds[i + 1];
+		}
+	}
+	if (tmpClient.fd != -1)
+	{
+		_pollFds[i] = tmpClient;
+	}
+}
+
+// set didio for pipe operations
+// check that everything behaves as expected
 void Server::loop()
 {
 	int timeout = 1 * 1000;
@@ -117,15 +203,24 @@ void Server::loop()
 
 	while (true)
 	{
+		_didIO = 0;
 		poll(_pollFds, getNfds(), timeout);
 		currentTime = std::time(nullptr);
+		// usleep(100000);
+		// std::cout << "Polling again..." << std::endl;
 		for (unsigned int i = 0; i < getNfds(); i++)
 		{
+			if (i >= _nServers + _nClients)
+			{
+				continue ;
+			}
 			if (i < _nServers)
 			{
 				if (_pollFds[i].revents & POLLIN)
 				{
 					newClient(i);
+					_didIO = _pollFds[i].fd;
+					i = getNfds();
 				}
 			}
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL) || _clients[_pollFds[i].fd].checkTimeout(currentTime))
@@ -141,11 +236,16 @@ void Server::loop()
 				}
 				// if client fails to read or write in handleEvent -> remove client
 			}
+			if (_didIO)
+			{
+				rotateClients(_didIO);
+				i = getNfds();
+			}
 		}
 	}
 }
 
 unsigned int Server::getNfds()
 {
-	return (_nServers + _nClients);
+	return (_nServers + _nClients + _nOtherFd);
 }
