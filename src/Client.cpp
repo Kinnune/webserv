@@ -75,7 +75,7 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 	for (std::vector<unsigned char>::iterator it = data.begin(); it < data.end(); it++)
 	{
 
-		o << "'" << (int)(*it) << "'" << *it;
+		o  << *it;
 	}
 	return(o);
 }
@@ -148,8 +148,9 @@ bool Client::respond()
 	}
 	if (_response.completeResponse())
 	{
+		std::cout << color("RESPONDED", PURPLE);
 		responseStr = _response.toString();
-		// std::cout << color(responseStr, YELLOW);
+		std::cout << color(responseStr, YELLOW);
 		if (write(_fd, responseStr.c_str(), responseStr.length()) == -1)
 		{
 			_failFlag = 1;
@@ -165,7 +166,8 @@ bool Client::respond()
 
 bool Client::checkTimeout(time_t currentTime)
 {
-	static const time_t maxTimeout = 42;
+	// static const time_t maxTimeout = 42;
+	static const time_t maxTimeout = 420;
 
 	return (currentTime - _timeout > maxTimeout);
 }
@@ -256,9 +258,12 @@ void Client::handleEvent(short events)
 			_failFlag = 1;
 			return ;
 		}
-		buffer[readCount] = '\0';
-		// std::cout << buffer;
-		_buffer.addToBuffer(&buffer[0], readCount);
+		if (readCount != 0)
+		{
+			buffer[readCount] = '\0';
+			std::cout << buffer;
+			_buffer.addToBuffer(&buffer[0], readCount);
+		}
 	}
 	if (!_request.getIsComplete() && _request.getContentLength() < 0 && _buffer.requestEnded() && !_request.getIsChunked())
 	{
@@ -277,20 +282,29 @@ void Client::handleEvent(short events)
 	{
 		ssize_t chunkSize;
 		chunkSize = _buffer.readChunkLength();
+		// std::cout <<  chunkSize << " " << _buffer.getSize() << std::endl;
+
 		if (chunkSize == 0)
 		{
 			_request.setIsComplete(true);
 			_request.setIsChunked(false);
 			_request.setContentLength(0);
+
 		}
 		else if (chunkSize > 0)
 		{
 			std::vector<unsigned char>chunk = _buffer.extractChunk(chunkSize);
 			for (unsigned char c : chunk)
 			{
+				// std::cout << c;
 				_request.getBody().push_back(c);
 			}
 			_request.setContentLength(_request.getContentLength() + chunkSize);
 		}
+	// if (_request.getTarget() == "/directory/youpi.bla")
+	// {
+	// std::cout << _buffer.getData();
+	// exit (0);
+	// }
  	}
 }

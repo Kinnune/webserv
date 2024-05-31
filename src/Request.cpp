@@ -200,8 +200,10 @@ void Request::setErrorCode(int errorCode)
 
 bool Request::tryToComplete(Buffer &buffer)
 {
-	if (_contentLength > getMaxBodySizeAllowed())
+	if (_contentLength > getMaxBodySizeAllowed() && getMaxBodySizeAllowed() != -1)
 	{
+		std::cout << "conlen: " << color(std::to_string(_contentLength), BLUE) << std::endl;
+		std::cout << "max: " << color(std::to_string( getMaxBodySizeAllowed()), BLUE) << std::endl;
 		std::cerr << color("DETECTED MAX CONTENT LENGTH" + std::to_string(getMaxBodySizeAllowed()), RED);
 		_errorCode = 413;
 		// _completed = true;
@@ -215,8 +217,6 @@ bool Request::tryToComplete(Buffer &buffer)
 		_completed = true;
 		return (true);
 	}
-	// else if (_contentLength == CHUNKED_REQUEST)
-	
 	return (false);
 }
 
