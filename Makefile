@@ -13,7 +13,6 @@ SRC = 	src/main.cpp \
 		src/Location.cpp \
 		src/Host.cpp \
 		src/Response.cpp \
-		src/Buffer.cpp
 		
 OBJ = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRC))
 

@@ -359,18 +359,7 @@ std::string Response::listDirectory(std::string path)
         i--;
     }
     trimmedpath = targetpath.substr(0, i);
-
-	std::string targetpath = _request.getTarget();
-	std::string trimmedpath;
-	int i = targetpath.length();
-	while (i > 1)
-	{
-		if (targetpath[i] == '/')
-			break;
-		i--;
-	}
-	trimmedpath = targetpath.substr(0, i);
-
+	
 	if (directory != nullptr)
 	{
         directoryListResponse.append("<table border=\"1\">");

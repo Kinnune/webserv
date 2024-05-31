@@ -12,3 +12,7 @@ LOGIN: This is login.py
 LOGIN: Session ID: 1716192370211-0
 LOGIN: Content length: 25
 LOGIN: Username: dsd
+LOGIN: This is login.py
+LOGIN: Session ID: 1716192370211-0
+LOGIN: Content length: 26
+LOGIN: Username: dsa
