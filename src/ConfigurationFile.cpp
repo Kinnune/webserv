@@ -111,17 +111,12 @@ Host *ConfigurationFile::getHost(std::string hostHeader)
 	size_t pos;
 	
 	// Derive name and port from hostHeader
-	// std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
-	// std::cout << "HostHeader: " << color(hostHeader, GREEN) << std::endl;
 	pos = hostHeader.find(":");
 	if (pos != std::string::npos)
 	{
 		name = hostHeader.substr(0, pos);
 		port = hostHeader.substr(pos + 1);
 	}
-
-	// std::cout << "Name: " << color(name, GREEN) << std::endl;
-	// std::cout << "Port: " << color(port, GREEN) << std::endl;
 
 	// Find host with correct name and port
 	for (std::vector<Host>::iterator host = _hosts.begin(); host != _hosts.end(); host++)
@@ -207,16 +202,16 @@ int ConfigurationFile::getLastValue(std::string& line, std::string& value)
 
 	pos = line.find_last_not_of(" \t");
 	if (pos == std::string::npos)
-		return (err("Syntax error1: Expected value"));
+		return (err("Syntax error: Expected value"));
 	line = line.substr(0, pos + 1);
 	pos = line.find_last_of(" \t");
 	if (pos == std::string::npos)
-		return (err("Syntax error2: Expected value"));
+		return (err("Syntax error: Expected value"));
 	value = line.substr(pos + 1);
 	line = line.substr(0, pos);
 	pos = line.find_last_not_of(" \t");
 	if (pos == std::string::npos)
-		return (err("Syntax error3: Expected value"));
+		return (err("Syntax error: Expected value"));
 	line = line.substr(0, pos + 1);
 	return (SUCCESS);
 }
@@ -285,13 +280,8 @@ int ConfigurationFile::parseErrorPages(Host& host, std::string& line)
 {
 	std::string value;
 
-	// std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
-
 	if (!getLastValue(line, value))
 		return (FAILURE);
-
-	// std::cout << "Value: [" << color(value, GREEN) << "]" << std::endl;
-	// std::cout << "Line: [" << color(line, GREEN) << "]" << std::endl;
 
 	std::vector<std::string> errorPages;
 	if (!parseMultipleValues(errorPages, line, ERROR_PAGES))
@@ -406,7 +396,7 @@ int ConfigurationFile::parseLocations(Host& host, std::ifstream& file, std::stri
 			if (!setLocation(loc, line))
 				return (FAILURE);
 
-			nextInfo(file, line);	// error check for starting curly brace?
+			nextInfo(file, line);
 			nextInfo(file, line);
 			while (line.at(0) != '}')
 			{
@@ -415,10 +405,6 @@ int ConfigurationFile::parseLocations(Host& host, std::ifstream& file, std::stri
 				nextInfo(file, line);
 			}
 			host.addLocation(loc);
-
-			// DEBUG START
-			// std::cout << "Location: " << color(host.getLocations().back().getLocation(), YELLOW) << " has " << color(host.getLocations().back().getMethods().size(), GREEN) << " methods." << std::endl;
-			// DEBUG END
 
 			nextInfo(file, line);
 		}
@@ -478,7 +464,7 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 		else if (value == "off")
 			host.setAutoIndex(false);
 		else
-			std::cerr << RED << "Invalid value for autoindex: " << value << RESET << std::endl;
+			return (err("Invalid value for autoindex: " + value));
 	}
 	else if (key == "MAX_BODY")
 		host.setMaxBody(std::stoi(value));
@@ -486,7 +472,6 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 	{
 		if (!parseErrorPages(host, value))
 			return (FAILURE);
-		// host.setErrorPages(errorPages);
 	}
 	else
 		return (err("Unknown key: " + key));

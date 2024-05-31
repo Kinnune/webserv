@@ -4,6 +4,7 @@ FLAGS =  -Wall -Wextra -Werror -std=c++11 -g -fsanitize=address
 SRCDIR = src
 OBJDIR = obj
 SRC = 	src/main.cpp \
+		src/Buffer.cpp \
 		src/Server.cpp \
 		src/Client.cpp \
 		src/Request.cpp \

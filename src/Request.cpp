@@ -5,7 +5,6 @@
 //------------------------------------------------------------------------------
 //  CONSTRUCTORS & DESTRUCTORS
 //------------------------------------------------------------------------------
-
 Request::Request()
 	: _completed(false),
 	_isValid(false),
@@ -76,7 +75,7 @@ Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 {
 	if (parseContent(content) == -1)
 	{
-		throw (std::runtime_error("Failed to parse request"));
+		return ;
 	}
 	_host = *(config.getHost(_headers["Host"]));
 }
@@ -202,7 +201,10 @@ bool Request::tryToComplete(Buffer &buffer)
 {
 	if (_contentLength > getMaxBodySizeAllowed())
 	{
+		std::cerr << color("DETECTED MAX CONTENT LENGTH" + std::to_string(getMaxBodySizeAllowed()), RED);
 		_errorCode = 413;
+		// _completed = true;
+		// _isValid = false;
 		return (true);
 	}
 	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
@@ -271,6 +273,13 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_method = std::string(line.begin() + index, line.begin() + wordSize);
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")
+	{
+		_errorCode = 405;
+		_version = "HTTP/1.1";
+		_target = "/";
+		return (-1);
+	}
 	index  = skipToWS(line, index);
 	index = skipWS(line, index);
 	wordSize = skipToWS(line, index);
