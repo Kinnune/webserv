@@ -76,38 +76,64 @@ Request::Request(std::vector<unsigned char> content, ConfigurationFile config)
 {
 	if (parseContent(content) == -1)
 	{
-		throw (std::runtime_error("Failed to parse request"));
+		return ;
 	}
 	_host = *(config.getHost(_headers["Host"]));
 }
 
 //------------------------------------------------------------------------------
-//  PRINT FUNCTIONS
+//  GETTERS & SETTERS
 //------------------------------------------------------------------------------
 
-#include <fstream>
-
-void Request::printRequest()
+int Request::getErrorCode()
 {
-	std::ofstream debugFile;
-	debugFile.open("DEBUG_REQUEST.txt", std::ios::app);
+	return (_errorCode);
+};
 
-	debugFile << color("----REQUEST---------------------------------------------", PURPLE) << std::endl;
-	std::unordered_map<std::string, std::string>::iterator it;
-	debugFile << _method << " " << _target << " " << _version << "\n";
-	for (it = _headers.begin(); it != _headers.end(); it++)
-	{
-		debugFile << it->first << ": " <<  it->second << "\n";
-	}
-	debugFile << color("----REQUEST_BODY----------------------------------------", PURPLE) << std::endl;
-	debugFile << _body << std::endl;
-	debugFile << color("--------------------------------------------------------", PURPLE) << std::endl;
+bool Request::getIsValid()
+{
+	return (_isValid);
+};
+
+bool Request::getIsChunked()
+{
+	return (_isChunked);
+};
+
+bool Request::getIsComplete()
+{
+	return (_completed);
 }
 
+ssize_t Request::getContentLength()
+{
+	return (_contentLength);
+}
 
-//------------------------------------------------------------------------------
-//  GETTERS
-//------------------------------------------------------------------------------
+void Request::setContentLength(ssize_t value)
+{
+	_contentLength = value;
+}
+
+std::vector<unsigned char> Request::getBody()
+{
+	return (_body);
+};
+
+Host &Request::getHost()
+{
+	return (_host);
+};
+
+std::string Request::getVersion()
+{
+	return (_version);
+}
+
+std::string &Request::getTarget()
+{
+	return (_target);
+}
 
 std::string const &Request::getMethod() const
 {
@@ -148,6 +174,25 @@ int Request::getMaxBodySizeAllowed()
 	return (maxBodySize);
 }
 
+void Request::setIsComplete(bool value)
+{
+	_completed = value;
+}
+
+void Request::setTarget(std::string target)
+{
+	_target = target;
+}
+
+void Request::setIsChunked(bool chunked)
+{
+	_isChunked = chunked;
+}
+
+void Request::setErrorCode(int errorCode)
+{
+	_errorCode = errorCode;
+}
 
 //------------------------------------------------------------------------------
 //  MEMBER FUNCTIONS
@@ -157,7 +202,10 @@ bool Request::tryToComplete(Buffer &buffer)
 {
 	if (_contentLength > getMaxBodySizeAllowed())
 	{
+		std::cerr << color("DETECTED MAX CONTENT LENGTH" + std::to_string(getMaxBodySizeAllowed()), RED);
 		_errorCode = 413;
+		// _completed = true;
+		// _isValid = false;
 		return (true);
 	}
 	if (_contentLength > 0 && buffer.getSize() >= static_cast<size_t>(_contentLength))
@@ -190,8 +238,6 @@ int Request::headerLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	key = std::string(line.begin() + index, line.begin() + wordSize);
-	if (DEBUG)
-		std::cout << "key as: (" << key << ")" << std::endl;
 	index += key.size() + 1;
 	if (!validIndex(line, index))
 	{
@@ -228,6 +274,13 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_method = std::string(line.begin() + index, line.begin() + wordSize);
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")
+	{
+		_errorCode = 405;
+		_version = "HTTP/1.1";
+		_target = "/";
+		return (-1);
+	}
 	index  = skipToWS(line, index);
 	index = skipWS(line, index);
 	wordSize = skipToWS(line, index);
@@ -236,8 +289,6 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_target = std::string(line.begin() + index, line.begin() + wordSize);
-	if (DEBUG)
-		std::cout << "target made as: (" << _target << ")" << std::endl;
 	index  = skipToWS(line, index);
 	index = skipWS(line, index);
 	wordSize = skipToWS(line, index);
@@ -246,17 +297,14 @@ int Request::firstLineParse(std::vector<unsigned char> &line)
 		return (-1);
 	}
 	_version = std::string(line.begin() + index, line.begin() + wordSize);
-	if (DEBUG)
-		std::cout << "version made as: (" << _version << ")" << std::endl;
 	return (0);
 }
 
-bool Request::detectContentLenght()
+bool Request::detectContentlength()
 {
 	std::unordered_map<std::string, std::string>::iterator it;
-	if (DEBUG)
-		std::cout << "detecting length" << std::endl;
 	ssize_t len = 0;
+
 	_isChunked = false;
 	_completed = true;
 	for (it = _headers.begin(); it != _headers.end(); it++)
@@ -288,7 +336,6 @@ bool Request::detectContentLenght()
 		_completed = false;
 	}
 	_contentLength = len;
-	std::cout << "len as: " << _contentLength << std::endl;
 	return (true);
 }
 
@@ -313,7 +360,7 @@ int Request::parseContent(std::vector<unsigned char> &data)
 		index += line.size();
 		line = getLine(data, index);
 	}
-	if (!detectContentLenght())
+	if (!detectContentlength())
 	{
 		return (-1);
 	}

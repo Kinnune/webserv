@@ -4,13 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
-#define METHODS 0
-#define CGI 1
-#define ERROR_PAGES 2
-#define INDEX 3
-#define FAILURE 0
-#define SUCCESS 1
-
 
 //------------------------------------------------------------------------------
 //		DEBUG
@@ -80,8 +73,14 @@ void ConfigurationFile::printConfigInfo()
 //------------------------------------------------------------------------------
 
 ConfigurationFile::ConfigurationFile() {}
+
 ConfigurationFile::ConfigurationFile(std::string path) : _path(path), _serverCount(0) {}
-ConfigurationFile::ConfigurationFile(const ConfigurationFile &other) { *this = other; }
+
+ConfigurationFile::ConfigurationFile(const ConfigurationFile &other)
+{
+	*this = other;
+}
+
 ConfigurationFile &ConfigurationFile::operator=(const ConfigurationFile &other)
 {
 	if (this != &other)
@@ -95,6 +94,7 @@ ConfigurationFile &ConfigurationFile::operator=(const ConfigurationFile &other)
 	}
 	return (*this);
 }
+
 ConfigurationFile::~ConfigurationFile() {}
 
 
@@ -125,7 +125,7 @@ Host *ConfigurationFile::getHost(std::string hostHeader)
 			return (&(*host));
 	}
 
-	std::cout << RED << "Host not found!" << RESET << std::endl;
+	std::cerr << RED << "Host not found!" << RESET << std::endl;
 
 	// Return nullptr if host not found
 	return (nullptr);
@@ -491,7 +491,7 @@ int ConfigurationFile::parseHostDefaultValues(Host& host, std::ifstream& file, s
 		}
 		if (line.at(0) == '}')
 		{
-			std::cout << RED << "No locations! Is this an error?" << RESET << std::endl;
+			std::cerr << RED << "No locations! Is this an error?" << RESET << std::endl;
 			break ;
 		}
 		if (!storeHostDefaultValue(host, line))
@@ -528,11 +528,11 @@ int ConfigurationFile::parseHostConfig(std::ifstream& file, std::string& line)
 	_hosts.push_back(host);
 
 	// DEBUG START
-	std::cout << color("Locations parsed!", PURPLE) << std::endl;
-	for (std::vector<Location>::iterator loc = _hosts.back().getLocations().begin(); loc != _hosts.back().getLocations().end(); loc++)
-	{
-		std::cout << "Location: " << color(loc->getLocation(), GREEN) << " has " << color(loc->getMethods().size(), GREEN) << " methods." << std::endl;
-	}
+	// std::cout << color("Locations parsed!", PURPLE) << std::endl;
+	// for (std::vector<Location>::iterator loc = _hosts.back().getLocations().begin(); loc != _hosts.back().getLocations().end(); loc++)
+	// {
+	// 	std::cout << "Location: " << color(loc->getLocation(), GREEN) << " has " << color(loc->getMethods().size(), GREEN) << " methods." << std::endl;
+	// }
 	// DEBUG END
 
 

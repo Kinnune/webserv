@@ -1,3 +1,4 @@
+
 #include "Host.hpp"
 #include "Colors.hpp"
 #include <iostream>
@@ -49,7 +50,6 @@ Host &Host::operator=(Host const &other)
 	return *this;
 }
 
-
 //------------------------------------------------------------------------------
 //	GETTERS
 //------------------------------------------------------------------------------
@@ -88,7 +88,6 @@ std::string Host::getInterpreter(std::string &path, const std::string &extension
 	return "";
 }
 
-
 //------------------------------------------------------------------------------
 //	SETTERS
 //------------------------------------------------------------------------------
@@ -106,14 +105,12 @@ void Host::setIndexPages(std::vector<std::string> index_pages) { _indexPages = i
 void Host::setErrorPages(std::map<std::string, std::string> errorPages) { _errorPages = errorPages; }
 void Host::setLocations(std::vector<Location> locations) { _locations = locations; }
 
-
 //------------------------------------------------------------------------------
 //	ADD
 //------------------------------------------------------------------------------
 
 void Host::addLocation(Location &location) { _locations.push_back(location); }
 void Host::addErrorPage(std::string &errorPage, std::string &path) { _errorPages.insert(std::pair<std::string, std::string>(errorPage, path)); }
-
 
 //------------------------------------------------------------------------------
 //	BOOL FUNCTIONS
@@ -214,7 +211,6 @@ bool stringEndsWithString(std::string const &fullString, std::string const &endi
 		return false;
 	}
 }
-
 
 //------------------------------------------------------------------------------
 //	UPDATE RESOURCE PATH

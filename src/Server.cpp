@@ -106,7 +106,6 @@ struct pollfd &Server::newFd(int fd)
 {
 	unsigned int nFds = getNfds();
 
-	std::cout << "Setting new fd: " << fd << std::endl;
 	_pollFds[nFds].fd = fd;
 	_pollFds[nFds].events = (POLLIN | POLLOUT);
 	_pollFds[nFds].revents = 0;
