@@ -114,7 +114,7 @@ void Request::setContentLength(ssize_t value)
 	_contentLength = value;
 }
 
-std::vector<unsigned char> Request::getBody()
+std::vector<unsigned char> &Request::getBody()
 {
 	return (_body);
 };

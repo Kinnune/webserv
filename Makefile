@@ -12,7 +12,7 @@ SRC = 	src/main.cpp \
 		src/ConfigurationFile.cpp \
 		src/Location.cpp \
 		src/Host.cpp \
-		src/Response.cpp \
+		src/Response.cpp
 		
 OBJ = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRC))
 

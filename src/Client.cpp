@@ -75,7 +75,7 @@ std::ostream &operator<<(std::ostream &o, std::vector<unsigned char>data)
 	for (std::vector<unsigned char>::iterator it = data.begin(); it < data.end(); it++)
 	{
 
-		o << "'" << (int)(*it) << "'" << *it;
+		o << *it;
 	}
 	return(o);
 }

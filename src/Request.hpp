@@ -38,7 +38,7 @@ public:
 	ssize_t getContentLength();
 	void setContentLength(ssize_t value);
 	std::string &getTarget();
-	std::vector<unsigned char> getBody();
+	std::vector<unsigned char> &getBody();
 	Host &getHost();
 	int getMaxBodySizeAllowed();
 	std::string const &getMethod() const;

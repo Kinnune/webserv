@@ -36,7 +36,6 @@ Response::Response(Request &request, std::string sessionID)
 	_version = _request.getVersion();			
 	_headers = _request.getHeaders();
 	_host = _request.getHost();
-	// _body = _request.getBody();
 	_waitCGI = false;
 	_readPipe = false;
 	_writePipe = false;
@@ -343,6 +342,7 @@ std::string Response::toString()
 
 //------------------------------------------------------------------------------
 
+
 std::string Response::listDirectory(std::string path)
 {
     std::string directoryListResponse;
@@ -359,21 +359,21 @@ std::string Response::listDirectory(std::string path)
         i--;
     }
     trimmedpath = targetpath.substr(0, i);
-	
-	if (directory != nullptr)
-	{
+
+    if (directory != nullptr)
+    {
         directoryListResponse.append("<table border=\"1\">");
         directoryListResponse.append("<tr><th>File Name</th></tr>");
 
-		while ((entry = readdir(directory)) != nullptr)
-		{
-			if (strcmp(entry->d_name, "..") == 0)
-				directoryListResponse.append("<tr><td><a href=\"" + trimmedpath +"\">" + std::string(entry->d_name) + "</a></td></tr>");
-			else if (strcmp(entry->d_name, ".") == 0)
-				directoryListResponse.append("<tr><td><a href=\"" + _request.getTarget() +"\">" + std::string(entry->d_name) + "</a></td></tr>");
-			else
-            	directoryListResponse.append("<tr><td><a href=\"" + _request.getTarget() + "/" + std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
-		}
+        while ((entry = readdir(directory)) != nullptr)
+        {
+            if (strcmp(entry->d_name, "..") == 0)
+                directoryListResponse.append("<tr><td><a href=\"" + trimmedpath +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+            else if (strcmp(entry->d_name, ".") == 0)
+                directoryListResponse.append("<tr><td><a href=\"" + _request.getTarget() +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+            else
+                directoryListResponse.append("<tr><td><a href=\"" + _request.getTarget() + "/" + std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+        }
 
         directoryListResponse.append("</table>");
         closedir(directory);
@@ -510,6 +510,7 @@ void Response::setCGIEnvironmentVariables(char **envp)
         envp[index++] = strdup((envVarName + "=" + envVarValue).c_str());
     }
     envp[index++] = strdup(("CONTENT_LENGTH=" + _headers["Content-Length"]).c_str());
+    envp[index++] = strdup(("PATH_INFO=" + _request.getTarget()).c_str());
     envp[index] = nullptr;
 }
 
@@ -710,20 +711,20 @@ void Response::handleGetMethod()
 void Response::handlePostMethod()
 {
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
+	std::ofstream uploadFile;
 
-	// Check if the requested method is allowed
-	if (_host.isAllowedMethod(_request.getTarget(), "POST") == false)
-		_statusCodeInt = 405;
-
-	// Check if the config parser returned an error
-	if (_statusCodeInt != 200)
+	uploadFile.open(filePath);
+	if (!uploadFile.is_open())
 	{
+		setStatus(500);
 		generateErrorPage();
+		_completed = true;
 		return ;
 	}
+	uploadFile << _request.getBody();
+	uploadFile.close();
 
-	// Build response
-	setStatus(405);
+	setStatus(200);
 	_version = "HTTP/1.1";
 	generateErrorPage();
 	// setContentLengthHeader(0);
@@ -758,8 +759,6 @@ void Response::handleDeleteMethod()
 		generateErrorPage();
 		return ;
 	}
-
-	// std::cout << color(filePath, RED) << " successfully deleted!" << std::endl;
 
 	// Build response
 	setStatus(200);
