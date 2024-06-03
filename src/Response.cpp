@@ -1,7 +1,6 @@
 #include "Response.hpp"
 #include "Colors.hpp"
 #include "Server.hpp"
-// #include "utilityHeader.hpp"
 
 //------------------------------------------------------------------------------
 //	CONSTRUCTORS & DESTRUCTORS
