@@ -28,6 +28,10 @@ def generate_response_profile(user_folder, username):
 	print('<body>')
 	
 	print('<div class="menuBar">')
+	print('\t\t<form id="uploadForm" method="post" action="/py/upload_file.py" enctype="multipart/form-data">')
+	print('\t\t\t<input type="file" name="file" id="file">')
+	print('\t\t\t<button class="button" type="submit">Upload</button>')
+	print('\t\t</form>')
 	print('\t<a href="/jokebook/login.html">')
 	print('\t\t<button class="button logOutButton">Log Out</button>')
 	print('\t</a>')

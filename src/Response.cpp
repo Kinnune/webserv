@@ -695,16 +695,20 @@ void Response::handleGetMethod()
 
 void Response::handlePostMethod()
 {
-	// std::cout << "Method: " << color("POST", GREEN) << std::endl;
-
-	// Update resource path
-	// std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
-	// std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
+	std::ofstream uploadFile;
 
-	// Handle body
+	uploadFile.open(filePath);
+	if (!uploadFile.is_open())
+	{
+		setStatus(500);
+		generateErrorPage();
+		_completed = true;
+		return ;
+	}
+	uploadFile << _request.getBody();
+	uploadFile.close();
 
-	// Build response
 	setStatus(200);
 	_version = "HTTP/1.1";
 	setContentLengthHeader(_body.size());
@@ -715,16 +719,7 @@ void Response::handlePostMethod()
 
 void Response::handleDeleteMethod()
 {
-	// std::cout << "Method: " << color("DELETE", GREEN) << std::endl;
-
-	// std::cout << "Host: " << color(_host.getHost(), YELLOW) << std::endl;
-	// std::cout << "Server name: " << color(_host.getServerName(), YELLOW) << std::endl;
-	// std::cout << "Port: " << color((_host.getPortInt()), YELLOW) << std::endl;
-
-	// Update resource path
-	// std::cout << "Requested path: " << color(_request.getTarget(), YELLOW) << std::endl;
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
-	// std::cout << "Resource updated: " << color(filePath, GREEN) << std::endl;
 
 	// Check if the config parser returned an error
 	if (_statusCodeInt != 200)
@@ -742,8 +737,6 @@ void Response::handleDeleteMethod()
 		generateErrorPage();
 		return ;
 	}
-
-	// std::cout << color(filePath, RED) << " successfully deleted!" << std::endl;
 
 	// Build response
 	setStatus(200);
