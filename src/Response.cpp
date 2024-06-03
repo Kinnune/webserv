@@ -698,6 +698,13 @@ void Response::handlePostMethod()
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
 	std::ofstream uploadFile;
 
+	if (_host.isAllowedMethod(_request.getTarget(), "POST") == false)
+	{
+		setStatus(405);
+		generateErrorPage();
+		return ;
+	}
+
 	uploadFile.open(filePath);
 	if (!uploadFile.is_open())
 	{
@@ -721,10 +728,17 @@ void Response::handleDeleteMethod()
 {
 	std::string filePath = _host.updateResourcePath(_request.getTarget(), _statusCodeInt);
 
+	if (_host.isAllowedMethod(_request.getTarget(), "DELETE") == false)
+	{
+        _statusCodeInt = 405;
+		setStatus(405);
+	}
+
 	// Check if the config parser returned an error
 	if (_statusCodeInt != 200)
 	{
 		generateErrorPage();
+		return ;
 	}
 
 	// Try to delete the file

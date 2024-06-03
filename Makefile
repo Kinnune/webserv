@@ -17,10 +17,13 @@ OBJ = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRC))
 
 .PHONY: all clean fclean re run test
 
-all: $(OBJDIR) $(NAME)
+all: $(OBJDIR) $(NAME) database
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
+
+database:
+	mkdir -p database
 
 $(NAME): $(OBJ)
 	$(CPP) $(FLAGS) -o $(NAME) $(OBJ)
@@ -43,6 +46,9 @@ run: $(NAME)
 
 emptydb:
 	@rm -rf database/*
+
+rmdb:
+	@rm -rf database
 
 test:
 	$(CPP) -Wall -Werror -Wextra  testmain.cpp Request.cpp request_helpers.cpp -o test
