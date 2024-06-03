@@ -36,7 +36,6 @@ Response::Response(Request &request, std::string sessionID)
 	_version = _request.getVersion();			
 	_headers = _request.getHeaders();
 	_host = _request.getHost();
-	_body = _request.getBody();
 	_waitCGI = false;
 	_readPipe = false;
 	_writePipe = false;
@@ -483,6 +482,7 @@ void Response::setCGIEnvironmentVariables(char **envp)
         envp[index++] = strdup((envVarName + "=" + envVarValue).c_str());
     }
     envp[index++] = strdup(("CONTENT_LENGTH=" + _headers["Content-Length"]).c_str());
+    envp[index++] = strdup(("PATH_INFO=" + _request.getTarget()).c_str());
     envp[index] = nullptr;
 }
 

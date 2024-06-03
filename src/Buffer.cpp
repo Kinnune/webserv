@@ -59,6 +59,10 @@ ssize_t Buffer::readChunkLength()
 	size_t endOfLinePos = std::string::npos;
 	std::string lineEndLiteral("\r\n");
 
+	if (_data.size() < 2)
+	{
+		return -1;
+	}
 	for (size_t i = 0; i < _data.size() - 1; ++i)
 	{
 		if (_data[i] == '\r' && _data[i + 1] == '\n')
@@ -72,23 +76,26 @@ ssize_t Buffer::readChunkLength()
 	{
 		return -1;
 	}
-
 	std::string chunkSizeStr(_data.begin(), _data.begin() + endOfLinePos);
 	size_t chunkSize;
 	std::stringstream strStream(chunkSizeStr);
+
 	strStream >> std::hex >> chunkSize;
 
 	if (strStream.fail())
 	{
 		return -1;
 	}
-
-	if (_data.size() >= chunkSize + endOfLinePos + lineEndLiteral.length())
+	size_t totalLength = endOfLinePos + lineEndLiteral.length() + chunkSize + lineEndLiteral.length();
+	if (_data.size() >= totalLength)
 	{
 		_data.erase(_data.begin(), _data.begin() + endOfLinePos + lineEndLiteral.length());
 	}
-
-	return chunkSize;
+	else
+	{
+		return -1;
+	}
+	return static_cast<ssize_t>(chunkSize);
 }
 
 std::vector<unsigned char> Buffer::extractChunk(size_t chunkSize)
