@@ -249,6 +249,7 @@ void Host::handleLocation(Location &loc, std::string &path, int &statusCode)
 		if (isFile(loc.getRoot() + path))
 		{
 			path = loc.getRoot() + path;
+			statusCode = 200;
 			return ;
 		}
 		path = loc.getRoot() + path.substr(loc.getLocation().length());

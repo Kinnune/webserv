@@ -478,7 +478,7 @@ int ConfigurationFile::storeHostDefaultValue(Host& host, std::string& line)
 		else if (value == "off")
 			host.setAutoIndex(autoIndexState::OFF);
 		else
-			std::cerr << RED << "Invalid value for autoindex: " << value << RESET << std::endl;
+			return (err("Invalid value for autoindex: " + value));
 	}
 	else if (key == "MAX_BODY")
 		host.setMaxBody(std::stoi(value));

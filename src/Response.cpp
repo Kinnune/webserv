@@ -331,30 +331,47 @@ std::string Response::toString()
 
 //------------------------------------------------------------------------------
 
+
 std::string Response::listDirectory(std::string path)
 {
-	std::string directoryListResponse;
-	DIR* directory = opendir(path.c_str());
-	struct dirent* entry;
+    std::string directoryListResponse;
+    DIR* directory = opendir(path.c_str());
+    struct dirent* entry;
 
-	if (directory != nullptr)
-	{
+    std::string targetpath = _request.getTarget();
+    std::string trimmedpath;
+    int i = targetpath.length();
+    while (i > 1)
+    {
+        if (targetpath[i] == '/')
+            break;
+        i--;
+    }
+    trimmedpath = targetpath.substr(0, i);
+
+    if (directory != nullptr)
+    {
         directoryListResponse.append("<table border=\"1\">");
         directoryListResponse.append("<tr><th>File Name</th></tr>");
 
-		while ((entry = readdir(directory)) != nullptr)
-		{
-            directoryListResponse.append("<tr><td><a href=\""+ std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
-		}
+        while ((entry = readdir(directory)) != nullptr)
+        {
+            if (strcmp(entry->d_name, "..") == 0)
+                directoryListResponse.append("<tr><td><a href=\"" + trimmedpath +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+            else if (strcmp(entry->d_name, ".") == 0)
+                directoryListResponse.append("<tr><td><a href=\"" + _request.getTarget() +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+            else
+                directoryListResponse.append("<tr><td><a href=\"" + _request.getTarget() + "/" + std::string(entry->d_name) +"\">" + std::string(entry->d_name) + "</a></td></tr>");
+        }
 
         directoryListResponse.append("</table>");
-		closedir(directory);
-	}
-	else
-	{
-		std::cerr << "Unable to open directory: " << path << std::endl;
-	}
-	return (directoryListResponse);
+        closedir(directory);
+    }
+    else
+    {
+        std::cerr << "Unable to open directory: " << path << std::endl;
+    }
+    return (directoryListResponse);
 }
 
 //------------------------------------------------------------------------------
